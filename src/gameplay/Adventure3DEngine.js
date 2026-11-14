@@ -203,6 +203,7 @@ export class Adventure3DEngine {
   startLevel1Solar(onComplete) {
     this.activeAction = 'level1';
     this.levelStep = 1;
+    this.currentOnComplete = onComplete;
     this.clearLevelProps();
 
     const player = this.game.playerAstronaut;
@@ -256,20 +257,21 @@ export class Adventure3DEngine {
 
     // Step 1: Guide Commander to pick up Cable Reel
     this.currentBeacon = this.create3DTargetBeacon(cablePos, 0x00E5FF, 'CABLE REEL');
-    orbitVoice.speak("Commander! Walk over to the glowing cable reel and pick it up in your hands!");
+    this.showPathGuide(player.position, cablePos, 0x00E5FF);
+    orbitVoice.speak("Commander! Follow the blue light path to the glowing cable reel and pick it up!");
 
     this.game.kidOverlay.showAction({
       icon: '🎒',
       label: 'PICK UP CABLE REEL! ⚡',
-      sub: 'Walk to the glowing reel',
+      sub: 'Follow the light path or tap here to grab',
       color: '#00E5FF',
       onTrigger: () => {
-        // Teleport near or trigger immediately
+        player.position.set(cablePos.x + 0.8, 0.3, cablePos.z + 0.4);
         this.triggerLevel1Pickup();
       }
     });
 
-    // Proximity poller for natural 3D walking
+    // Proximity poller for natural 3D walking (Generous 4.0m radius)
     this.stepChecker = () => {
       if (this.activeAction !== 'level1') return;
 
@@ -277,13 +279,13 @@ export class Adventure3DEngine {
 
       if (this.levelStep === 1) {
         const d = pPos.distanceTo(cablePos);
-        if (d < 2.0) {
+        if (d < 4.0) {
           this.triggerLevel1Pickup();
         }
       } else if (this.levelStep === 2) {
         const d = pPos.distanceTo(socketPos);
-        if (d < 2.2) {
-          this.triggerLevel1PlugIn(socketPos, onComplete);
+        if (d < 4.0) {
+          this.triggerLevel1PlugIn(socketPos, this.currentOnComplete);
         }
       }
     };
@@ -323,13 +325,14 @@ export class Adventure3DEngine {
     this.currentBeacon = this.create3DTargetBeacon(socketPos, 0xFFD166, 'PLUG HERE');
     this.showPathGuide(this.game.playerAstronaut.position, socketPos, 0x00E5FF);
 
-    orbitVoice.speak("Awesome! You've got the cable! Now carry it across to the solar array socket!");
+    orbitVoice.speak("Awesome! You've got the cable! Follow the light path to plug it in!");
     this.game.kidOverlay.showAction({
-      icon: '🚶',
-      label: 'CARRY TO SOLAR SOCKET! 🔌',
-      sub: 'Walk across the base to plug it in',
+      icon: '🔌',
+      label: 'PLUG IN SOLAR POWER! ⚡',
+      sub: 'Follow the light path or tap to connect',
       color: '#FFB703',
       onTrigger: () => {
+        this.game.playerAstronaut.position.set(socketPos.x + 0.8, 0.3, socketPos.z + 0.4);
         this.triggerLevel1PlugIn(socketPos, this.currentOnComplete);
       }
     });
@@ -449,6 +452,7 @@ export class Adventure3DEngine {
   startLevel2WaterPipe(onComplete) {
     this.activeAction = 'level2';
     this.levelStep = 1;
+    this.currentOnComplete = onComplete;
     this.clearLevelProps();
 
     // Turn on water mist spray
@@ -482,14 +486,16 @@ export class Adventure3DEngine {
 
     // Step 1: Guide Commander to Workbench
     this.currentBeacon = this.create3DTargetBeacon(toolPos, 0xFFB703, 'REPAIR CLAMP');
-    orbitVoice.speak("Commander! Water pipe is spraying into space! Walk to the workbench and grab the magnetic clamp!");
+    this.showPathGuide(player.position, toolPos, 0xFFB703);
+    orbitVoice.speak("Commander! Water pipe is spraying into space! Follow the yellow light path to grab the repair clamp!");
 
     this.game.kidOverlay.showAction({
       icon: '🎒',
       label: 'PICK UP REPAIR CLAMP! 💧',
-      sub: 'Walk to workbench to grab tool',
+      sub: 'Follow the light path or tap to grab',
       color: '#FFB703',
       onTrigger: () => {
+        player.position.set(toolPos.x + 0.8, 0.3, toolPos.z + 0.4);
         this.triggerLevel2Pickup();
       }
     });
@@ -499,12 +505,12 @@ export class Adventure3DEngine {
       const pPos = player.position;
 
       if (this.levelStep === 1) {
-        if (pPos.distanceTo(toolPos) < 2.0) {
+        if (pPos.distanceTo(toolPos) < 4.0) {
           this.triggerLevel2Pickup();
         }
       } else if (this.levelStep === 2) {
-        if (pPos.distanceTo(pipePos) < 2.2) {
-          this.triggerLevel2Seal(pipePos, onComplete);
+        if (pPos.distanceTo(pipePos) < 4.0) {
+          this.triggerLevel2Seal(pipePos, this.currentOnComplete);
         }
       }
     };
@@ -536,13 +542,14 @@ export class Adventure3DEngine {
     this.currentBeacon = this.create3DTargetBeacon(pipePos, 0x00E5FF, 'LEAKING PIPE');
     this.showPathGuide(this.game.playerAstronaut.position, pipePos, 0x00E5FF);
 
-    orbitVoice.speak("Got the clamp! Now carry it across to the spraying pipe to seal the leak!");
+    orbitVoice.speak("Got the clamp! Now follow the light path to seal the spraying pipe!");
     this.game.kidOverlay.showAction({
-      icon: '🚶',
-      label: 'CARRY CLAMP TO PIPE! 🩹',
-      sub: 'Walk to leaking pipe to repair it',
+      icon: '🩹',
+      label: 'WELD WATER PIPE! 💧',
+      sub: 'Follow the light path or tap to fix',
       color: '#00E5FF',
       onTrigger: () => {
+        this.game.playerAstronaut.position.set(pipePos.x + 0.8, 0.3, pipePos.z + 0.4);
         this.triggerLevel2Seal(pipePos, this.currentOnComplete);
       }
     });
@@ -632,6 +639,7 @@ export class Adventure3DEngine {
   startLevel3SolarStorm(onComplete) {
     this.activeAction = 'level3';
     this.levelStep = 1;
+    this.currentOnComplete = onComplete;
     this.clearLevelProps();
     this.game.playerController.clearFollowers();
 
@@ -640,7 +648,7 @@ export class Adventure3DEngine {
       this.scene.fog.color.setHex(0x551515);
     }
     this.playSFX('beam');
-    orbitVoice.speak("NASA ALERT! Real Solar Particle Storm from May 10, 2024 incoming! Run and gather all three astronauts, then lead them into the bunker!");
+    orbitVoice.speak("NASA ALERT! Real Solar Particle Storm from May 10, 2024 incoming! Tap Gather Crew to lead everyone into the bunker!");
 
     // Astronauts to rescue
     const astros = this.astronautData?.astronauts;
@@ -663,11 +671,12 @@ export class Adventure3DEngine {
     this.crewBeacons = targets.map(t => this.create3DTargetBeacon(t.pos, 0xFF3B30, 'EVA ASTRONAUT'));
 
     const bunkerPos = new THREE.Vector3(0.0, 0.3, -1.2);
+    this.showPathGuide(this.game.playerAstronaut.position, targets[0].pos, 0xFF3B30);
 
     this.game.kidOverlay.showAction({
       icon: '🚨',
-      label: 'RUN & GATHER CREW! (0/3)',
-      sub: 'Run to each astronaut to form a line',
+      label: 'GATHER CREW & SHELTER! 🏠',
+      sub: 'Tap to lead all astronauts safely into bunker',
       color: '#FF3B30',
       onTrigger: () => {
         // Quick trigger: auto-gather all
@@ -677,7 +686,8 @@ export class Adventure3DEngine {
             this.game.playerController.addFollower(t.astro);
           }
         });
-        this.triggerLevel3BunkerLock(bunkerPos, onComplete);
+        this.game.playerAstronaut.position.set(bunkerPos.x, 0.3, bunkerPos.z);
+        this.triggerLevel3BunkerLock(bunkerPos, this.currentOnComplete);
       }
     });
 
@@ -685,13 +695,13 @@ export class Adventure3DEngine {
       if (this.activeAction !== 'level3') return;
       const pPos = this.game.playerAstronaut.position;
 
-      // Check proximity to unrescued crew
+      // Check proximity to unrescued crew (4.0m radius)
       let allRescued = true;
       let count = 0;
       targets.forEach((t, idx) => {
         if (!t.rescued) {
           const d = pPos.distanceTo(t.astro.position);
-          if (d < 2.5) {
+          if (d < 4.0) {
             t.rescued = true;
             this.playSFX('pickup');
             this.game.playerController.addFollower(t.astro);
@@ -723,12 +733,12 @@ export class Adventure3DEngine {
           sub: 'Run inside habitat airlock',
           color: '#06D6A0',
           onTrigger: () => {
-            this.triggerLevel3BunkerLock(bunkerPos, onComplete);
+            this.triggerLevel3BunkerLock(bunkerPos, this.currentOnComplete);
           }
         });
       } else if (this.levelStep === 2) {
-        if (pPos.distanceTo(bunkerPos) < 2.4) {
-          this.triggerLevel3BunkerLock(bunkerPos, onComplete);
+        if (pPos.distanceTo(bunkerPos) < 4.0) {
+          this.triggerLevel3BunkerLock(bunkerPos, this.currentOnComplete);
         }
       }
     };
@@ -840,6 +850,7 @@ export class Adventure3DEngine {
   startLevel4Greenhouse(onComplete) {
     this.activeAction = 'level4';
     this.levelStep = 1;
+    this.currentOnComplete = onComplete;
     this.clearLevelProps();
     this.plantModels.forEach(p => p.scale.set(0.01, 0.01, 0.01));
 
@@ -856,14 +867,16 @@ export class Adventure3DEngine {
     this.levelProps.push(sackMesh);
 
     this.currentBeacon = this.create3DTargetBeacon(depotPos, 0x06D6A0, 'SEED SACK');
-    orbitVoice.speak("Commander! Pick up the sack of space seeds and carry it into the bio-domes!");
+    this.showPathGuide(this.game.playerAstronaut.position, depotPos, 0x06D6A0);
+    orbitVoice.speak("Commander! Follow the green path to pick up the space seeds and plant them in the greenhouse!");
 
     this.game.kidOverlay.showAction({
       icon: '🌱',
       label: 'PICK UP SEED SACK! 🌾',
-      sub: 'Walk to supply depot to grab seeds',
+      sub: 'Follow the light path or tap to grab seeds',
       color: '#06D6A0',
       onTrigger: () => {
+        this.game.playerAstronaut.position.set(depotPos.x + 0.8, 0.3, depotPos.z + 0.4);
         this.triggerLevel4PickupSeeds();
       }
     });
@@ -873,12 +886,12 @@ export class Adventure3DEngine {
       const pPos = this.game.playerAstronaut.position;
 
       if (this.levelStep === 1) {
-        if (pPos.distanceTo(depotPos) < 2.0) {
+        if (pPos.distanceTo(depotPos) < 4.0) {
           this.triggerLevel4PickupSeeds();
         }
       } else if (this.levelStep === 2) {
-        if (pPos.distanceTo(gardenPos) < 2.2) {
-          this.triggerLevel4GrowGarden(onComplete);
+        if (pPos.distanceTo(gardenPos) < 4.0) {
+          this.triggerLevel4GrowGarden(this.currentOnComplete);
         }
       }
     };
@@ -905,13 +918,14 @@ export class Adventure3DEngine {
     this.currentBeacon = this.create3DTargetBeacon(gardenPos, 0x00E5FF, 'SOIL BEDS');
     this.showPathGuide(this.game.playerAstronaut.position, gardenPos, 0x06D6A0);
 
-    orbitVoice.speak("Now carry the seeds over to the garden soil beds!");
+    orbitVoice.speak("Now follow the light path inside the greenhouse to plant the crops!");
     this.game.kidOverlay.showAction({
-      icon: '🚶',
-      label: 'CARRY SEEDS TO SOIL BEDS! 🍓',
-      sub: 'Walk inside greenhouse to plant',
+      icon: '🍓',
+      label: 'PLANT & GROW CROPS! 🌱',
+      sub: 'Follow the light path or tap to grow',
       color: '#00E5FF',
       onTrigger: () => {
+        this.game.playerAstronaut.position.set(gardenPos.x + 0.8, 0.3, gardenPos.z + 0.4);
         this.triggerLevel4GrowGarden(this.currentOnComplete);
       }
     });
@@ -972,27 +986,30 @@ export class Adventure3DEngine {
 
   startLevel5Antenna(onComplete) {
     this.activeAction = 'level5';
+    this.currentOnComplete = onComplete;
     this.clearLevelProps();
 
     const consolePos = new THREE.Vector3(4.6, 0.4, -4.2);
     this.currentBeacon = this.create3DTargetBeacon(consolePos, 0x00E5FF, 'ANTENNA WHEEL');
+    this.showPathGuide(this.game.playerAstronaut.position, consolePos, 0x00E5FF);
 
     orbitVoice.speak("Commander! Walk up to the space radio console and swivel the giant dish to lock onto Earth!");
     this.game.kidOverlay.showAction({
       icon: '📡',
       label: 'SWIVEL DISH TO EARTH! 🌍',
-      sub: 'Walk to antenna console to align beam',
+      sub: 'Follow the light path or tap to align beam',
       color: '#00E5FF',
       onTrigger: () => {
-        this.triggerLevel5Beam(onComplete);
+        this.game.playerAstronaut.position.set(consolePos.x + 0.8, 0.3, consolePos.z + 0.4);
+        this.triggerLevel5Beam(this.currentOnComplete);
       }
     });
 
     this.stepChecker = () => {
       if (this.activeAction !== 'level5') return;
       const d = this.game.playerAstronaut.position.distanceTo(consolePos);
-      if (d < 2.2) {
-        this.triggerLevel5Beam(onComplete);
+      if (d < 4.0) {
+        this.triggerLevel5Beam(this.currentOnComplete);
       }
     };
   }

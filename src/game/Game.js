@@ -195,6 +195,9 @@ export class Game {
       () => {
         console.log("ORBIT Tutorial completed.");
         this.targetOrbitPos.set(2.5, 3.5, 5.0);
+        setTimeout(() => {
+          this.startSolMission(gameState.currentDay);
+        }, 800);
       }
     );
   }
@@ -257,15 +260,17 @@ export class Game {
           gameState.advanceDay();
           if (this.gameHUD) this.gameHUD.update(gameState);
         }
-        if (gameState.currentDay === 7 && this.adventure3D) {
+        
+        const tutorialDone = localStorage.getItem('luna_orbit_tutorial_completed') === 'true';
+        if (!tutorialDone) {
           setTimeout(() => {
-            this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
-          }, 1400);
+            this.tutorial.start(false);
+          }, 1200);
+        } else {
+          setTimeout(() => {
+            this.startSolMission(gameState.currentDay);
+          }, 1200);
         }
-        // Start tutorial if first time
-        setTimeout(() => {
-          this.tutorial.start(false);
-        }, 1200);
       },
       onResetCamera: () => {
         this.cameraManager.reset(1000);
@@ -383,11 +388,12 @@ export class Game {
           this.missionControl.reportModal.show(adv.report);
         } else {
           orbitVoice.speak(`Welcome to Sol ${gameState.currentDay}! Let's check today's mission!`);
-          if (gameState.currentDay === 7 && this.adventure3D) {
-            this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
-          }
+          this.startSolMission(gameState.currentDay);
         }
         if (this.gameHUD) this.gameHUD.update(gameState);
+      },
+      onStartMissionSol: (sol) => {
+        this.startSolMission(sol);
       },
       onJoystickMove: (x, y) => {
         if (this.roverController && this.roverController.active) {
@@ -400,9 +406,7 @@ export class Game {
         this.exitRoverMode();
       },
       onClaimVictory: () => {
-        if (this.adventure3D) {
-          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
-        }
+        this.startSolMission(7);
       },
       onScoopIce: () => {
         if (this.roverController && this.roverController.active) {
@@ -417,6 +421,101 @@ export class Game {
     });
   }
 
+  startSolMission(sol) {
+    if (!this.adventure3D) return;
+
+    const solNum = Number(sol) || gameState.currentDay || 1;
+
+    // If currently in rover mode and moving to another Sol, safely exit rover
+    if (this.roverController && this.roverController.active && solNum !== 6) {
+      this.exitRoverMode();
+    }
+
+    // Reset any lingering props/actions
+    this.adventure3D.clearLevelProps();
+    if (this.kidOverlay) {
+      this.kidOverlay.hideAction();
+    }
+
+    switch (solNum) {
+      case 1: {
+        const bData = BUILDINGS_DATA.solar_array;
+        if (bData && bData.cameraView) {
+          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
+        }
+        if (this.interaction) this.interaction.highlightBuilding('solar_array');
+        setTimeout(() => {
+          this.adventure3D.startLevel1Solar(() => this.handleMiniGameSuccess(1, 'choice_1_a'));
+        }, 500);
+        break;
+      }
+      case 2: {
+        const bData = BUILDINGS_DATA.habitat;
+        if (bData && bData.cameraView) {
+          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
+        }
+        if (this.interaction) this.interaction.highlightBuilding('habitat');
+        setTimeout(() => {
+          this.adventure3D.startLevel2WaterPipe(() => this.handleMiniGameSuccess(2, 'choice_2_a'));
+        }, 500);
+        break;
+      }
+      case 3: {
+        const bData = BUILDINGS_DATA.habitat;
+        if (bData && bData.cameraView) {
+          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
+        }
+        if (this.interaction) this.interaction.highlightBuilding('habitat');
+        setTimeout(() => {
+          this.adventure3D.startLevel3SolarStorm(() => this.handleMiniGameSuccess(3, 'choice_3_a'));
+        }, 500);
+        break;
+      }
+      case 4: {
+        const bData = BUILDINGS_DATA.greenhouse;
+        if (bData && bData.cameraView) {
+          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
+        }
+        if (this.interaction) this.interaction.highlightBuilding('greenhouse');
+        setTimeout(() => {
+          this.adventure3D.startLevel4Greenhouse(() => this.handleMiniGameSuccess(4, 'choice_4_a'));
+        }, 500);
+        break;
+      }
+      case 5: {
+        const bData = BUILDINGS_DATA.antenna;
+        if (bData && bData.cameraView) {
+          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
+        }
+        if (this.interaction) this.interaction.highlightBuilding('antenna');
+        setTimeout(() => {
+          this.adventure3D.startLevel5Antenna(() => this.handleMiniGameSuccess(5, 'choice_5_a'));
+        }, 500);
+        break;
+      }
+      case 6: {
+        const bData = BUILDINGS_DATA.rover;
+        if (bData && bData.cameraView) {
+          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
+        }
+        if (this.interaction) this.interaction.highlightBuilding('rover');
+        setTimeout(() => {
+          this.adventure3D.startLevel6Rover();
+        }, 500);
+        break;
+      }
+      case 7: {
+        if (this.interaction) this.interaction.highlightBuilding(null);
+        setTimeout(() => {
+          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+        }, 500);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
   handleStationAction(stationId) {
     const currentSol = gameState.currentDay;
     const isTodayDecided = gameState.currentDayDecided;
@@ -428,9 +527,7 @@ export class Game {
         gameState.advanceDay();
         if (this.gameHUD) this.gameHUD.update(gameState);
         orbitVoice.speak(`Advancing to Sol ${gameState.currentDay}!`);
-        if (gameState.currentDay === 7 && this.adventure3D) {
-          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
-        }
+        this.startSolMission(gameState.currentDay);
         return;
       }
       this.infoPanel.show(stationId);
@@ -507,11 +604,10 @@ export class Game {
         this.missionControl.reportModal.show(adv.report);
       } else {
         orbitVoice.speak(`Super job Commander! Sol ${sol} mission completed! Advancing to Sol ${gameState.currentDay}!`);
-        if (gameState.currentDay === 7 && this.adventure3D) {
-          setTimeout(() => {
-            this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
-          }, 800);
-        }
+        if (this.gameHUD) this.gameHUD.update(gameState);
+        setTimeout(() => {
+          this.startSolMission(gameState.currentDay);
+        }, 1200);
       }
     } else {
       orbitVoice.speak("Awesome maintenance work Commander! Systems running smoothly!");
@@ -576,11 +672,9 @@ export class Game {
     this.showScienceDebrief(6, () => {
       // Upon closing Level 6 debrief, smoothly trigger Sol 7 victory celebration!
       orbitVoice.speak("Welcome to Sol 7, Commander! Today is our final victory celebration on the Moon! You did it!");
-      if (this.adventure3D) {
-        setTimeout(() => {
-          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
-        }, 500);
-      }
+      setTimeout(() => {
+        this.startSolMission(7);
+      }, 500);
     });
   }
 

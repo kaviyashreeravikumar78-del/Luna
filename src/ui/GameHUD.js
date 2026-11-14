@@ -185,7 +185,7 @@ export class GameHUD {
       });
     }
 
-    // Interactive Sol Counter Pill (Click to jump to next Sol)
+    // Interactive Sol Counter Pill (Click to jump between Sols 1-7)
     const solPill = this.element.querySelector('#hud-sol-pill');
     if (solPill) {
       solPill.title = "Click to jump between Sols 1-7!";
@@ -195,7 +195,9 @@ export class GameHUD {
         gameState.jumpToDay(next);
         this.update(gameState);
         this.speakOrbit(`Jumped to Sol ${next}!`);
-        if (next === 7 && this.options.onClaimVictory) {
+        if (this.options.onStartMissionSol) {
+          this.options.onStartMissionSol(next);
+        } else if (next === 7 && this.options.onClaimVictory) {
           this.options.onClaimVictory();
         }
       });
@@ -340,29 +342,85 @@ export class GameHUD {
       return;
     }
 
+    banner.style.cursor = "pointer";
+    banner.onclick = (e) => {
+      if (e.target.tagName && e.target.tagName.toLowerCase() === 'button') return;
+      if (this.options.onStartMissionSol) {
+        this.options.onStartMissionSol(sol);
+      }
+    };
+
+    const makeBannerHTML = (text, btnLabel, actionFn) => {
+      banner.innerHTML = `
+        <span style="display:flex; align-items:center; gap:6px;">${text}</span>
+        <button class="btn-hud-banner-go" style="background:linear-gradient(135deg, #00E5FF, #3A86FF); color:#06101E; border:2px solid #FFF; border-radius:14px; padding:4px 12px; margin-left:10px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:0 2px 10px rgba(0,229,255,0.6); display:inline-flex; align-items:center; gap:4px; font-size:0.85rem;">
+          ${btnLabel}
+        </button>
+      `;
+      const btn = banner.querySelector('.btn-hud-banner-go');
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (actionFn) actionFn();
+        });
+      }
+    };
+
     switch (sol) {
       case 1:
-        banner.textContent = '⚡ Sol 1: Walk to the Solar Panels to connect power cables!';
+        makeBannerHTML(
+          '⚡ Sol 1: Reconnect Solar Power Cable!',
+          '📍 Go to Station ➔',
+          () => this.options.onStartMissionSol && this.options.onStartMissionSol(1)
+        );
         break;
       case 2:
-        banner.textContent = '💧 Sol 2: Walk to the Main Habitat to repair the life-support pipe!';
+        makeBannerHTML(
+          '💧 Sol 2: Weld Life-Support Water Pipe!',
+          '📍 Go to Station ➔',
+          () => this.options.onStartMissionSol && this.options.onStartMissionSol(2)
+        );
         break;
       case 3:
-        banner.textContent = '☀️🚨 Sol 3: NASA Solar Storm! Run to the Habitat Shelter & lock shields!';
+        makeBannerHTML(
+          '☀️🚨 Sol 3: Solar Radiation Storm Shelter!',
+          '📍 Go to Station ➔',
+          () => this.options.onStartMissionSol && this.options.onStartMissionSol(3)
+        );
         break;
       case 4:
-        banner.textContent = '🌱 Sol 4: Visit the Greenhouse Bio-Domes to plant and grow fresh food!';
+        makeBannerHTML(
+          '🌱 Sol 4: Plant & Grow Greenhouse Crops!',
+          '📍 Go to Station ➔',
+          () => this.options.onStartMissionSol && this.options.onStartMissionSol(4)
+        );
         break;
       case 5:
-        banner.textContent = '📡 Sol 5: Walk to the Space Radio Dish and align the Earth antenna!';
+        makeBannerHTML(
+          '📡 Sol 5: Swivel Dish to Beam Earth!',
+          '📍 Go to Station ➔',
+          () => this.options.onStartMissionSol && this.options.onStartMissionSol(5)
+        );
         break;
       case 6:
         banner.innerHTML = `
           <span>🚜 Sol 6: Drive Rover to collect 3 glowing ice stones!</span>
-          <button id="btn-force-sol7" style="background:linear-gradient(135deg, #06D6A0, #00E5FF); color:#06101E; border:2px solid #FFF; border-radius:14px; padding:4px 12px; margin-left:10px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:0 2px 10px rgba(6,214,160,0.6);">
+          <button id="btn-banner-drive" style="background:linear-gradient(135deg, #00E5FF, #3A86FF); color:#06101E; border:2px solid #FFF; border-radius:14px; padding:4px 12px; margin-left:10px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:0 2px 10px rgba(0,229,255,0.6); font-size:0.85rem;">
+            🚜 Drive Rover ➔
+          </button>
+          <button id="btn-force-sol7" style="background:linear-gradient(135deg, #06D6A0, #00E5FF); color:#06101E; border:2px solid #FFF; border-radius:14px; padding:4px 12px; margin-left:6px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:0 2px 10px rgba(6,214,160,0.6); font-size:0.85rem;">
             🚀 Skip to Sol 7 ➔
           </button>
         `;
+        const btnDrive = banner.querySelector('#btn-banner-drive');
+        if (btnDrive) {
+          btnDrive.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.options.onStartMissionSol) {
+              this.options.onStartMissionSol(6);
+            }
+          });
+        }
         const forceBtn = banner.querySelector('#btn-force-sol7');
         if (forceBtn) {
           forceBtn.addEventListener('click', (e) => {
@@ -376,7 +434,7 @@ export class GameHUD {
       case 7:
         banner.innerHTML = `
           <span>🏆 Sol 7: Final Base Inspection! Inspect all stations for victory!</span>
-          <button id="btn-claim-victory" style="background:linear-gradient(135deg, #FFD166, #FF9E00); color:#06101E; border:2px solid #FFF; border-radius:14px; padding:4px 12px; margin-left:10px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:0 2px 10px rgba(255,209,102,0.6);">
+          <button id="btn-claim-victory" style="background:linear-gradient(135deg, #FFD166, #FF9E00); color:#06101E; border:2px solid #FFF; border-radius:14px; padding:4px 12px; margin-left:10px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:0 2px 10px rgba(255,209,102,0.6); font-size:0.85rem;">
             🏆 Claim Victory Trophy ➔
           </button>
         `;

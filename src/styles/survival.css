@@ -1,0 +1,989 @@
+/**
+ * LUNA: Mission Survival - Module 3: Survival Engine & NASA Telemetry Styles
+ * High-contrast sci-fi modals, event cards, decision options, and NASA telemetry HUD.
+ */
+
+/* Modal Overlays */
+.survival-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 16, 30, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.survival-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.survival-modal-card {
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, rgba(16, 44, 73, 0.95) 0%, rgba(10, 26, 48, 0.98) 100%);
+  border: 1.5px solid rgba(0, 229, 255, 0.35);
+  border-radius: 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 229, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: modalPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalPopIn {
+  from {
+    transform: scale(0.92) translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Event Modal Header */
+.survival-modal-header {
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.08) 0%, transparent 100%);
+}
+
+.survival-sol-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  background: rgba(217, 87, 54, 0.25);
+  border: 1px solid #D95736;
+  border-radius: 20px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #FFA07A;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+
+.survival-modal-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* Modal Body */
+.survival-modal-body {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #E2EAF4;
+  font-family: 'Inter', sans-serif;
+}
+
+.survival-situation-box {
+  background: rgba(8, 20, 36, 0.65);
+  border-left: 4px solid #00E5FF;
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+/* ORBIT Guidance Box */
+.survival-orbit-guidance {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.12) 0%, rgba(16, 44, 73, 0.4) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.survival-orbit-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #00E5FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.5);
+}
+
+.survival-orbit-content {
+  flex: 1;
+}
+
+.survival-orbit-name {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #00E5FF;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+}
+
+.survival-orbit-text {
+  font-size: 0.92rem;
+  color: #F0F6FC;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Decisions Stack */
+.survival-decisions-heading {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FFB703;
+  margin: 4px 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.survival-decisions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.survival-decision-card {
+  background: rgba(14, 34, 58, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.survival-decision-card:hover {
+  background: rgba(18, 48, 82, 0.9);
+  border-color: #00E5FF;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0, 229, 255, 0.2);
+}
+
+.survival-decision-card.selected {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: #00E5FF;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.decision-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.decision-card-label {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.decision-card-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(255, 183, 3, 0.18);
+  border: 1px solid #FFB703;
+  color: #FFD166;
+  white-space: nowrap;
+}
+
+.decision-card-summary {
+  font-size: 0.88rem;
+  color: #B8C7D9;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.decision-orbit-tip {
+  font-size: 0.84rem;
+  color: #70E0FF;
+  font-style: italic;
+  margin: 0;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Footer */
+.survival-modal-footer {
+  padding: 18px 28px 24px;
+  border-top: 1px solid rgba(0, 229, 255, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: rgba(8, 20, 36, 0.4);
+}
+
+.btn-survival-action {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  padding: 13px 28px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-survival-primary {
+  background: linear-gradient(135deg, #00E5FF 0%, #0099FF 100%);
+  color: #06101E;
+  box-shadow: 0 4px 18px rgba(0, 229, 255, 0.4);
+}
+
+.btn-survival-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 26px rgba(0, 229, 255, 0.6);
+}
+
+.btn-survival-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-survival-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #E2EAF4;
+}
+
+.btn-survival-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* NASA DONKI Telemetry Card */
+.nasa-telemetry-box {
+  background: linear-gradient(135deg, rgba(14, 28, 54, 0.85) 0%, rgba(6, 16, 32, 0.95) 100%);
+  border: 1.5px solid #00E5FF;
+  border-radius: 12px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nasa-telemetry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+  padding-bottom: 10px;
+}
+
+.nasa-source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid #00E5FF;
+  color: #00E5FF;
+  text-transform: uppercase;
+}
+
+.nasa-status-live {
+  background: rgba(6, 214, 160, 0.2);
+  border-color: #06D6A0;
+  color: #06D6A0;
+}
+
+.nasa-status-demo {
+  background: rgba(232, 183, 107, 0.2);
+  border-color: #E8B76B;
+  color: #E8B76B;
+}
+
+.nasa-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 16px;
+}
+
+.nasa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nasa-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #8CA0BA;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nasa-val {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.nasa-disclaimer-banner {
+  background: rgba(255, 183, 3, 0.12);
+  border-left: 3px solid #FFB703;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #FFE08A;
+}
+
+.nasa-json-viewer {
+  background: #040911;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #A3E5FF;
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  margin-top: 8px;
+}
+
+/* Delta Indicators in Results Modal */
+.delta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.delta-positive {
+  background: rgba(6, 214, 160, 0.18);
+  border: 1px solid #06D6A0;
+  color: #06D6A0;
+}
+
+.delta-negative {
+  background: rgba(255, 59, 48, 0.18);
+  border: 1px solid #FF3B30;
+  color: #FF6B6B;
+}
+
+.delta-neutral {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #B8C7D9;
+}
+
+/* Sol Action HUD Bar inside Mission Control */
+.mc-survival-action-bar {
+  background: linear-gradient(135deg, rgba(217, 87, 54, 0.25) 0%, rgba(16, 44, 73, 0.85) 100%);
+  border: 1.5px solid #F47752;
+  border-radius: 14px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(217, 87, 54, 0.25);
+}
+
+.mc-survival-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mc-survival-sol-pill {
+  background: #D95736;
+  color: #FFFFFF;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.mc-survival-event-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.mc-survival-event-sub {
+  font-size: 0.84rem;
+  color: #CAD5E2;
+  margin: 2px 0 0;
+}
+
+.btn-mc-survival-action {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #00E5FF 0%, #0099FF 100%);
+  color: #06101E;
+  box-shadow: 0 3px 12px rgba(0, 229, 255, 0.4);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-mc-survival-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(0, 229, 255, 0.6);
+}
+
+.btn-mc-reset-mission {
+  background: rgba(255, 59, 48, 0.15);
+  border: 1px solid rgba(255, 59, 48, 0.4);
+  color: #FF8080;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-mc-reset-mission:hover {
+  background: rgba(255, 59, 48, 0.3);
+  color: #FFFFFF;
+}
+
+/* ====================================================================
+   COMPACT & ATTRACTIVE NASA DONKI INFORMATION PANEL (CHILD-FRIENDLY)
+   ==================================================================== */
+.nasa-compact-alert-panel {
+  background: linear-gradient(135deg, rgba(10, 24, 48, 0.95) 0%, rgba(4, 14, 28, 0.98) 100%);
+  border: 1.5px solid #00E5FF;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.2);
+  margin: 8px 0;
+}
+
+.nasa-compact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+  padding-bottom: 8px;
+}
+
+.nasa-compact-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nasa-compact-logo {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #00E5FF;
+  letter-spacing: 0.05em;
+}
+
+.nasa-compact-tag {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #FFB703;
+  background: rgba(255, 183, 3, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.nasa-compact-status {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+.nasa-badge-real {
+  background: rgba(6, 214, 160, 0.2);
+  border: 1px solid #06D6A0;
+  color: #06D6A0;
+}
+
+.nasa-badge-demo {
+  background: rgba(232, 183, 107, 0.2);
+  border: 1px solid #E8B76B;
+  color: #E8B76B;
+}
+
+.nasa-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 14px;
+}
+
+.nasa-compact-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.nasa-compact-label {
+  color: #8CA0BA;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.nasa-compact-val {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.nasa-kid-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(0, 229, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.nasa-kid-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.nasa-kid-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #D6ECFF;
+}
+
+.nasa-sim-disclaimer {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: #FFE08A;
+  background: rgba(255, 183, 3, 0.1);
+  border-left: 2.5px solid #FFB703;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.nasa-portal-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.nasa-portal-link {
+  color: #00E5FF;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.nasa-portal-link:hover {
+  color: #FFFFFF;
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .nasa-compact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ====================================================================
+   ORBIT ROBOT SCIENCE & THEORY DEBRIEF MODAL (ANIMATED VOICE)
+   ==================================================================== */
+.orbit-debrief-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 7000;
+  background: rgba(4, 12, 24, 0.88);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  font-family: var(--font-heading);
+  animation: fadeInDebrief 0.3s ease-out;
+}
+
+@keyframes fadeInDebrief {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.orbit-debrief-card {
+  width: 100%;
+  max-width: 680px;
+  background: linear-gradient(135deg, rgba(14, 34, 64, 0.96) 0%, rgba(6, 18, 36, 0.98) 100%);
+  border: 2.5px solid #00E5FF;
+  border-radius: 24px;
+  box-shadow: 0 16px 60px rgba(0, 229, 255, 0.4), inset 0 0 30px rgba(0, 229, 255, 0.12);
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 1. Animated ORBIT Robot Avatar */
+.orbit-debrief-robot-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 1.5px solid rgba(0, 229, 255, 0.25);
+  padding-bottom: 16px;
+}
+
+.orbit-avatar-frame {
+  position: relative;
+  width: 74px;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  animation: orbitHover 3s infinite ease-in-out;
+}
+
+@keyframes orbitHover {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.orbit-avatar-antenna {
+  width: 3px;
+  height: 12px;
+  background: #A0AEC0;
+  position: relative;
+}
+
+.orbit-antenna-bulb {
+  position: absolute;
+  top: -8px;
+  left: -4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #FFB703;
+  box-shadow: 0 0 10px #FFB703;
+  animation: bulbBlink 1.2s infinite alternate;
+}
+
+@keyframes bulbBlink {
+  0% { opacity: 0.4; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 14px #FFB703; }
+}
+
+.orbit-avatar-body {
+  width: 68px;
+  height: 60px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #D0D7DE 100%);
+  border: 3px solid #00E5FF;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0, 229, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.orbit-avatar-face {
+  width: 52px;
+  height: 38px;
+  background: #06101E;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  padding: 4px 6px;
+  border: 1px solid rgba(0, 229, 255, 0.5);
+  position: relative;
+}
+
+.orbit-eye {
+  width: 10px;
+  height: 10px;
+  background: #00E5FF;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00E5FF;
+  animation: eyeBlink 3.8s infinite;
+  display: inline-block;
+  margin: 0 4px;
+}
+
+@keyframes eyeBlink {
+  0%, 94%, 100% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+
+.orbit-mouth-wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 8px;
+}
+
+.orbit-mouth-wave span {
+  width: 2px;
+  height: 3px;
+  background: #06D6A0;
+  border-radius: 2px;
+  animation: mouthTalk 0.6s infinite ease-in-out alternate;
+}
+
+.orbit-mouth-wave span:nth-child(2) { animation-delay: 0.1s; }
+.orbit-mouth-wave span:nth-child(3) { animation-delay: 0.25s; }
+.orbit-mouth-wave span:nth-child(4) { animation-delay: 0.15s; }
+.orbit-mouth-wave span:nth-child(5) { animation-delay: 0.3s; }
+
+@keyframes mouthTalk {
+  0% { height: 2px; }
+  100% { height: 9px; }
+}
+
+/* Robot Meta Info */
+.orbit-robot-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-grow: 1;
+}
+
+.orbit-debrief-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #00E5FF;
+  letter-spacing: 0.06em;
+}
+
+.orbit-sol-pill {
+  background: #06D6A0;
+  color: #06101E;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.orbit-debrief-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1.25;
+  text-shadow: 0 2px 10px rgba(0, 229, 255, 0.4);
+}
+
+.orbit-voice-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #06D6A0;
+}
+
+.voice-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #06D6A0;
+  box-shadow: 0 0 8px #06D6A0;
+  animation: pulseLed 1.2s infinite ease-in-out;
+}
+
+/* 2. Science Body & Speech Bubble */
+.orbit-speech-bubble {
+  background: rgba(0, 229, 255, 0.08);
+  border: 1.5px solid rgba(0, 229, 255, 0.35);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.5);
+  margin-bottom: 14px;
+}
+
+.orbit-speech-text {
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #F0F6FC;
+  font-weight: 600;
+}
+
+/* 3. Did You Know? Facts Grid */
+.orbit-facts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.orbit-fact-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(6, 16, 30, 0.85);
+  border: 1px solid rgba(255, 183, 3, 0.35);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.orbit-fact-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.orbit-fact-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.orbit-fact-label {
+  font-size: 0.82rem;
+  color: #FFB703;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.orbit-fact-desc {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: #CBD5E1;
+}
+
+/* 4. Action Footer */
+.orbit-debrief-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(0, 229, 255, 0.2);
+  padding-top: 16px;
+}
+
+.btn-debrief-replay {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 229, 255, 0.15);
+  color: #00E5FF;
+  border: 1.5px solid #00E5FF;
+  border-radius: 14px;
+  padding: 10px 20px;
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-debrief-replay:hover {
+  background: rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-debrief-proceed {
+  background: linear-gradient(135deg, #06D6A0 0%, #00B4D8 100%);
+  color: #06101E;
+  border: 2px solid #FFFFFF;
+  border-radius: 16px;
+  padding: 12px 32px;
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(6, 214, 160, 0.6);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-debrief-proceed:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 26px rgba(6, 214, 160, 0.8);
+}
+
+@media (max-width: 640px) {
+  .orbit-facts-grid {
+    grid-template-columns: 1fr;
+  }
+  .orbit-debrief-robot-row {
+    flex-direction: column;
+    text-align: center;
+  }
+  .orbit-debrief-footer {
+    flex-direction: column;
+    width: 100%;
+  }
+  .btn-debrief-proceed,
+  .btn-debrief-replay {
+    width: 100%;
+    justify-content: center;
+  }
+}

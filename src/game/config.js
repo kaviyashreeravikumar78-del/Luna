@@ -1,0 +1,58 @@
+/**
+ * LUNA: Mission Survival - Core Configuration
+ */
+export const CONFIG = {
+  colors: {
+    spaceNavy: 0x0A1628,
+    spaceFog: 0x102C49,
+    lunarOrange: 0xD95736,
+    lunarDark: 0xA73D22,
+    lunarBedrock: 0x6E2514,
+    coral: 0xF47752,
+    habitatWhite: 0xE6EAF0,
+    habitatTrim: 0xC8D1DC,
+    greenhouseGlass: 0xD6F0FA,
+    greenhouseFrame: 0xF0F4F8,
+    plantGreen: 0x68B255,
+    plantDarkGreen: 0x3E7D32,
+    trunkBrown: 0x7A5230,
+    solarPanelBlue: 0x152E58,
+    solarGridLine: 0x3B6EA8,
+    solarFrame: 0x8A9BB5,
+    labBlue: 0x3F5E8A,
+    antennaSilver: 0xD0D7DE,
+    beaconRed: 0xFF3B30,
+    beaconBlue: 0x00D2FF,
+    roverWhite: 0xF2F5F8,
+    roverTire: 0x2A2E33,
+    astronautSuit: 0xF0F4F8,
+    astronautVisor: 0x1A233A,
+    astronautBackpack: 0xDCE3EA,
+    orbitBody: 0xF4F7FA,
+    orbitEye: 0x00E5FF,
+    earthOcean: 0x1C4A8D,
+    earthContinent: 0x2E7D32,
+    earthCloud: 0xFFFFFF,
+    distantPlanet: 0x8A5BAA,
+    ringColor: 0xBA98D8,
+    sunLight: 0xFFF5E6,
+    ambientLight: 0x6280A8,
+    hoverHighlight: 0x00E5FF,
+  },
+  camera: {
+    defaultPos: { x: 23, y: 19, z: 27 },
+    defaultTarget: { x: 0, y: 1.2, z: 0 },
+    fov: 42,
+    near: 0.1,
+    far: 500,
+    minDistance: 6,
+    maxDistance: 95,
+    minPolarAngle: Math.PI * 0.1,
+    maxPolarAngle: Math.PI * 0.44, // Prevent clipping below the lunar platform
+  },
+  platform: {
+    width: 38,
+    depth: 38,
+    height: 4.0,
+  }
+};

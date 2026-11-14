@@ -1,0 +1,659 @@
+<USER_REQUEST>
+# LUNA – MISSION SURVIVAL
+# COMPLETE REBUILD FROM SCRATCH – MODULE 1
+## Real 3D Lunar Colony Using Three.js
+
+I want to completely restart my existing LUNA – Mission Survival project.
+
+The previous implementation has collapsed and is no longer usable. Do not try to repair the old UI or continue adding patches to it.
+
+I want a fresh, properly structured project with a completely new visual direction.
+
+IMPORTANT: This is a destructive rebuild.
+
+First inspect the existing project. Create a backup of the existing source code and documentation in a separate backup folder. Then remove the broken application implementation and replace it with a clean new implementation.
+
+Do not delete environment credentials, useful configuration information or files outside this project. Do not expose secrets in the browser or overwrite .env files unnecessarily.
+
+Do not reuse the old UI, old flattened colony image, or old Phaser implementation.
+
+The new project must use REAL 3D.
+
+---
+
+# 1. TECHNOLOGY
+
+Use:
+
+- Three.js – 3D graphics and rendering.
+- JavaScript – interactions, animations and scene logic.
+- Vite – frontend development server and module management.
+- HTML – application entry point.
+- CSS – menus, information panels and interface styling.
+
+Do not use:
+
+- React
+- TypeScript
+- Unity
+- Phaser
+- MongoDB
+- Unnecessary backend services
+
+Do not add AI API integration yet.
+
+Keep the implementation beginner-friendly and easy to understand.
+
+---
+
+# 2. MAIN VISUAL GOAL
+
+Create an immersive 3D lunar colony survival game.
+
+I do not want a dashboard, website template, 2D illustration or static image.
+
+I want the player to feel like they are looking at an actual small lunar colony inside a 3D game.
+
+Visual style:
+
+- Stylized low-poly 3D.
+- Attractive futuristic science-fiction environment.
+- Colourful but realistic enough to feel like a lunar research base.
+- Detailed 3D buildings.
+- Beautiful lighting and shadows.
+- Smooth animations.
+- Rich environmental details.
+
+Colour palette:
+
+- Deep space navy: #102C49
+- Lunar orange: #D95736
+- Coral: #F47752
+- Habitat white: #E6EAF0
+- Greenhouse green: #A7C98D
+- Muted blue: #697DAF
+- Warm gold: #E8B76B
+
+Use these colours as guidance, not as restrictions.
+
+Avoid excessive neon, extremely dark environments, clutter and tiny text.
+
+---
+
+# 3. MODULE 1 – GAME FOUNDATION
+
+Module 1 introduces the player to the mission and allows them to explore the lunar colony.
+
+Create four main experiences.
+
+## SCREEN 1 – WELCOME
+
+Create a beautiful opening screen.
+
+Display:
+
+LUNA
+MISSION SURVIVAL
+
+Tagline:
+
+"One Moon. Seven Days. Your Decisions."
+
+Background:
+
+A real Three.js 3D lunar environment.
+
+Include:
+
+- Moon surface in the foreground.
+- Lunar mountains in the distance.
+- Earth visible in the sky.
+- Stars and subtle space particles.
+- A small lunar colony visible in the distance.
+- Smooth camera movement.
+- Beautiful lighting.
+- Atmospheric depth.
+
+Add an attractive Start Mission button.
+
+The environment should be visible behind the interface.
+
+The title should have a polished entrance animation.
+
+When Start Mission is clicked, transition to the Mission Briefing screen.
+
+Do not create a static background image. The scene must be rendered using Three.js.
+
+## SCREEN 2 – MISSION BRIEFING
+
+Introduce the player to the mission.
+
+Mission information:
+
+Mission Name: LUNA-01
+
+Location: Lunar South Pole
+
+Duration: 7 Days
+
+Crew: 4 Astronauts
+
+Objective:
+
+Establish and maintain a lunar research colony while keeping all four astronauts safe for seven days.
+
+Create an attractive briefing interface with:
+
+- 3D Moon model or lunar environment preview.
+- Mission details.
+- Crew count.
+- Mission objective.
+- Continue button.
+
+Make the information easy to understand.
+
+The Continue button must transition to the 3D colony.
+
+## SCREEN 3 – THE 3D LUNAR COLONY
+
+THIS IS THE MOST IMPORTANT PART OF MODULE 1.
+
+Build an original 3D lunar colony using Three.js.
+
+Do not use a flat image as the environment.
+
+Do not create one large image and place invisible buttons over it.
+
+Build the environment from actual 3D objects, geometry, materials and models.
+
+Use procedural geometry and simple original models where external assets are unavailable.
+
+### A. Lunar Environment
+
+Create:
+
+- Large lunar terrain.
+- Craters.
+- Small rocks.
+- Distant lunar mountains.
+- Earth in the sky.
+- Star field.
+- Directional sunlight.
+- Ambient lighting.
+- Realistic-looking shadows.
+- Floating lunar dust particles.
+
+Use a suitable camera angle that lets the player clearly see the colony.
+
+### B. Create These Six Individual 3D Structures
+
+1. MAIN HABITAT
+
+Create a futuristic white lunar habitat with:
+
+- Rounded or modular connected sections.
+- Entrance and airlock.
+- Windows.
+- External lights.
+- Small connecting corridors.
+
+Purpose:
+
+Provides shelter and living space for the four astronauts.
+
+2. GREENHOUSE
+
+Create a transparent greenhouse with:
+
+- Glass or transparent dome.
+- Visible green plants.
+- Plant beds.
+- Interior lighting.
+- Small growing equipment.
+
+Purpose:
+
+Supports plant growth and food-production research.
+
+3. SOLAR ARRAY
+
+Create:
+
+- Multiple blue solar panels.
+- Panel frames.
+- Support structures.
+- A visible connection to the colony.
+
+Purpose:
+
+Collects sunlight to generate electricity for the base.
+
+4. RESEARCH LABORATORY
+
+Create:
+
+- Separate futuristic laboratory building.
+- Windows.
+- Scientific equipment details.
+- External lighting.
+
+Purpose:
+
+Used for lunar research and scientific experiments.
+
+5. COMMUNICATION ANTENNA
+
+Create:
+
+- Tall antenna tower.
+- Dish antenna.
+- Support structure.
+- Blinking signal lights.
+
+Purpose:
+
+Maintains communication between the colony and mission control.
+
+6. LUNAR ROVER
+
+Create:
+
+- Small lunar vehicle.
+- Wheels.
+- Seats or cabin.
+- Headlights.
+- Visible details.
+
+Purpose:
+
+Used by astronauts to explore the lunar surface.
+
+Each structure must be a separate Three.js object or group of objects.
+
+Do not combine the entire colony into one object.
+
+### C. Astronauts
+
+Create four small astronaut characters.
+
+They should have:
+
+- White space suits.
+- Helmets.
+- Backpacks.
+- Recognizable astronaut appearance.
+
+Place them in different areas of the colony.
+
+Add simple animations:
+
+- Idle movement.
+- Walking.
+- Turning.
+- Working near buildings.
+
+If detailed animated models are unavailable, use simple original 3D character models with articulated parts.
+
+Do not leave astronauts as static decorative dots.
+
+### D. Interactivity
+
+Every major structure must be independently clickable.
+
+Use Three.js Raycaster for object selection.
+
+When the player hovers over a structure:
+
+- Highlight the selected structure.
+- Show its name.
+- Change its appearance subtly.
+- Display a small visual feedback effect.
+
+When the player clicks:
+
+Open an attractive information panel.
+
+Example:
+
+MAIN HABITAT
+
+"Living quarters for the four astronauts. Provides shelter, life-support systems and a protected working environment."
+
+Status: Operational.
+
+Each of the six structures must show its own information.
+
+The information panel must have a working close button.
+
+Make interactions work with both mouse and touch input.
+
+### E. Camera Controls
+
+Add smooth camera controls.
+
+The player should be able to:
+
+- Rotate the view around the colony.
+- Zoom in and out.
+- View the buildings from different angles.
+- Return to the default camera position.
+
+Prevent the camera from moving too far away or entering the ground.
+
+Add a Reset Camera button.
+
+Keep controls simple and intuitive.
+
+### F. Environment Animations
+
+Add smooth animations:
+
+- Earth slowly rotates.
+- Stars twinkle.
+- Solar panels adjust their orientation.
+- Antenna rotates slowly.
+- Building lights blink gently.
+- Greenhouse interior lights glow.
+- Astronauts walk or perform simple tasks.
+- Rover moves occasionally.
+- Dust particles float across the terrain.
+
+Animations should be lightweight and optimized.
+
+---
+
+# 4. ORBIT – MISSION ASSISTANT
+
+Create a friendly 3D robot called ORBIT.
+
+Appearance:
+
+- Small white and blue robot.
+- Rounded body.
+- Glowing blue eyes.
+- Friendly expression.
+- Floating movement.
+- Animated head and body.
+
+ORBIT must appear as a character in the colony environment or as a polished assistant beside the game interface.
+
+For this module, use predefined JavaScript dialogue.
+
+Do not integrate a live AI API.
+
+### ORBIT tutorial
+
+ORBIT should explain:
+
+1. Welcome to the lunar colony.
+2. Main Habitat.
+3. Greenhouse.
+4. Solar Array.
+5. Research Laboratory.
+6. Communication Antenna.
+7. Lunar Rover.
+8. How to enter Mission Control.
+
+When ORBIT explains a building:
+
+- Move the camera toward that building or highlight it.
+- Display the corresponding information.
+- Show ORBIT's speech bubble.
+
+Include:
+
+- Next
+- Back
+- Skip
+- Replay
+- Progress indicator.
+
+Store tutorial completion in localStorage.
+
+The tutorial should not restart automatically after completion unless the player chooses Replay.
+
+---
+
+# 5. NAVIGATION
+
+Create a clear game navigation system.
+
+Required flow:
+
+Welcome
+→ Mission Briefing
+→ 3D Lunar Colony
+→ Mission Control (Module 2 will be implemented later).
+
+For Module 1, provide a Mission Control button in the colony interface.
+
+It may open a clear "Mission Control – Coming in Module 2" transition screen for now.
+
+Do not build Module 2 yet.
+
+Also include:
+
+- ORBIT assistant button.
+- Camera reset button.
+- Building information panel.
+- Return to Welcome option.
+
+Every visible button must work.
+
+---
+
+# 6. UI DESIGN
+
+The interface must complement the 3D environment.
+
+Use a polished science-fiction game interface.
+
+Include:
+
+- Clear readable typography.
+- Attractive buttons.
+- Subtle glass-like panels where appropriate.
+- Smooth screen transitions.
+- Small animated status indicators.
+- Consistent spacing.
+- Clear visual hierarchy.
+
+The 3D colony must remain the main focus.
+
+Do not cover most of the 3D scene with UI panels.
+
+Do not make the interface look like a generic admin dashboard.
+
+Make the experience responsive, but prioritize desktop browser gameplay.
+
+---
+
+# 7. PROJECT STRUCTURE
+
+Organize the project clearly.
+
+Suggested structure:
+
+luna/
+  index.html
+  package.json
+  vite.config.js
+
+  src/
+    main.js
+
+    styles/
+      style.css
+
+    game/
+      Game.js
+      config.js
+
+    scenes/
+      WelcomeScene.js
+      BriefingScene.js
+      ColonyScene.js
+
+    world/
+      createTerrain.js
+      createEnvironment.js
+      createLighting.js
+
+    objects/
+      Habitat.js
+      Greenhouse.js
+      SolarArray.js
+      ResearchLab.js
+      Antenna.js
+      LunarRover.js
+      Astronaut.js
+      OrbitRobot.js
+
+    interactions/
+      ObjectInteraction.js
+      CameraControls.js
+
+    data/
+      buildings.js
+      mission.js
+
+    ui/
+      Navigation.js
+      InformationPanel.js
+      OrbitTutorial.js
+
+  public/
+    assets/
+
+  documentation/
+    module_1_game_foundation.md
+
+You can adjust the structure if necessary, but keep each responsibility separated.
+
+Do not place the whole game inside one JavaScript file.
+
+---
+
+# 8. DOCUMENTATION – VERY IMPORTANT
+
+Create:
+
+documentation/module_1_game_foundation.md
+
+I am a beginner and want to understand the implementation.
+
+Explain in simple English:
+
+1. What Module 1 does.
+2. What Three.js is.
+3. Why we selected Three.js for this project.
+4. Difference between 2D and 3D rendering.
+5. What a Scene is.
+6. What a Camera is.
+7. What a Renderer is.
+8. What Geometry and Materials mean.
+9. How 3D objects are created.
+10. How the lunar terrain is created.
+11. How the six buildings are created.
+12. How Raycaster detects clicked objects.
+13. How camera controls work.
+14. How animations work.
+15. What requestAnimationFrame does.
+16. How ORBIT's tutorial works.
+17. What every important project file does.
+18. Important functions and variables.
+19. How the application flows from Welcome to Colony.
+20. How to run the project.
+21. How to test the project.
+22. Beginner-friendly viva questions and answers.
+
+Include simple examples and diagrams where useful.
+
+Explain actual code from the implementation. Do not write generic documentation unrelated to the files.
+
+---
+
+# 9. TESTING
+
+Do not stop after generating the code.
+
+Run the project and test it.
+
+Check:
+
+- Vite starts successfully.
+- Browser opens the application.
+- Three.js loads correctly.
+- 3D scene is visible.
+- Camera works.
+- Lighting works.
+- All six buildings are visible.
+- Buildings can be individually selected.
+- Hover highlighting works.
+- Information panels open and close.
+- Astronauts are visible.
+- Animations work.
+- ORBIT appears.
+- ORBIT tutorial works.
+- All navigation buttons work.
+- No blank screen.
+- No JavaScript errors.
+- No missing assets.
+- No broken import paths.
+- No major performance issues.
+
+If the application fails, inspect the browser console and fix the actual error.
+
+Do not claim success without testing.
+
+---
+
+# 10. FINAL SCOPE
+
+Implement ONLY Module 1.
+
+Do not implement:
+
+- Resource consumption.
+- Oxygen depletion.
+- Water depletion.
+- Food depletion.
+- Power calculations.
+- Crew health changes.
+- Survival events.
+- NASA API integration.
+- DONKI integration.
+- Seven-day gameplay.
+- Final mission report.
+- Module 2 dashboard.
+
+These will be implemented in later modules.
+
+At completion, tell me:
+
+1. What old files were backed up.
+2. What old implementation was replaced.
+3. What new files were created.
+4. What technology is being used.
+5. How to run the application.
+6. How to test Module 1.
+7. What features are fully working.
+8. What features are still incomplete.
+
+The priority is a WORKING 3D GAME, not a screenshot or mockup.
+
+Build, run, inspect, test and fix before declaring completion.     create all 3D models and the lunar environment itself using Three.js.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-11-14T14:11:58+05:30.
+
+The user's current state is as follows:
+Active Document: c:\Users\KAVIYA SRI R\Desktop\Luna\app.py (LANGUAGE_UNSPECIFIED)
+Cursor is on line: 1
+Other open documents:
+- c:\Users\KAVIYA SRI R\Desktop\Luna\static\js\scenes\ColonyScene.js (LANGUAGE_UNSPECIFIED)
+- c:\Users\KAVIYA SRI R\Desktop\Luna\static\js\scenes\MissionControlScene.js (LANGUAGE_UNSPECIFIED)
+- c:\Users\KAVIYA SRI R\Desktop\Luna\static\js\scenes\WelcomeScene.js (LANGUAGE_UNSPECIFIED)
+- c:\Users\KAVIYA SRI R\Desktop\Luna\static\js\scenes\BriefingScene.js (LANGUAGE_UNSPECIFIED)
+- c:\Users\KAVIYA SRI R\Desktop\Luna\static\js\scenes\BootScene.js (LANGUAGE_UNSPECIFIED)
+</ADDITIONAL_METADATA>

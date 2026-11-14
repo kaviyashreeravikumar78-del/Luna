@@ -1,0 +1,504 @@
+/**
+ * LUNA: Mission Survival - Child-Friendly Action Adventure Gameplay Styles
+ * Colorful, high-contrast, playful UI with large tap targets, stars, and mini-game overlays.
+ */
+
+/* ==========================================================================
+   1. In-Game Adventure HUD (Top & Bottom)
+   ========================================================================== */
+.game-adventure-hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2500;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 20px;
+  font-family: 'Nunito', sans-serif;
+}
+
+.game-adventure-hud > * {
+  pointer-events: auto;
+}
+
+/* Top Navigation Bar */
+.hud-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.hud-sol-card {
+  background: linear-gradient(135deg, rgba(16, 44, 73, 0.92) 0%, rgba(8, 20, 36, 0.95) 100%);
+  border: 2px solid #00E5FF;
+  border-radius: 16px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.25);
+}
+
+.hud-sol-pill {
+  background: #D95736;
+  color: #FFFFFF;
+  font-size: 1.05rem;
+  font-weight: 900;
+  padding: 6px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(217, 87, 54, 0.4);
+}
+
+.hud-stars-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.25rem;
+}
+
+/* Compact Resources Row */
+.hud-resources-cluster {
+  background: rgba(10, 26, 48, 0.88);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  backdrop-filter: blur(10px);
+}
+
+.hud-res-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.hud-res-bar {
+  width: 50px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hud-res-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+
+/* Top Right Control Buttons */
+.hud-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-hud-round {
+  background: linear-gradient(135deg, rgba(16, 44, 73, 0.9) 0%, rgba(8, 20, 36, 0.9) 100%);
+  border: 1.5px solid #00E5FF;
+  color: #FFFFFF;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.btn-hud-round:hover {
+  transform: translateY(-2px);
+  border-color: #FFB703;
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.4);
+}
+
+/* Active Mission Banner */
+.hud-mission-banner {
+  align-self: center;
+  background: linear-gradient(90deg, rgba(217, 87, 54, 0.9) 0%, rgba(244, 119, 82, 0.9) 100%);
+  border: 2px solid #FFD166;
+  border-radius: 24px;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  box-shadow: 0 6px 24px rgba(217, 87, 54, 0.45);
+  animation: pulseMission 2.5s infinite ease-in-out;
+  margin-top: 10px;
+}
+
+@keyframes pulseMission {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* Bottom Context-Sensitive Prompt & Action Button */
+.hud-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.hud-prompt-card {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.9) 0%, rgba(0, 153, 255, 0.9) 100%);
+  color: #06101E;
+  padding: 12px 24px;
+  border-radius: 20px;
+  font-size: 1.15rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 6px 28px rgba(0, 229, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  animation: bouncePrompt 1.8s infinite ease-in-out;
+}
+
+@keyframes bouncePrompt {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.hud-prompt-card:hover {
+  transform: scale(1.04) translateY(-2px);
+}
+
+.hud-key-badge {
+  background: #06101E;
+  color: #00E5FF;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+/* ORBIT Companion Bubble */
+.hud-orbit-bubble {
+  background: rgba(14, 34, 58, 0.94);
+  border: 2px solid #00E5FF;
+  border-radius: 18px;
+  padding: 12px 18px;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 6px 24px rgba(0, 229, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.hud-orbit-face {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  animation: floatHead 2s infinite ease-in-out;
+}
+
+@keyframes floatHead {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.hud-orbit-msg {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Touch Virtual Joystick */
+.hud-virtual-joystick {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(0, 229, 255, 0.4);
+  position: relative;
+  touch-action: none;
+  display: none; /* Shown on touch screens */
+}
+
+.hud-joystick-knob {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #00E5FF;
+  position: absolute;
+  top: 35px;
+  left: 35px;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.8);
+}
+
+/* ==========================================================================
+   2. Child-Friendly Mini-Game Overlays
+   ========================================================================== */
+.minigame-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 16, 30, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Nunito', sans-serif;
+}
+
+.minigame-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.minigame-window {
+  width: 100%;
+  max-width: 720px;
+  max-height: 92vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, rgba(16, 44, 73, 0.98) 0%, rgba(8, 20, 36, 0.98) 100%);
+  border: 2.5px solid #00E5FF;
+  border-radius: 24px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 229, 255, 0.3);
+  position: relative;
+  animation: gamePopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes gamePopIn {
+  from { transform: scale(0.9) translateY(20px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.minigame-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid rgba(0, 229, 255, 0.25);
+  padding-bottom: 14px;
+}
+
+.minigame-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.minigame-icon {
+  font-size: 2rem;
+}
+
+.minigame-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.minigame-subtitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #00E5FF;
+}
+
+.btn-minigame-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-minigame-close:hover {
+  background: rgba(255, 59, 48, 0.6);
+  border-color: #FF3B30;
+}
+
+/* Mini-Game Visual Playing Field */
+.minigame-board {
+  background: rgba(6, 16, 30, 0.75);
+  border: 2px dashed rgba(0, 229, 255, 0.4);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  position: relative;
+  gap: 18px;
+}
+
+/* Big Action Button */
+.btn-game-action {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+  padding: 14px 32px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #00E5FF 0%, #0099FF 100%);
+  color: #06101E;
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-game-action:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 28px rgba(0, 229, 255, 0.6);
+}
+
+.btn-game-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Cable Connection Puzzle Grid */
+.cables-puzzle-container {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 10px;
+}
+
+.cable-nodes-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cable-node-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  border: 3px solid #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.cable-node-btn:hover {
+  transform: scale(1.1);
+}
+
+.cable-node-btn.connected {
+  border-color: #00FF88;
+  box-shadow: 0 0 20px #00FF88;
+  cursor: default;
+}
+
+/* Gardening Planter Boxes */
+.greenhouse-garden-row {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  width: 100%;
+}
+
+.garden-pot {
+  background: #3E2723;
+  border: 3px solid #6D4C41;
+  border-radius: 16px;
+  width: 130px;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.garden-pot:hover {
+  transform: translateY(-4px);
+  border-color: #00E5FF;
+}
+
+.garden-plant-stage {
+  font-size: 3.5rem;
+  margin-bottom: 8px;
+  transition: all 0.3s;
+}
+
+.garden-pot-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #FFE0B2;
+}
+
+/* Celebration Banner */
+.celebrate-banner {
+  background: linear-gradient(135deg, rgba(255, 183, 3, 0.2) 0%, rgba(6, 214, 160, 0.2) 100%);
+  border: 2px solid #FFD166;
+  border-radius: 16px;
+  padding: 18px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: popCelebrate 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popCelebrate {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.celebrate-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #FFD166;
+  margin: 0;
+}
+
+.celebrate-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}

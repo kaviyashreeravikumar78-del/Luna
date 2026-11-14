@@ -1,0 +1,7 @@
+node_modules/
+.vite/
+dist/
+_backup_v1/
+*.log
+.DS_Store
+Thumbs.db

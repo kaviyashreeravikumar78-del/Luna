@@ -13,9 +13,9 @@ export class RoverDrivingController {
 
     this.active = false;
     this.speed = 0;
-    this.maxSpeed = 9.0;
-    this.acceleration = 14.0;
-    this.deceleration = 10.0;
+    this.maxSpeed = 10.0;
+    this.acceleration = 16.0;
+    this.deceleration = 12.0;
     this.heading = -Math.PI * 0.15;
 
     // Direct movement controls
@@ -24,7 +24,7 @@ export class RoverDrivingController {
 
     this.iceCrystals = [];
     this.collectedCount = 0;
-    this.targetCount = 5;
+    this.targetCount = 3; // Streamlined to 3 stones in clear view
     this.isReturning = false;
 
     this.bindControls();
@@ -48,6 +48,10 @@ export class RoverDrivingController {
       }
       if (code === 'KeyD' || code === 'ArrowRight' || key === 'd') {
         this.keys.right = true;
+      }
+      if (code === 'Space') {
+        e.preventDefault();
+        this.scoopNextCrystal();
       }
       if (code === 'Escape') {
         this.stop();
@@ -104,6 +108,11 @@ export class RoverDrivingController {
         <button id="btn-rover-down" class="rover-drive-btn" style="width:72px; height:64px; border-radius:18px; background:#FFB703; color:#06101E; border:3px solid #FFF; font-size:2rem; cursor:pointer; box-shadow:0 6px 20px rgba(255,183,3,0.6); display:flex; align-items:center; justify-content:center;">⬇️</button>
         <button id="btn-rover-right" class="rover-drive-btn" style="width:72px; height:64px; border-radius:18px; background:#00E5FF; color:#06101E; border:3px solid #FFF; font-size:2rem; cursor:pointer; box-shadow:0 6px 20px rgba(0,229,255,0.6); display:flex; align-items:center; justify-content:center;">➡️</button>
       </div>
+      <div style="display:flex; justify-content:center; width:100%; margin-top:4px;">
+        <button id="btn-rover-magnet" style="width:100%; padding:10px 14px; border-radius:16px; background:linear-gradient(135deg, #00E5FF 0%, #0077B6 100%); color:#06101E; font-family:'Nunito',sans-serif; font-size:1.02rem; font-weight:900; border:2px solid #FFF; cursor:pointer; box-shadow:0 4px 16px rgba(0,229,255,0.7); display:flex; align-items:center; justify-content:center; gap:8px;">
+          🧲 TRACTOR BEAM SCOOP
+        </button>
+      </div>
     `;
 
     document.body.appendChild(hud);
@@ -126,6 +135,14 @@ export class RoverDrivingController {
     setupBtn('btn-rover-down', () => { this.touchSteer.throttle = -1; }, () => { this.touchSteer.throttle = 0; });
     setupBtn('btn-rover-left', () => { this.touchSteer.steer = 1; }, () => { this.touchSteer.steer = 0; });
     setupBtn('btn-rover-right', () => { this.touchSteer.steer = -1; }, () => { this.touchSteer.steer = 0; });
+
+    const magnetBtn = hud.querySelector('#btn-rover-magnet');
+    if (magnetBtn) {
+      magnetBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.scoopNextCrystal();
+      });
+    }
   }
 
   setJoystickInput(x, y) {
@@ -160,19 +177,17 @@ export class RoverDrivingController {
   spawnIceCrystals() {
     this.clearIceCrystals();
 
-    // 5 crater locations across the 38x38 terrain
+    // 3 easily visible, brightly glowing lunar stones directly in front of the rover
     const spawnPoints = [
-      { x: -7.5, z: 9.5 },
-      { x: 10.5, z: 7.8 },
-      { x: -14.2, z: -9.5 },
-      { x: 14.5, z: 12.2 },
-      { x: -12.5, z: -2.8 },
+      { x: -3.8, z: 8.5 }, // Stone 1 (just ahead to the left)
+      { x: 0.5, z: 11.8 }, // Stone 2 (straight ahead down the crater path)
+      { x: 4.2, z: 9.0 },  // Stone 3 (just ahead to the right)
     ];
 
     const crystalMat = new THREE.MeshStandardMaterial({
       color: 0x00FFFF,
       emissive: 0x00B4D8,
-      emissiveIntensity: 0.6,
+      emissiveIntensity: 0.7,
       roughness: 0.1,
       metalness: 0.4,
       transparent: true,
@@ -183,7 +198,7 @@ export class RoverDrivingController {
     const pillarMat = new THREE.MeshBasicMaterial({
       color: 0x00E5FF,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.5,
       side: THREE.DoubleSide
     });
 
@@ -191,20 +206,20 @@ export class RoverDrivingController {
       const group = new THREE.Group();
       group.position.set(pt.x, 0.7, pt.z);
 
-      // Large Glowing Octahedron Ice Crystal
-      const geo = new THREE.OctahedronGeometry(0.85, 0);
+      // Large Glowing Octahedron Ice Crystal Stone
+      const geo = new THREE.OctahedronGeometry(0.95, 0);
       const mesh = new THREE.Mesh(geo, crystalMat);
       mesh.castShadow = true;
       group.add(mesh);
 
       // Sky Beacon Light Pillar (Visible from anywhere on the Moon!)
-      const pillarGeo = new THREE.CylinderGeometry(0.15, 0.15, 30, 8);
+      const pillarGeo = new THREE.CylinderGeometry(0.18, 0.18, 30, 8);
       const pillar = new THREE.Mesh(pillarGeo, pillarMat);
       pillar.position.y = 15;
       group.add(pillar);
 
       // Glowing Pulse Halo Ring on Ground
-      const ringGeo = new THREE.TorusGeometry(1.2, 0.08, 6, 24);
+      const ringGeo = new THREE.TorusGeometry(1.4, 0.1, 6, 24);
       const ringMat = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
       const ring = new THREE.Mesh(ringGeo, ringMat);
       ring.rotation.x = Math.PI / 2;
@@ -231,6 +246,65 @@ export class RoverDrivingController {
     this.iceCrystals = [];
   }
 
+  scoopNextCrystal() {
+    if (!this.active) return;
+    const remaining = this.iceCrystals.filter(c => !c.collected);
+    if (remaining.length === 0) return;
+
+    // Pick closest stone
+    remaining.sort((a, b) => {
+      const da = this.rover.position.distanceTo(a.pos);
+      const db = this.rover.position.distanceTo(b.pos);
+      return da - db;
+    });
+    const target = remaining[0];
+
+    // Animate magnetic tractor beam swooshing the stone straight into the rover
+    let t = 0;
+    const startPos = target.group.position.clone();
+    const anim = setInterval(() => {
+      t += 0.14;
+      const targetPos = this.rover.position.clone().add(new THREE.Vector3(0, 0.6, 0));
+      target.group.position.lerpVectors(startPos, targetPos, Math.min(1, t));
+      target.mesh.rotation.y += 0.4;
+      target.mesh.scale.multiplyScalar(0.92);
+
+      if (t >= 1) {
+        clearInterval(anim);
+        this.collectCrystal(target);
+      }
+    }, 25);
+  }
+
+  collectCrystal(crystal) {
+    if (!crystal || crystal.collected) return;
+    crystal.collected = true;
+    crystal.group.visible = false;
+    this.collectedCount += 1;
+
+    // Trigger visual/sound feedback
+    if (this.options.playSFX) {
+      this.options.playSFX('pickup');
+    }
+
+    if (this.options.onCollectIce) {
+      this.options.onCollectIce(this.collectedCount, this.targetCount);
+    }
+
+    // Instant Victory when all 3 stones are gathered!
+    if (this.collectedCount >= this.targetCount) {
+      if (this.options.playSFX) {
+        this.options.playSFX('success');
+      }
+      setTimeout(() => {
+        this.stop();
+        if (this.options.onCompleteMission) {
+          this.options.onCompleteMission();
+        }
+      }, 700);
+    }
+  }
+
   update(delta, elapsedTime) {
     if (!this.active || !this.rover) return;
 
@@ -253,7 +327,7 @@ export class RoverDrivingController {
 
     // 1. Snappy Steer (Can turn even when standing still!)
     if (Math.abs(steer) > 0.05) {
-      this.heading += steer * 3.4 * delta;
+      this.heading += steer * 4.2 * delta;
     }
     this.rover.rotation.y = this.heading;
 
@@ -261,7 +335,7 @@ export class RoverDrivingController {
     if (throttle > 0) {
       this.speed = Math.min(this.maxSpeed, this.speed + this.acceleration * delta);
     } else if (throttle < 0) {
-      this.speed = Math.max(-this.maxSpeed * 0.6, this.speed - this.acceleration * delta);
+      this.speed = Math.max(-this.maxSpeed * 0.7, this.speed - this.acceleration * delta);
     } else {
       // Natural deceleration to stop
       if (this.speed > 0) {
@@ -304,36 +378,10 @@ export class RoverDrivingController {
       const dz = this.rover.position.z - crystal.pos.z;
       const dist = Math.sqrt(dx * dx + dz * dz);
 
-      // Generous 3.2m pickup radius
-      if (dist < 3.2) {
-        crystal.collected = true;
-        crystal.group.visible = false;
-        this.collectedCount += 1;
-
-        if (this.options.onCollectIce) {
-          this.options.onCollectIce(this.collectedCount, this.targetCount);
-        }
-
-        if (this.collectedCount >= this.targetCount) {
-          this.isReturning = true;
-        }
+      // Generous 5.0m pickup radius (super easy to collect by driving near!)
+      if (dist < 5.0) {
+        this.collectCrystal(crystal);
       }
     });
-
-    // 6. Return to Base detection
-    if (this.isReturning) {
-      const baseDist = Math.sqrt(
-        Math.pow(this.rover.position.x - 0.2, 2) +
-        Math.pow(this.rover.position.z - 6.2, 2)
-      );
-
-      if (baseDist < 3.6) {
-        this.isReturning = false;
-        this.stop();
-        if (this.options.onCompleteMission) {
-          this.options.onCompleteMission();
-        }
-      }
-    }
   }
 }

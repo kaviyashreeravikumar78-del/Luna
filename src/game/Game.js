@@ -302,6 +302,9 @@ export class Game {
 
     // 3. Instantiate 3D Lunar Rover Driving Controller
     this.roverController = new RoverDrivingController(this.rover, this.scene, this.camera, {
+      playSFX: (type) => {
+        if (this.adventure3D) this.adventure3D.playSFX(type);
+      },
       onCollectIce: (collected, total) => {
         if (this.gameHUD) {
           this.gameHUD.updateRoverIce(collected, total);
@@ -312,6 +315,11 @@ export class Game {
       },
       onExitRover: () => {
         this.exitRoverMode();
+      },
+      onScoopIce: () => {
+        if (this.roverController && this.roverController.active) {
+          this.roverController.scoopNextCrystal();
+        }
       }
     });
 
@@ -372,6 +380,11 @@ export class Game {
       },
       onExitRover: () => {
         this.exitRoverMode();
+      },
+      onScoopIce: () => {
+        if (this.roverController && this.roverController.active) {
+          this.roverController.scoopNextCrystal();
+        }
       }
     });
 
@@ -470,7 +483,18 @@ export class Game {
       this.cameraManager.controls.enabled = false;
     }
     if (this.gameHUD) {
-      this.gameHUD.showRoverMode(0, 5);
+      this.gameHUD.showRoverMode(0, 3);
+    }
+    if (this.kidOverlay) {
+      this.kidOverlay.showAction({
+        icon: '🧲',
+        label: 'TRACTOR-BEAM SCOOP 💎',
+        sub: 'Tap to vacuum moon stones into rover!',
+        color: '#00E5FF',
+        onTrigger: () => {
+          this.roverController.scoopNextCrystal();
+        }
+      });
     }
   }
 
@@ -502,6 +526,9 @@ export class Game {
 
   exitRoverMode() {
     this.roverController.stop();
+    if (this.kidOverlay) {
+      this.kidOverlay.hideAction();
+    }
     if (this.playerAstronaut) {
       this.playerAstronaut.position.set(this.rover.position.x + 1.6, 0.3, this.rover.position.z + 1.2);
       this.playerAstronaut.visible = true;

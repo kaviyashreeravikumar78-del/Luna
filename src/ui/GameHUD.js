@@ -104,8 +104,11 @@ export class GameHUD {
             <div style="font-size:1.15rem; font-weight:900; color:#FFFFFF;" id="hud-rover-ice-status">🧊 Collect Ice Crystals: 0 / 5</div>
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <span style="font-size:0.85rem; color:#D6ECFF; font-weight:700;">Drive: W,A,S,D or Arrows</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:0.85rem; color:#D6ECFF; font-weight:700;">Drive: W,A,S,D / Arrows / Tap</span>
+          <button id="btn-hud-rover-scoop" style="background:linear-gradient(135deg, #00E5FF, #0077B6); color:#06101E; border:2px solid #FFF; padding:8px 16px; border-radius:14px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:0 2px 10px rgba(0,229,255,0.6);">
+            🧲 Tractor Scoop
+          </button>
           <button id="btn-exit-rover-hud" style="background:#FF3B30; color:#FFF; border:none; padding:8px 16px; border-radius:12px; font-weight:800; cursor:pointer;">
             🛑 Exit Rover
           </button>
@@ -171,6 +174,16 @@ export class GameHUD {
         this.options.onExitRover();
       }
     });
+
+    // Tractor Scoop HUD button
+    const btnScoop = this.element.querySelector('#btn-hud-rover-scoop');
+    if (btnScoop) {
+      btnScoop.addEventListener('click', () => {
+        if (this.options.onScoopIce) {
+          this.options.onScoopIce();
+        }
+      });
+    }
 
     // Virtual Touch Joystick
     this.setupTouchJoystick();
@@ -328,7 +341,7 @@ export class GameHUD {
         banner.textContent = '📡 Sol 5: Walk to the Space Radio Dish and align the Earth antenna!';
         break;
       case 6:
-        banner.textContent = '🚜 Sol 6: Jump into the Lunar Rover and collect 5 Ice Crystals in craters for the Lab!';
+        banner.textContent = '🚜 Sol 6: Drive the Lunar Rover to collect 3 glowing ice stones for the Lab!';
         break;
       case 7:
         banner.textContent = '🏆 Sol 7: Final Base Inspection! Inspect all stations for victory!';
@@ -363,19 +376,19 @@ export class GameHUD {
     const panel = this.element.querySelector('#hud-rover-panel');
     const status = this.element.querySelector('#hud-rover-ice-status');
     if (panel) panel.style.display = 'flex';
-    if (status) status.textContent = `🧊 Collect Ice Crystals: ${collected} / ${total}`;
+    if (status) status.textContent = `🧊 Collect Ice Stones: ${collected} / ${total}`;
     this.hideProximityPrompt();
-    this.speakOrbit("Driving Lunar Rover! Steer around craters and drive over glowing blue ice crystals!");
+    this.speakOrbit("Driving Lunar Rover! Steer near the 3 glowing ice stones or tap Tractor Scoop!");
   }
 
   updateRoverIce(collected, total) {
     const status = this.element.querySelector('#hud-rover-ice-status');
     if (status) {
       if (collected >= total) {
-        status.textContent = `🎉 All ${total} Ice Crystals Collected! Drive back to base!`;
-        this.speakOrbit("Great driving! All 5 ice deposits gathered! Now drive the rover back to the outpost!");
+        status.textContent = `🎉 All ${total} Ice Stones Collected! Great Job!`;
+        this.speakOrbit("Awesome driving! All 3 lunar ice stones collected! Science lab analysis beginning!");
       } else {
-        status.textContent = `🧊 Collect Ice Crystals: ${collected} / ${total}`;
+        status.textContent = `🧊 Collect Ice Stones: ${collected} / ${total}`;
       }
     }
   }

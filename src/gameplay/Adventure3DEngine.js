@@ -1043,7 +1043,7 @@ export class Adventure3DEngine {
      LEVEL 6: ROVER DRIVING ICE/ROCK EXPEDITION
      ========================================================================= */
   startLevel6Rover(onComplete) {
-    orbitVoice.speak("Hop in the Lunar Rover, Commander! Drive across the craters and run over 5 glowing blue ice crystals!");
+    orbitVoice.speak("Hop in the Lunar Rover, Commander! Drive near the 3 glowing ice stones ahead, or tap Tractor Scoop!");
     this.game.startRoverMode();
   }
 

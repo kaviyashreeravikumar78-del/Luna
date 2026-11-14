@@ -326,6 +326,11 @@ export class Game {
       onExitRover: () => {
         this.exitRoverMode();
       },
+      onClaimVictory: () => {
+        if (this.adventure3D) {
+          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+        }
+      },
       onScoopIce: () => {
         if (this.roverController && this.roverController.active) {
           this.roverController.scoopNextCrystal();
@@ -393,6 +398,11 @@ export class Game {
       },
       onExitRover: () => {
         this.exitRoverMode();
+      },
+      onClaimVictory: () => {
+        if (this.adventure3D) {
+          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+        }
       },
       onScoopIce: () => {
         if (this.roverController && this.roverController.active) {
@@ -538,30 +548,40 @@ export class Game {
 
   completeRoverMission() {
     this.exitRoverMode();
-    if (gameState.currentDay === 6) {
-      this.showScienceDebrief(6, () => {
-        if (!gameState.currentDayDecided) {
-          gameState.applyDecision('choice_6_a');
-        }
-        // Advance simulation to Sol 7
-        const adv = gameState.advanceDay();
-        if (this.gameHUD) this.gameHUD.update(gameState);
 
-        orbitVoice.speak("Welcome to Sol 7, Commander! Today is our final victory celebration on the Moon! You did it!");
-        if (this.adventure3D) {
-          setTimeout(() => {
-            this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
-          }, 600);
-        }
-      });
-    } else if (gameState.currentDay === 2 && !gameState.currentDayDecided) {
-      this.showScienceDebrief(2, () => {
-        this.handleMiniGameSuccess(2, 'choice_2_a');
-      });
-    } else {
-      orbitVoice.speak("Rover ice scouting mission successful! Water tanks topped off!");
+    // 1. Ensure Sol 6 decision is applied
+    try {
+      if (!gameState.currentDayDecided && gameState.currentDay === 6) {
+        gameState.applyDecision('choice_6_a');
+      }
+    } catch (e) {
+      console.warn("Decision 6_a applied:", e);
     }
+
+    // 2. Advance to Sol 7
+    try {
+      gameState.advanceDay();
+    } catch (e) {
+      gameState.jumpToDay(7);
+    }
+
+    // Always ensure we are on Sol 7 now!
+    if (gameState.currentDay < 7) {
+      gameState.jumpToDay(7);
+    }
+
     if (this.gameHUD) this.gameHUD.update(gameState);
+
+    // 3. Show Level 6 Science Debrief
+    this.showScienceDebrief(6, () => {
+      // Upon closing Level 6 debrief, smoothly trigger Sol 7 victory celebration!
+      orbitVoice.speak("Welcome to Sol 7, Commander! Today is our final victory celebration on the Moon! You did it!");
+      if (this.adventure3D) {
+        setTimeout(() => {
+          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+        }, 500);
+      }
+    });
   }
 
   showScienceDebrief(sol, onComplete) {

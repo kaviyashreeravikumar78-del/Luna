@@ -267,8 +267,14 @@ export class GameState {
    * Advances the mission to the next Sol (e.g. Sol 1 -> Sol 2)
    */
   advanceDay() {
+    // If today was not decided yet, auto-decide with default choice so player is NEVER blocked!
     if (!this.currentDayDecided && this.currentDay <= this.maxDays) {
-      throw new Error("Please resolve today's mission event before advancing.");
+      try {
+        const defaultChoice = `choice_${this.currentDay}_a`;
+        this.applyDecision(defaultChoice);
+      } catch (e) {
+        this.currentDayDecided = true;
+      }
     }
 
     // Check if already completed Day 7
@@ -305,6 +311,19 @@ export class GameState {
     this.notify();
 
     return { completed: false, currentDay: this.currentDay };
+  }
+
+  /**
+   * Directly jumps to any Sol (1-7)
+   */
+  jumpToDay(targetDay) {
+    const day = Math.max(1, Math.min(this.maxDays, targetDay));
+    this.currentDay = day;
+    this.currentDayDecided = false;
+    this.currentDayEvent = MISSION_EVENTS[day] || null;
+    this.save();
+    this.notify();
+    return this.currentDay;
   }
 
   /**

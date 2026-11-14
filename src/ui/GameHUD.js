@@ -185,6 +185,22 @@ export class GameHUD {
       });
     }
 
+    // Interactive Sol Counter Pill (Click to jump to next Sol)
+    const solPill = this.element.querySelector('#hud-sol-pill');
+    if (solPill) {
+      solPill.title = "Click to jump between Sols 1-7!";
+      solPill.style.cursor = "pointer";
+      solPill.addEventListener('click', () => {
+        const next = (gameState.currentDay % 7) + 1;
+        gameState.jumpToDay(next);
+        this.update(gameState);
+        this.speakOrbit(`Jumped to Sol ${next}!`);
+        if (next === 7 && this.options.onClaimVictory) {
+          this.options.onClaimVictory();
+        }
+      });
+    }
+
     // Virtual Touch Joystick
     this.setupTouchJoystick();
   }
@@ -341,10 +357,38 @@ export class GameHUD {
         banner.textContent = '📡 Sol 5: Walk to the Space Radio Dish and align the Earth antenna!';
         break;
       case 6:
-        banner.textContent = '🚜 Sol 6: Drive the Lunar Rover to collect 3 glowing ice stones for the Lab!';
+        banner.innerHTML = `
+          <span>🚜 Sol 6: Drive Rover to collect 3 glowing ice stones!</span>
+          <button id="btn-force-sol7" style="background:linear-gradient(135deg, #06D6A0, #00E5FF); color:#06101E; border:2px solid #FFF; border-radius:14px; padding:4px 12px; margin-left:10px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:0 2px 10px rgba(6,214,160,0.6);">
+            🚀 Skip to Sol 7 ➔
+          </button>
+        `;
+        const forceBtn = banner.querySelector('#btn-force-sol7');
+        if (forceBtn) {
+          forceBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.options.onAdvanceSol) {
+              this.options.onAdvanceSol();
+            }
+          });
+        }
         break;
       case 7:
-        banner.textContent = '🏆 Sol 7: Final Base Inspection! Inspect all stations for victory!';
+        banner.innerHTML = `
+          <span>🏆 Sol 7: Final Base Inspection! Inspect all stations for victory!</span>
+          <button id="btn-claim-victory" style="background:linear-gradient(135deg, #FFD166, #FF9E00); color:#06101E; border:2px solid #FFF; border-radius:14px; padding:4px 12px; margin-left:10px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:0 2px 10px rgba(255,209,102,0.6);">
+            🏆 Claim Victory Trophy ➔
+          </button>
+        `;
+        const claimBtn = banner.querySelector('#btn-claim-victory');
+        if (claimBtn) {
+          claimBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.options.onClaimVictory) {
+              this.options.onClaimVictory();
+            }
+          });
+        }
         break;
       default:
         banner.textContent = `Sol ${sol}: Explore and maintain the colony!`;

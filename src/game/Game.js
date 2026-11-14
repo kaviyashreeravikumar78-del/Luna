@@ -252,6 +252,16 @@ export class Game {
       onEnterColony: () => {
         this.cameraManager.reset(1200);
         if (this.gameHUD) this.gameHUD.show();
+        // If currentDay was already decided (e.g. reloaded from localStorage), auto-advance to next Sol!
+        if (gameState.currentDayDecided && gameState.currentDay < 7) {
+          gameState.advanceDay();
+          if (this.gameHUD) this.gameHUD.update(gameState);
+        }
+        if (gameState.currentDay === 7 && this.adventure3D) {
+          setTimeout(() => {
+            this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+          }, 1400);
+        }
         // Start tutorial if first time
         setTimeout(() => {
           this.tutorial.start(false);
@@ -368,6 +378,9 @@ export class Game {
           this.missionControl.reportModal.show(adv.report);
         } else {
           orbitVoice.speak(`Welcome to Sol ${gameState.currentDay}! Let's check today's mission!`);
+          if (gameState.currentDay === 7 && this.adventure3D) {
+            this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+          }
         }
         if (this.gameHUD) this.gameHUD.update(gameState);
       },
@@ -399,10 +412,25 @@ export class Game {
     const isTodayDecided = gameState.currentDayDecided;
 
     // If today's mission is already complete and user interacts with this station,
-    // don't restart the emergency crisis! Show info panel and notify user!
-    if (isTodayDecided && stationId !== 'rover') {
+    // automatically advance them to the next Sol!
+    if (isTodayDecided) {
+      if (currentSol < 7) {
+        gameState.advanceDay();
+        if (this.gameHUD) this.gameHUD.update(gameState);
+        orbitVoice.speak(`Advancing to Sol ${gameState.currentDay}!`);
+        if (gameState.currentDay === 7 && this.adventure3D) {
+          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+        }
+        return;
+      }
       this.infoPanel.show(stationId);
-      orbitVoice.speak("All systems for this station are running smoothly, Commander! Click 'Advance to Sol' in the top bar to continue our mission!");
+      orbitVoice.speak("All systems for this station are running smoothly, Commander!");
+      return;
+    }
+
+    // On Sol 7: any station interaction triggers the Victory Celebration!
+    if (currentSol === 7) {
+      this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
       return;
     }
 
@@ -463,8 +491,18 @@ export class Game {
   handleMiniGameSuccess(sol, decisionId) {
     if (gameState.currentDay === sol && !gameState.currentDayDecided) {
       const result = gameState.applyDecision(decisionId);
-      this.missionControl.resultModal.show(result);
-      orbitVoice.speak(`Super job Commander! Sol ${sol} mission completed! Check out your rewards!`);
+      // Auto-advance to next Sol so the child never gets stuck!
+      const adv = gameState.advanceDay();
+      if (adv.completed) {
+        this.missionControl.reportModal.show(adv.report);
+      } else {
+        orbitVoice.speak(`Super job Commander! Sol ${sol} mission completed! Advancing to Sol ${gameState.currentDay}!`);
+        if (gameState.currentDay === 7 && this.adventure3D) {
+          setTimeout(() => {
+            this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+          }, 800);
+        }
+      }
     } else {
       orbitVoice.speak("Awesome maintenance work Commander! Systems running smoothly!");
     }
@@ -500,9 +538,21 @@ export class Game {
 
   completeRoverMission() {
     this.exitRoverMode();
-    if (gameState.currentDay === 6 && !gameState.currentDayDecided) {
+    if (gameState.currentDay === 6) {
       this.showScienceDebrief(6, () => {
-        this.handleMiniGameSuccess(6, 'choice_6_a');
+        if (!gameState.currentDayDecided) {
+          gameState.applyDecision('choice_6_a');
+        }
+        // Advance simulation to Sol 7
+        const adv = gameState.advanceDay();
+        if (this.gameHUD) this.gameHUD.update(gameState);
+
+        orbitVoice.speak("Welcome to Sol 7, Commander! Today is our final victory celebration on the Moon! You did it!");
+        if (this.adventure3D) {
+          setTimeout(() => {
+            this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+          }, 600);
+        }
       });
     } else if (gameState.currentDay === 2 && !gameState.currentDayDecided) {
       this.showScienceDebrief(2, () => {

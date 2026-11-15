@@ -40,6 +40,7 @@ import { Level1Power } from '../levels/Level1Power.js';
 import { Level2Water } from '../levels/Level2Water.js';
 import { Level3Storm } from '../levels/Level3Storm.js';
 import { Level5Habitat } from '../levels/Level5Habitat.js';
+import { Level6Comms } from '../levels/Level6Comms.js';
 
 import '../styles/mission-control.css';
 import '../styles/gameplay.css';
@@ -565,6 +566,36 @@ export class Game {
     });
   }
 
+  startLevel6(skipIntro = false) {
+    if (this.currentLevel) {
+      this.currentLevel.dispose();
+      this.currentLevel = null;
+    }
+
+    if (this.gameHUD) this.gameHUD.hide();
+
+    // 1. Camera starts zoom toward antenna in colony view
+    const bData = BUILDINGS_DATA.antenna;
+    if (bData && bData.cameraView && this.cameraManager) {
+      this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 800);
+    }
+
+    // 2. Play smooth circular iris wipe into dedicated Level 6 scene
+    LevelTransition.play({
+      badge: "SOL 6 • DEEP SPACE UPLINK",
+      title: 'DAY 6: <span class="title-accent">COMMUNICATION</span>',
+      subtitle: "Aim the large space radio dish, lock onto the satellite, and transmit our message to Earth!",
+      skipIntro,
+      onMidpoint: () => {
+        this.currentLevel = new Level6Comms(this);
+        this.currentLevel.init(skipIntro);
+      },
+      onComplete: () => {
+        console.log("Level 6 (Communication) hilltop stage active!");
+      }
+    });
+  }
+
   exitLevelToMissionControl() {
     LevelTransition.exitToMissionControl(
       () => {
@@ -625,14 +656,7 @@ export class Game {
         break;
       }
       case 6: {
-        const bData = BUILDINGS_DATA.rover;
-        if (bData && bData.cameraView) {
-          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
-        }
-        if (this.interaction) this.interaction.highlightBuilding('rover');
-        setTimeout(() => {
-          this.adventure3D.startLevel6Rover();
-        }, 500);
+        this.startLevel6(false);
         break;
       }
       case 7: {
@@ -706,8 +730,8 @@ export class Game {
         break;
 
       case 'antenna':
-        if (currentSol === 5) {
-          this.adventure3D.startLevel5Antenna(() => this.handleMiniGameSuccess(5, 'choice_5_a'));
+        if (currentSol === 6) {
+          this.startLevel6(false);
         } else {
           this.infoPanel.show('antenna');
         }

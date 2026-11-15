@@ -37,6 +37,7 @@ import { GameHUD } from '../ui/GameHUD.js';
 import { orbitVoice } from '../audio/OrbitVoice.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { Level1Power } from '../levels/Level1Power.js';
+import { Level2Water } from '../levels/Level2Water.js';
 
 import '../styles/mission-control.css';
 import '../styles/gameplay.css';
@@ -240,6 +241,12 @@ export class Game {
         // Sol 1: Launch dedicated Level 1 (Power Up) with smooth iris transition!
         if (gameState.currentDay === 1 || (event && event.facilityId === 'solar_array')) {
           this.startLevel1(false);
+          return;
+        }
+
+        // Sol 2: Launch dedicated Level 2 (Water Hunt Driving) with smooth iris transition!
+        if (gameState.currentDay === 2 || (event && event.facilityId === 'habitat' && gameState.currentDay === 2)) {
+          this.startLevel2(false);
           return;
         }
 
@@ -466,6 +473,36 @@ export class Game {
     });
   }
 
+  startLevel2(skipIntro = false) {
+    if (this.currentLevel) {
+      this.currentLevel.dispose();
+      this.currentLevel = null;
+    }
+
+    if (this.gameHUD) this.gameHUD.hide();
+
+    // 1. Camera starts zoom toward rover in colony view
+    const bData = BUILDINGS_DATA.rover;
+    if (bData && bData.cameraView && this.cameraManager) {
+      this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 800);
+    }
+
+    // 2. Play smooth circular iris wipe into dedicated Level 2 scene
+    LevelTransition.play({
+      badge: "SOL 2 • ROVER EXPEDITION",
+      title: 'DAY 2: <span class="title-accent">WATER HUNT</span>',
+      subtitle: "Our water is low! Drive the lunar rover to find ice hidden in the dark crater!",
+      skipIntro,
+      onMidpoint: () => {
+        this.currentLevel = new Level2Water(this);
+        this.currentLevel.init();
+      },
+      onComplete: () => {
+        console.log("Level 2 (Water Hunt) driving stage active!");
+      }
+    });
+  }
+
   exitLevelToMissionControl() {
     LevelTransition.exitToMissionControl(
       () => {
@@ -503,14 +540,7 @@ export class Game {
         break;
       }
       case 2: {
-        const bData = BUILDINGS_DATA.habitat;
-        if (bData && bData.cameraView) {
-          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
-        }
-        if (this.interaction) this.interaction.highlightBuilding('habitat');
-        setTimeout(() => {
-          this.adventure3D.startLevel2WaterPipe(() => this.handleMiniGameSuccess(2, 'choice_2_a'));
-        }, 500);
+        this.startLevel2(false);
         break;
       }
       case 3: {

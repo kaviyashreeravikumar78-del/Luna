@@ -1,0 +1,558 @@
+/* ====================================================================
+   LUNA: Mission Survival - Level 2 (Water Hunt) Minimal Driving HUD
+   ==================================================================== */
+
+.l2-hud-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  font-family: 'Nunito', system-ui, sans-serif;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* TOP HUD BAR */
+.l2-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 1.8rem;
+  pointer-events: auto;
+}
+
+.l2-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.l2-sol-pill {
+  background: rgba(14, 34, 58, 0.85);
+  border: 1.5px solid #00E5FF;
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem;
+  color: #00E5FF;
+  font-size: 0.85rem;
+  font-weight: 900;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.l2-stars-pill {
+  background: rgba(14, 34, 58, 0.85);
+  border: 1.5px solid #FFD166;
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem;
+  color: #FFD166;
+  font-size: 0.85rem;
+  font-weight: 900;
+  box-shadow: 0 0 12px rgba(255, 209, 102, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+/* Objective Chip */
+.l2-objective-chip {
+  background: linear-gradient(135deg, rgba(58, 134, 255, 0.9), rgba(0, 153, 255, 0.95));
+  border: 2px solid #00E5FF;
+  border-radius: 999px;
+  padding: 0.5rem 1.6rem;
+  color: #FFFFFF;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  animation: l2ChipPulse 3s infinite ease-in-out;
+  backdrop-filter: blur(8px);
+}
+
+@keyframes l2ChipPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); box-shadow: 0 6px 24px rgba(0, 229, 255, 0.7); }
+}
+
+/* Top Right Group: Battery, Tank, Pause */
+.l2-right-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Tank Fill Gauge */
+.l2-tank-card {
+  background: rgba(14, 34, 58, 0.9);
+  border: 1.5px solid rgba(0, 229, 255, 0.4);
+  border-radius: 16px;
+  padding: 0.45rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  backdrop-filter: blur(10px);
+}
+
+.l2-tank-icon {
+  font-size: 1.4rem;
+}
+
+.l2-tank-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.l2-tank-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.l2-tank-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #94A3B8;
+  letter-spacing: 0.05em;
+}
+
+.l2-tank-val {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #00E5FF;
+}
+
+.l2-tank-track {
+  width: 100px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.l2-tank-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #3A86FF, #00E5FF);
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+
+/* Rover Battery */
+.l2-battery-card {
+  background: rgba(14, 34, 58, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 0.45rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  backdrop-filter: blur(10px);
+}
+
+.l2-battery-icon {
+  font-size: 1.4rem;
+}
+
+.l2-battery-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.l2-battery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.l2-battery-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #94A3B8;
+}
+
+.l2-battery-val {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #FFFFFF;
+}
+
+.l2-battery-track {
+  width: 100px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.l2-battery-fill {
+  height: 100%;
+  width: 100%;
+  background: #06D6A0;
+  border-radius: 999px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.l2-battery-fill.warning {
+  background: #FFB703;
+}
+
+.l2-battery-fill.critical {
+  background: #FF3B30;
+  animation: l2FlashCrit 0.8s infinite alternate;
+}
+
+@keyframes l2FlashCrit {
+  from { opacity: 1; }
+  to { opacity: 0.4; }
+}
+
+.btn-l2-pause {
+  background: rgba(14, 34, 58, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+}
+
+.btn-l2-pause:hover {
+  background: #3A86FF;
+  border-color: #00E5FF;
+  transform: scale(1.08);
+}
+
+/* CORNER MINI-MAP (Radar Sonar Scope) */
+.l2-minimap-wrap {
+  position: absolute;
+  top: 5rem;
+  left: 1.8rem;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: rgba(10, 22, 40, 0.85);
+  border: 2px solid rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.l2-minimap-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.l2-minimap-label {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: #00E5FF;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* RADAR PING ACTION BUTTON (Desktop & Touch) */
+.l2-radar-dock {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: auto;
+}
+
+.btn-l2-radar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #3A86FF 0%, #0044AA 100%);
+  border: 3px solid #00E5FF;
+  box-shadow: 0 0 24px rgba(0, 229, 255, 0.7);
+  color: #FFFFFF;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-l2-radar:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 32px rgba(0, 229, 255, 0.9);
+}
+
+.btn-l2-radar:active {
+  transform: scale(0.94);
+}
+
+.btn-l2-radar.cooldown {
+  opacity: 0.55;
+  filter: grayscale(0.5);
+  pointer-events: none;
+}
+
+.btn-l2-radar-icon {
+  font-size: 1.8rem;
+}
+
+.btn-l2-radar-text {
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+/* DRILL ACTION BUTTON */
+.btn-l2-drill {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #D95736 0%, #A73D22 100%);
+  border: 3px solid #FFD166;
+  box-shadow: 0 0 24px rgba(217, 87, 54, 0.7);
+  color: #FFFFFF;
+  cursor: pointer;
+  display: none; /* Shown near ice deposit */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  animation: l2DrillGlow 1.5s infinite alternate;
+  pointer-events: auto;
+}
+
+@keyframes l2DrillGlow {
+  from { box-shadow: 0 0 16px rgba(255, 209, 102, 0.5); }
+  to { box-shadow: 0 0 32px rgba(255, 209, 102, 0.9); }
+}
+
+/* RADAR SIGNAL PROXIMITY METER (Hot/Cold) */
+.l2-radar-meter {
+  position: absolute;
+  bottom: 8.5rem;
+  right: 2rem;
+  background: rgba(14, 34, 58, 0.9);
+  border: 2px solid #00E5FF;
+  border-radius: 18px;
+  padding: 0.4rem 1rem;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.l2-radar-meter.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.l2-radar-meter.cold { border-color: #00E5FF; color: #00E5FF; }
+.l2-radar-meter.warm { border-color: #FFB703; color: #FFB703; }
+.l2-radar-meter.hot  { border-color: #06D6A0; color: #06D6A0; box-shadow: 0 0 20px #06D6A0; }
+
+/* POPUPS */
+.l2-popup-float {
+  position: absolute;
+  font-weight: 900;
+  font-size: 1.4rem;
+  pointer-events: none;
+  animation: l2PopFloat 1.2s forwards ease-out;
+}
+
+@keyframes l2PopFloat {
+  0% { opacity: 0; transform: translateY(0) scale(0.8); }
+  25% { opacity: 1; transform: translateY(-10px) scale(1.15); }
+  100% { opacity: 0; transform: translateY(-45px) scale(1); }
+}
+
+/* BIG "GO!" INTRO BANNER */
+.l2-go-banner {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  background: linear-gradient(135deg, #00E5FF, #3A86FF);
+  color: #06101E;
+  font-size: 3.5rem;
+  font-weight: 900;
+  padding: 0.8rem 3.5rem;
+  border-radius: 28px;
+  border: 4px solid #FFFFFF;
+  box-shadow: 0 10px 40px rgba(0, 229, 255, 0.8);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  z-index: 2000;
+}
+
+.l2-go-banner.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* MODALS */
+.l2-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 16, 30, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.l2-modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.l2-modal-card {
+  background: #0E223D;
+  border: 2px solid rgba(0, 229, 255, 0.4);
+  border-radius: 24px;
+  padding: 2.2rem;
+  width: 90%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
+  text-align: center;
+  transform: scale(0.9);
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.l2-modal-backdrop.active .l2-modal-card {
+  transform: scale(1);
+}
+
+.l2-modal-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.l2-science-disclaimer {
+  font-size: 0.8rem;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 0.5rem 0.8rem;
+  line-height: 1.4;
+  margin-top: 0.4rem;
+}
+
+.l2-stars-row {
+  display: flex;
+  gap: 0.8rem;
+  font-size: 2.8rem;
+  margin: 0.2rem 0;
+}
+
+.l2-modal-btn-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.btn-l2-action {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 14px;
+  border: none;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-l2-primary {
+  background: linear-gradient(135deg, #00E5FF, #3A86FF);
+  color: #06101E;
+  box-shadow: 0 4px 18px rgba(0, 229, 255, 0.5);
+}
+
+.btn-l2-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #E2E8F0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-l2-action:hover {
+  transform: scale(1.03);
+}
+
+/* MOBILE TOUCH DOCK */
+.l2-touch-dock {
+  display: none;
+  pointer-events: auto;
+  padding: 1.5rem;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+@media (pointer: coarse), (max-width: 900px) {
+  .l2-touch-dock {
+    display: flex;
+  }
+}
+
+.l2-virtual-stick {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(0, 229, 255, 0.5);
+  position: relative;
+  touch-action: none;
+}
+
+.l2-stick-knob {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #00E5FF;
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.8);
+}

@@ -862,23 +862,6 @@ export class Level7Final {
 
   togglePause() {
     this.isPaused = !this.isPaused;
-    if (this.isPaused) {
-      if (this.hud) {
-        this.hud.showPauseModal(
-          () => { this.isPaused = false; },
-          () => {
-            this.dispose();
-            this.game.startLevel7(true);
-          },
-          (muted) => {},
-          () => {
-            this.game.exitLevelToMissionControl();
-          }
-        );
-      }
-    } else {
-      if (this.hud) this.hud.hideModals();
-    }
   }
 
   dispose() {

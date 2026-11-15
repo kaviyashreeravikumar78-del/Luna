@@ -222,6 +222,7 @@ export class Game {
         }
       }
     );
+    this.interaction.enabled = false; // Enabled only when exploring the colony directly
 
     this.tutorial = new OrbitTutorial(
       this.cameraManager,
@@ -248,12 +249,16 @@ export class Game {
         this.missionControl.hide();
         this.navigation.switchScreen('colony');
         if (this.gameHUD) this.gameHUD.show();
+        if (this.playerController) this.playerController.enabled = true;
+        if (this.interaction) this.interaction.enabled = true;
         this.cameraManager.reset(1000);
       },
       onViewInColony: (facilityId) => {
         this.missionControl.hide();
         this.navigation.switchScreen('colony');
         if (this.gameHUD) this.gameHUD.show();
+        if (this.playerController) this.playerController.enabled = true;
+        if (this.interaction) this.interaction.enabled = true;
 
         // Center and fly camera to the facility
         const bData = BUILDINGS_DATA[facilityId];
@@ -306,10 +311,19 @@ export class Game {
       },
       onOpenMissionControl: () => {
         if (this.gameHUD) this.gameHUD.hide();
+        if (this.playerController) this.playerController.enabled = false;
+        if (this.interaction) this.interaction.enabled = false;
         this.missionControl.show();
+      },
+      onScreenChange: (screenName) => {
+        const isColony = (screenName === 'colony');
+        if (this.playerController) this.playerController.enabled = isColony;
+        if (this.interaction) this.interaction.enabled = isColony;
       },
       onReturnToMenu: () => {
         if (this.gameHUD) this.gameHUD.hide();
+        if (this.playerController) this.playerController.enabled = false;
+        if (this.interaction) this.interaction.enabled = false;
         this.cameraManager.flyTo({ x: 26, y: 21, z: 30 }, { x: 0, y: 1.5, z: 0 }, 1500);
       },
       onSelectBuilding: (buildingId) => {
@@ -344,6 +358,7 @@ export class Game {
         this.handleStationAction(station.id);
       }
     });
+    this.playerController.enabled = false; // Enabled only when actively exploring the colony
 
     // 3. Instantiate 3D Lunar Rover Driving Controller
     this.roverController = new RoverDrivingController(this.rover, this.scene, this.camera, {
@@ -637,7 +652,7 @@ export class Game {
     // Reset any lingering props/actions
     this.adventure3D.clearLevelProps();
     if (this.kidOverlay) {
-      this.kidOverlay.hideAction();
+      this.kidOverlay.hide();
     }
 
     switch (solNum) {
@@ -861,7 +876,7 @@ export class Game {
   exitRoverMode() {
     this.roverController.stop();
     if (this.kidOverlay) {
-      this.kidOverlay.hideAction();
+      this.kidOverlay.hide();
     }
     if (this.playerAstronaut) {
       this.playerAstronaut.position.set(this.rover.position.x + 1.6, 0.3, this.rover.position.z + 1.2);

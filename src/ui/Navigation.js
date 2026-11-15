@@ -98,5 +98,9 @@ export class Navigation {
     if (target) {
       target.classList.add('active');
     }
+
+    if (this.options.onScreenChange) {
+      this.options.onScreenChange(screenName);
+    }
   }
 }

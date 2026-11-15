@@ -28,7 +28,7 @@ export class ObjectInteraction {
     // Create 3D Floating Pointer Beacon
     this.createBeacon();
 
-    this.enabled = true;
+    this.enabled = false; // Enabled only when player is actively exploring the colony
     this.bindEvents();
   }
 

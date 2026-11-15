@@ -467,8 +467,9 @@ export class GameHUD {
       card.style.display = 'flex';
     }
 
-    // Cute Moon Buddy robot speaks the proximity guidance directly!
-    if (station.prompt) {
+    // Cute Moon Buddy robot speaks the proximity guidance only for active mission objectives!
+    const isNominal = station.prompt && (station.prompt.includes('(Nominal)') || station.prompt.includes('✅') || station.prompt.includes('(Growing)'));
+    if (station.prompt && !isNominal) {
       orbit.say(`${station.prompt}! Press [E] or Space!`, {
         emotion: 'excited',
         gesture: 'point'

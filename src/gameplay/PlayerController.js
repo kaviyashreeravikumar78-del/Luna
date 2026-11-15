@@ -13,7 +13,7 @@ export class PlayerController {
     this.camera = camera;
     this.options = options; // { onNearStation, onLeaveStation, onInteract }
 
-    this.enabled = true;
+    this.enabled = false; // Enabled only when player is actively exploring the colony
     this.speed = 4.5; // Smooth responsive walking speed
     this.walkTime = 0;
     this.isMoving = false;
@@ -156,6 +156,7 @@ export class PlayerController {
   }
 
   triggerInteraction() {
+    if (!this.enabled) return;
     if (this.currentNearStation && this.options.onInteract) {
       this.options.onInteract(this.currentNearStation);
     }
@@ -361,6 +362,7 @@ export class PlayerController {
   }
 
   checkStationProximity() {
+    if (!this.enabled) return;
     let closestStation = null;
     let closestDist = Infinity;
 

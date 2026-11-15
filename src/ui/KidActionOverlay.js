@@ -202,4 +202,8 @@ export class KidActionOverlay {
   hide() {
     this.element.style.display = 'none';
   }
+
+  hideAction() {
+    this.hide();
+  }
 }

@@ -35,6 +35,8 @@ import { KidActionOverlay } from '../ui/KidActionOverlay.js';
 import { OrbitScienceDebriefModal } from '../ui/OrbitScienceDebriefModal.js';
 import { GameHUD } from '../ui/GameHUD.js';
 import { orbitVoice } from '../audio/OrbitVoice.js';
+import { LevelTransition } from '../core/LevelTransition.js';
+import { Level1Power } from '../levels/Level1Power.js';
 
 import '../styles/mission-control.css';
 import '../styles/gameplay.css';
@@ -50,6 +52,7 @@ export class Game {
     this.container = canvasContainer;
     this.clock = new THREE.Clock();
     this.targetOrbitPos = new THREE.Vector3(2.5, 3.5, 5.0);
+    this.currentLevel = null;
 
     this.initThree();
     this.buildWorld();
@@ -233,6 +236,13 @@ export class Game {
       onPlaySolAction: (event) => {
         this.missionControl.hide();
         this.navigation.switchScreen('colony');
+
+        // Sol 1: Launch dedicated Level 1 (Power Up) with smooth iris transition!
+        if (gameState.currentDay === 1 || (event && event.facilityId === 'solar_array')) {
+          this.startLevel1(false);
+          return;
+        }
+
         if (this.gameHUD) this.gameHUD.show();
         this.cameraManager.reset(1200);
 
@@ -425,6 +435,52 @@ export class Game {
     });
   }
 
+  startLevel1(skipIntro = false) {
+    if (this.currentLevel) {
+      this.currentLevel.dispose();
+      this.currentLevel = null;
+    }
+
+    if (this.gameHUD) this.gameHUD.hide();
+
+    // 1. Camera starts zoom toward solar array in colony view
+    const bData = BUILDINGS_DATA.solar_array;
+    if (bData && bData.cameraView && this.cameraManager) {
+      this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 800);
+    }
+
+    // 2. Play smooth circular iris wipe into dedicated Level 1 scene
+    LevelTransition.play({
+      badge: "SOL 1 • EXPEDITION",
+      title: 'DAY 1: <span class="title-accent">POWER UP</span>',
+      subtitle: "Lunar dust is blocking the solar panels. Clean them to restore colony power!",
+      skipIntro,
+      onMidpoint: () => {
+        // Instantiate and init dedicated Level 1 scene
+        this.currentLevel = new Level1Power(this);
+        this.currentLevel.init();
+      },
+      onComplete: () => {
+        console.log("Level 1 (Power Up) stage active and camera framed!");
+      }
+    });
+  }
+
+  exitLevelToMissionControl() {
+    LevelTransition.exitToMissionControl(
+      () => {
+        if (this.currentLevel) {
+          this.currentLevel.dispose();
+          this.currentLevel = null;
+        }
+        this.missionControl.show();
+      },
+      () => {
+        console.log("Returned to Mission Control from level.");
+      }
+    );
+  }
+
   startSolMission(sol) {
     if (!this.adventure3D) return;
 
@@ -443,14 +499,7 @@ export class Game {
 
     switch (solNum) {
       case 1: {
-        const bData = BUILDINGS_DATA.solar_array;
-        if (bData && bData.cameraView) {
-          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
-        }
-        if (this.interaction) this.interaction.highlightBuilding('solar_array');
-        setTimeout(() => {
-          this.adventure3D.startLevel1Solar(() => this.handleMiniGameSuccess(1, 'choice_1_a'));
-        }, 500);
+        this.startLevel1(false);
         break;
       }
       case 2: {
@@ -917,7 +966,12 @@ export class Game {
       this.adventure3D.update(delta, elapsedTime);
     }
 
-    // 15. Render Scene
+    // 15. Update Dedicated Level Scene (e.g. Level 1 Power Up)
+    if (this.currentLevel && this.currentLevel.update) {
+      this.currentLevel.update(delta, elapsedTime);
+    }
+
+    // 16. Render Scene
     this.renderer.render(this.scene, this.camera);
   }
 }

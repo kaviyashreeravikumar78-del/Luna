@@ -38,6 +38,7 @@ import { orbitVoice } from '../audio/OrbitVoice.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { Level1Power } from '../levels/Level1Power.js';
 import { Level2Water } from '../levels/Level2Water.js';
+import { Level3Storm } from '../levels/Level3Storm.js';
 
 import '../styles/mission-control.css';
 import '../styles/gameplay.css';
@@ -503,6 +504,36 @@ export class Game {
     });
   }
 
+  startLevel3(skipIntro = false) {
+    if (this.currentLevel) {
+      this.currentLevel.dispose();
+      this.currentLevel = null;
+    }
+
+    if (this.gameHUD) this.gameHUD.hide();
+
+    // 1. Camera starts zoom toward habitat in colony view
+    const bData = BUILDINGS_DATA.habitat;
+    if (bData && bData.cameraView && this.cameraManager) {
+      this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 800);
+    }
+
+    // 2. Play smooth circular iris wipe into dedicated Level 3 scene
+    LevelTransition.play({
+      badge: "SOL 3 • SPACE WEATHER ALERT",
+      title: 'DAY 3: <span class="title-accent">SOLAR STORM</span>',
+      subtitle: "A high-speed solar particle storm is approaching! Get everyone into the shelter!",
+      skipIntro,
+      onMidpoint: () => {
+        this.currentLevel = new Level3Storm(this);
+        this.currentLevel.init(skipIntro);
+      },
+      onComplete: () => {
+        console.log("Level 3 (Solar Storm) rescue stage active!");
+      }
+    });
+  }
+
   exitLevelToMissionControl() {
     LevelTransition.exitToMissionControl(
       () => {
@@ -544,14 +575,7 @@ export class Game {
         break;
       }
       case 3: {
-        const bData = BUILDINGS_DATA.habitat;
-        if (bData && bData.cameraView) {
-          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
-        }
-        if (this.interaction) this.interaction.highlightBuilding('habitat');
-        setTimeout(() => {
-          this.adventure3D.startLevel3SolarStorm(() => this.handleMiniGameSuccess(3, 'choice_3_a'));
-        }, 500);
+        this.startLevel3(false);
         break;
       }
       case 4: {
@@ -641,7 +665,7 @@ export class Game {
         if (currentSol === 2) {
           this.adventure3D.startLevel2WaterPipe(() => this.handleMiniGameSuccess(2, 'choice_2_a'));
         } else if (currentSol === 3) {
-          this.adventure3D.startLevel3SolarStorm(() => this.handleMiniGameSuccess(3, 'choice_3_a'));
+          this.startLevel3(false);
         } else {
           this.infoPanel.show('habitat');
         }

@@ -1,0 +1,657 @@
+/* ==========================================================================
+   Level 3 (Day 3 - Solar Storm) Minimal Modern HUD
+   Aesthetic: NASA High-Contrast Navy, Electric Cyan, Solar Amber & Crimson Alert
+   ========================================================================== */
+
+.l3-hud-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  color: #FFFFFF;
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   TOP HUD BAR
+   -------------------------------------------------------------------------- */
+.l3-top-bar {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: auto;
+  gap: 12px;
+}
+
+.l3-badge-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.l3-sol-pill {
+  background: rgba(6, 16, 30, 0.85);
+  border: 1.5px solid #FF5E57;
+  color: #FF5E57;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 5px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(255, 94, 87, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.l3-sol-dot {
+  width: 7px;
+  height: 7px;
+  background: #FF5E57;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #FF5E57;
+  animation: l3-pulse-dot 1.2s infinite ease-in-out;
+}
+
+@keyframes l3-pulse-dot {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+
+.l3-stars-pill {
+  background: rgba(6, 16, 30, 0.85);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  color: #FFD700;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+
+/* TOP-CENTER OBJECTIVE CHIP */
+.l3-objective-chip {
+  background: rgba(6, 16, 30, 0.9);
+  border: 2px solid #00E5FF;
+  border-radius: 30px;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.25);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.l3-objective-chip.urgent {
+  border-color: #FF5E57;
+  box-shadow: 0 6px 22px rgba(255, 94, 87, 0.4);
+  animation: l3-chip-shake 1.6s infinite;
+}
+
+@keyframes l3-chip-shake {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+#l3-obj-icon {
+  font-size: 1.3rem;
+}
+
+#l3-obj-text {
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #FFFFFF;
+}
+
+/* TOP-RIGHT GROUP: ASTRONAUTS SAFE + COUNTDOWN RING + PAUSE */
+.l3-right-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 4 ASTRONAUT SAFE COUNTER */
+.l3-crew-safe-card {
+  background: rgba(6, 16, 30, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  backdrop-filter: blur(8px);
+}
+
+.l3-crew-icons-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.l3-astro-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  opacity: 0.5;
+  filter: grayscale(80%);
+}
+
+.l3-astro-badge.gathered {
+  opacity: 0.85;
+  filter: grayscale(0%);
+  border-color: #FFB703;
+  box-shadow: 0 0 10px rgba(255, 183, 3, 0.4);
+  animation: l3-bounce 0.4s ease-out;
+}
+
+.l3-astro-badge.sheltered {
+  opacity: 1;
+  filter: grayscale(0%);
+  background: rgba(6, 214, 160, 0.2);
+  border-color: #06D6A0;
+  box-shadow: 0 0 12px rgba(6, 214, 160, 0.6);
+  transform: scale(1.08);
+}
+
+.l3-astro-check {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  background: #06D6A0;
+  color: #06101E;
+  font-size: 0.65rem;
+  font-weight: 900;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #06101E;
+}
+
+.l3-astro-badge.sheltered .l3-astro-check {
+  display: flex;
+}
+
+@keyframes l3-bounce {
+  0% { transform: scale(0.8); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.l3-crew-count-text {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #00E5FF;
+  letter-spacing: 0.04em;
+}
+
+/* CIRCULAR COUNTDOWN RING */
+.l3-countdown-card {
+  background: rgba(6, 16, 30, 0.85);
+  border: 1.5px solid rgba(255, 94, 87, 0.3);
+  border-radius: 16px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.l3-timer-ring-wrap {
+  width: 44px;
+  height: 44px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.l3-timer-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.l3-timer-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 5;
+}
+
+.l3-timer-bar {
+  fill: none;
+  stroke: #00E5FF;
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s linear, stroke 0.3s ease;
+}
+
+.l3-timer-bar.warning {
+  stroke: #FFB703;
+}
+
+.l3-timer-bar.danger {
+  stroke: #FF5E57;
+}
+
+.l3-timer-center-icon {
+  position: absolute;
+  font-size: 1rem;
+}
+
+.l3-timer-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.l3-timer-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #94A3B8;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.l3-timer-val {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #FFFFFF;
+}
+
+/* REAL NASA DATA BUTTON BADGE */
+.btn-nasa-data-pill {
+  background: rgba(14, 28, 54, 0.9);
+  border: 1.5px solid #00E5FF;
+  color: #00E5FF;
+  font-size: 0.74rem;
+  font-weight: 900;
+  padding: 6px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-nasa-data-pill:hover {
+  background: #00E5FF;
+  color: #06101E;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 229, 255, 0.4);
+}
+
+/* PAUSE BUTTON */
+.btn-l3-pause {
+  background: rgba(6, 16, 30, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+}
+
+.btn-l3-pause:hover {
+  border-color: #00E5FF;
+  transform: scale(1.06);
+}
+
+/* --------------------------------------------------------------------------
+   CHARGING BAR (SHIELD GENERATOR)
+   -------------------------------------------------------------------------- */
+.l3-charge-bar-wrap {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(6, 16, 30, 0.92);
+  border: 2px solid #00E5FF;
+  border-radius: 20px;
+  padding: 12px 24px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  box-shadow: 0 8px 32px rgba(0, 229, 255, 0.4);
+}
+
+.l3-charge-bar-wrap.visible {
+  display: flex;
+  animation: l3-fade-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes l3-fade-up {
+  from { opacity: 0; transform: translate(-50%, 15px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.l3-charge-title {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #00E5FF;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.l3-charge-track {
+  width: 220px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.l3-charge-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #00E5FF, #FFD166);
+  border-radius: 6px;
+  transition: width 0.08s ease;
+  box-shadow: 0 0 12px #00E5FF;
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE & TOUCH CONTROLS
+   -------------------------------------------------------------------------- */
+.l3-touch-controls {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.l3-joystick-zone {
+  width: 120px;
+  height: 120px;
+  background: rgba(6, 16, 30, 0.65);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  position: relative;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.l3-joystick-knob {
+  width: 50px;
+  height: 50px;
+  background: #00E5FF;
+  border-radius: 50%;
+  position: absolute;
+  top: 35px;
+  left: 35px;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+  pointer-events: none;
+}
+
+.l3-action-btn-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.btn-l3-action {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00E5FF, #0091FF);
+  border: 3px solid #FFFFFF;
+  color: #06101E;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0, 229, 255, 0.5);
+  transition: transform 0.15s ease;
+  user-select: none;
+  touch-action: none;
+}
+
+.btn-l3-action:active {
+  transform: scale(0.92);
+}
+
+.l3-action-hint {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #FFFFFF;
+  background: rgba(6, 16, 30, 0.8);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   GO! POPUP & ANNOUNCEMENTS
+   -------------------------------------------------------------------------- */
+.l3-go-popup {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.3);
+  opacity: 0;
+  font-size: 4rem;
+  font-weight: 900;
+  color: #FFB703;
+  text-shadow: 0 0 30px #FFB703, 0 4px 10px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 120;
+}
+
+.l3-go-popup.active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* --------------------------------------------------------------------------
+   MODALS (NASA DATA, PAUSE, WIN, FAIL)
+   -------------------------------------------------------------------------- */
+.l3-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(3, 8, 16, 0.82);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 200;
+}
+
+.l3-modal-backdrop.open {
+  display: flex;
+}
+
+.l3-modal-window {
+  background: linear-gradient(180deg, #0D1B2E 0%, #06101E 100%);
+  border: 2px solid #00E5FF;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 520px;
+  padding: 28px 24px;
+  box-shadow: 0 16px 48px rgba(0, 229, 255, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  text-align: center;
+  animation: l3-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes l3-pop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.l3-modal-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.l3-modal-stars {
+  font-size: 2.2rem;
+  letter-spacing: 0.15em;
+  margin: 4px 0;
+}
+
+.l3-modal-text {
+  font-size: 0.95rem;
+  color: #D6ECFF;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* REAL NASA DONKI BADGE IN WIN MODAL */
+.l3-nasa-badge-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid #00E5FF;
+  border-radius: 14px;
+  padding: 12px 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.l3-nasa-badge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.l3-nasa-tag {
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #00E5FF;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.l3-nasa-link {
+  color: #00E5FF;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.l3-nasa-item {
+  font-size: 0.84rem;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.l3-science-note {
+  font-size: 0.8rem;
+  color: #94A3B8;
+  font-style: italic;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+/* MODAL BUTTONS */
+.l3-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.btn-l3-modal-primary {
+  background: linear-gradient(135deg, #00E5FF 0%, #0091FF 100%);
+  color: #06101E;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  padding: 12px 24px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 229, 255, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-l3-modal-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0, 229, 255, 0.6);
+}
+
+.btn-l3-modal-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-l3-modal-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 600px) {
+  .l3-top-bar {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+  .l3-objective-chip {
+    padding: 6px 14px;
+  }
+  #l3-obj-text {
+    font-size: 0.82rem;
+  }
+  .l3-astro-badge {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+  .btn-nasa-data-pill {
+    display: none;
+  }
+}

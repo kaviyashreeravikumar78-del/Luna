@@ -3,6 +3,7 @@ import { level5Audio } from '../audio/Level5Audio.js';
 import { Level5HUD } from './Level5HUD.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { orbitVoice } from '../audio/OrbitVoice.js';
+import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
 import { BUILDINGS_DATA } from '../data/buildings.js';
 
 /**
@@ -63,6 +64,16 @@ export class Level5Habitat {
 
     // HUD
     this.hud = null;
+    this.activeTimers = [];
+  }
+
+  safeTimeout(fn, ms) {
+    const id = setTimeout(() => {
+      if (!this.isActive || !this.hud) return;
+      fn();
+    }, ms);
+    this.activeTimers.push(id);
+    return id;
   }
 
   /**
@@ -104,16 +115,9 @@ export class Level5Habitat {
   }
 
   setColonyVisibility(visible) {
-    if (this.game.platform) this.game.platform.visible = visible;
-    if (this.game.buildings) {
-      Object.values(this.game.buildings).forEach(b => {
-        if (b) b.visible = visible;
-      });
+    if (this.game.setColonyVisible) {
+      this.game.setColonyVisible(visible);
     }
-    if (this.game.astronautsGroup) this.game.astronautsGroup.visible = visible;
-    if (this.game.playerAstronaut) this.game.playerAstronaut.visible = visible;
-    if (this.game.rocks) this.game.rocks.visible = visible;
-    if (this.game.decorations) this.game.decorations.visible = visible;
   }
 
   /**
@@ -1175,6 +1179,7 @@ export class Level5Habitat {
 
   dispose() {
     this.isActive = false;
+    clearTimerArray(this.activeTimers);
     level5Audio.stopHiss();
 
     window.removeEventListener('keydown', this.onKeyDown);
@@ -1185,18 +1190,8 @@ export class Level5Habitat {
       this.hud = null;
     }
 
-    this.levelGroup.traverse(obj => {
-      if (obj.geometry) obj.geometry.dispose();
-      if (obj.material) {
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach(m => m.dispose());
-        } else {
-          obj.material.dispose();
-        }
-      }
-    });
-
-    this.scene.remove(this.levelGroup);
+    // Universal Three.js Resource Disposal
+    disposeThreeObject(this.levelGroup);
     this.setColonyVisibility(true);
 
     if (this.cameraManager && this.cameraManager.controls) {

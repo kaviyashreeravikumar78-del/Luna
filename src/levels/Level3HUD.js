@@ -370,6 +370,7 @@ export class Level3HUD {
       <div class="l3-modal-actions">
         <button class="btn-l3-modal-primary" id="btn-pause-resume">Resume ▶</button>
         <button class="btn-l3-modal-secondary" id="btn-pause-restart">Restart 🔄</button>
+        <button class="btn-l3-modal-secondary" id="btn-pause-mute">${level3Audio.isMuted ? '🔇 Sound: MUTED' : '🔊 Sound: ON'}</button>
         <button class="btn-l3-modal-secondary" id="btn-pause-exit">Mission Control 🚀</button>
       </div>
     `;
@@ -386,6 +387,13 @@ export class Level3HUD {
       level3Audio.playClick();
       backdrop.classList.remove('open');
       if (onRestart) onRestart();
+    });
+
+    const muteBtn = windowEl.querySelector('#btn-pause-mute');
+    muteBtn.addEventListener('click', () => {
+      level3Audio.setMuted(!level3Audio.isMuted);
+      muteBtn.textContent = level3Audio.isMuted ? '🔇 Sound: MUTED' : '🔊 Sound: ON';
+      level3Audio.playClick();
     });
 
     windowEl.querySelector('#btn-pause-exit').addEventListener('click', () => {

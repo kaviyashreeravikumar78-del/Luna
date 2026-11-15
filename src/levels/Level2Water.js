@@ -6,6 +6,7 @@ import { orbitVoice } from '../audio/OrbitVoice.js';
 import { level2Audio } from '../audio/Level2Audio.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { Level2HUD } from './Level2HUD.js';
+import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
 
 /**
  * LUNA: Mission Survival - Dedicated Level 2 (Sol 2: Water Hunt Driving Mini-game)
@@ -81,6 +82,16 @@ export class Level2Water {
     // Particles
     this.wheelDustParticles = [];
     this.drillChipParticles = [];
+    this.activeTimers = [];
+  }
+
+  safeTimeout(fn, ms) {
+    const id = setTimeout(() => {
+      if (!this.isActive || !this.hud) return;
+      fn();
+    }, ms);
+    this.activeTimers.push(id);
+    return id;
   }
 
   /**
@@ -642,8 +653,10 @@ export class Level2Water {
       gesture: 'point'
     });
 
-    setTimeout(() => {
+    this.safeTimeout(() => {
+      if (!this.isActive || !this.hud) return;
       this.hud.showGoBanner(() => {
+        if (!this.isActive || !this.hud) return;
         this.phase = 1;
         this.hud.setObjective("Drive north to the crater!", "🚜");
       });
@@ -1039,6 +1052,7 @@ export class Level2Water {
 
   dispose() {
     this.isActive = false;
+    clearTimerArray(this.activeTimers);
     level2Audio.stopEngine();
 
     window.removeEventListener('keydown', this.onKeyDown);
@@ -1056,24 +1070,8 @@ export class Level2Water {
     // Restore colony visibility
     this.setColonyVisibility(true);
 
-    // Remove Level 2 objects
-    if (this.levelGroup && this.levelGroup.parent) {
-      this.levelGroup.parent.remove(this.levelGroup);
-    }
-
-    // Traverse and dispose Three.js objects
-    this.levelGroup.traverse(child => {
-      if (child.isMesh) {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(m => m.dispose());
-          } else {
-            child.material.dispose();
-          }
-        }
-      }
-    });
+    // Universal Three.js Resource Disposal
+    disposeThreeObject(this.levelGroup);
 
     if (this.cameraManager && this.cameraManager.controls) {
       this.cameraManager.controls.enabled = true;

@@ -1,0 +1,124 @@
+{
+  "module1": {
+    "avgFps": 16,
+    "low1Fps": 9,
+    "calls": 973,
+    "triangles": 84768,
+    "geometries": 473,
+    "textures": 3,
+    "heapMB": 31
+  },
+  "missionControl": {
+    "avgFps": 16,
+    "low1Fps": 8,
+    "calls": 981,
+    "triangles": 85624,
+    "geometries": 473,
+    "textures": 3,
+    "heapMB": 30
+  },
+  "level1": {
+    "startResult": {
+      "ok": true
+    },
+    "perf": {
+      "avgFps": 37,
+      "low1Fps": 22,
+      "calls": 85,
+      "triangles": 6476,
+      "geometries": 537,
+      "textures": 6,
+      "heapMB": 30
+    }
+  },
+  "level2": {
+    "startResult": {
+      "ok": true
+    },
+    "perf": {
+      "avgFps": 19,
+      "low1Fps": 1,
+      "calls": 30,
+      "triangles": 10592,
+      "geometries": 516,
+      "textures": 7,
+      "heapMB": 26
+    }
+  },
+  "level3": {
+    "startResult": {
+      "ok": true
+    },
+    "perf": {
+      "avgFps": 8,
+      "low1Fps": 5,
+      "calls": 350,
+      "triangles": 53952,
+      "geometries": 542,
+      "textures": 8,
+      "heapMB": 41
+    }
+  },
+  "level4": {
+    "startResult": {
+      "ok": true
+    },
+    "perf": {
+      "avgFps": 11,
+      "low1Fps": 5,
+      "calls": 263,
+      "triangles": 40152,
+      "geometries": 494,
+      "textures": 8,
+      "heapMB": 40
+    }
+  },
+  "level5": {
+    "startResult": {
+      "ok": true
+    },
+    "perf": {
+      "avgFps": 7,
+      "low1Fps": 3,
+      "calls": 909,
+      "triangles": 80040,
+      "geometries": 549,
+      "textures": 8,
+      "heapMB": 40
+    }
+  },
+  "level6": {
+    "startResult": {
+      "ok": true
+    },
+    "perf": {
+      "avgFps": 7,
+      "low1Fps": 0,
+      "calls": 130,
+      "triangles": 23248,
+      "geometries": 508,
+      "textures": 8,
+      "heapMB": 39
+    }
+  },
+  "level7": {
+    "startResult": {
+      "ok": true
+    },
+    "perf": {
+      "avgFps": 7,
+      "low1Fps": 5,
+      "calls": 1333,
+      "triangles": 116096,
+      "geometries": 764,
+      "textures": 9,
+      "heapMB": 62
+    }
+  },
+  "errors": [
+    {
+      "text": "Cannot read properties of null (reading 'showGoBanner')"
+    }
+  ],
+  "warnings": []
+}

@@ -6,6 +6,7 @@ import { orbitVoice } from '../audio/OrbitVoice.js';
 import { level1Audio } from '../audio/Level1Audio.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { Level1HUD } from './Level1HUD.js';
+import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
 
 /**
  * LUNA: Mission Survival - Dedicated Level 1 (Sol 1: Power Up the Moon Base)
@@ -57,6 +58,16 @@ export class Level1Power {
     // Statistics for 3-star rating
     this.startTime = Date.now();
     this.reDustedCount = 0;
+    this.activeTimers = [];
+  }
+
+  safeTimeout(fn, ms) {
+    const id = setTimeout(() => {
+      if (!this.isActive || !this.hud) return;
+      fn();
+    }, ms);
+    this.activeTimers.push(id);
+    return id;
   }
 
   /**
@@ -754,20 +765,23 @@ export class Level1Power {
           gesture: 'point'
         });
 
-        // Show "GO!" banner
-        setTimeout(() => {
+        // Show "GO!" banner with safe timeout
+        this.safeTimeout(() => {
+          if (!this.isActive || !this.hud) return;
           if (u.rightArm) {
             u.rightArm.rotation.set(0, 0, 0);
           }
           if (u.brush) u.brush.visible = true; // Show cleaning brush tool
 
           this.hud.showGoBanner(() => {
+            if (!this.isActive || !this.hud) return;
             this.phase = 1; // Phase 1 Active!
             this.hud.setObjective("Clean the panels (0/6)", "🧹");
           });
         }, 1200);
       }
     }, 30);
+    this.activeTimers.push(walkInterval);
   }
 
   /**
@@ -1185,6 +1199,9 @@ export class Level1Power {
   dispose() {
     this.isActive = false;
 
+    // Clear all pending timeouts and intervals
+    clearTimerArray(this.activeTimers);
+
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
 
@@ -1197,24 +1214,8 @@ export class Level1Power {
     // Restore colony visibility
     this.setColonyVisibility(true);
 
-    // Remove Level 1 Group
-    if (this.levelGroup && this.levelGroup.parent) {
-      this.levelGroup.parent.remove(this.levelGroup);
-    }
-
-    // Traverse and dispose Three.js objects
-    this.levelGroup.traverse(child => {
-      if (child.isMesh) {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(m => m.dispose());
-          } else {
-            child.material.dispose();
-          }
-        }
-      }
-    });
+    // Universal Three.js Resource Disposal
+    disposeThreeObject(this.levelGroup);
 
     if (this.cameraManager && this.cameraManager.controls) {
       this.cameraManager.controls.enabled = true;

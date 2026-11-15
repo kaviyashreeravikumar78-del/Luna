@@ -36,6 +36,8 @@ import { Level3Storm } from '../levels/Level3Storm.js';
 import { Level5Habitat } from '../levels/Level5Habitat.js';
 import { Level6Comms } from '../levels/Level6Comms.js';
 import { Level7Final } from '../levels/Level7Final.js';
+import { QualityManager } from '../core/QualityManager.js';
+import { ErrorHandler } from '../core/ErrorHandler.js';
 
 import '../styles/mission-control.css';
 import '../styles/gameplay.css';
@@ -52,6 +54,7 @@ export class Game {
     this.clock = new THREE.Clock();
     this.targetOrbitPos = new THREE.Vector3(2.5, 3.5, 5.0);
     this.currentLevel = null;
+    this.gameState = gameState;
 
     this.initThree();
     this.buildWorld();
@@ -59,10 +62,20 @@ export class Game {
     this.setupUI();
     this.setupGameplay();
 
+    this.qualityManager = new QualityManager(this);
+    ErrorHandler.init(this);
+
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
 
     window.addEventListener('resize', () => this.onWindowResize());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.clock.stop();
+      } else {
+        this.clock.start();
+      }
+    });
   }
 
   initThree() {
@@ -92,6 +105,11 @@ export class Game {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Mobile touch action & gesture prevention
+    this.renderer.domElement.style.touchAction = 'none';
+    this.renderer.domElement.style.userSelect = 'none';
+    this.renderer.domElement.style.webkitUserSelect = 'none';
 
     this.container.appendChild(this.renderer.domElement);
 
@@ -137,6 +155,25 @@ export class Game {
 
     // Module 3: 3D Facility Warning Indicators
     this.initFacilityAlertRings();
+  }
+
+  /**
+   * Toggles visibility of all Module 1 colony assets when entering/leaving dedicated mini-games.
+   * Significantly reduces draw calls from ~1000 down to < 100 in dedicated levels.
+   */
+  setColonyVisible(visible) {
+    if (this.terrain) this.terrain.visible = visible;
+    if (this.decorations && this.decorations.group) this.decorations.group.visible = visible;
+    if (this.facilityAlerts) this.facilityAlerts.forEach(ring => { if (ring) ring.visible = visible; });
+    if (this.habitat) this.habitat.visible = visible;
+    if (this.greenhouse) this.greenhouse.visible = visible;
+    if (this.solarArray) this.solarArray.visible = visible;
+    if (this.researchLab) this.researchLab.visible = visible;
+    if (this.antenna) this.antenna.visible = visible;
+    if (this.rover) this.rover.visible = visible;
+    if (this.playerAstronaut) this.playerAstronaut.visible = visible;
+    if (this.astronautData && this.astronautData.group) this.astronautData.group.visible = visible;
+    if (this.orbitRobot) this.orbitRobot.visible = visible;
   }
 
   initFacilityAlertRings() {
@@ -863,8 +900,13 @@ export class Game {
   animate() {
     requestAnimationFrame(this.animate);
 
-    const delta = this.clock.getDelta();
+    const rawDelta = this.clock.getDelta();
+    const delta = Math.min(rawDelta, 0.05); // Clamp to prevent jump on tab resume
     const elapsedTime = this.clock.getElapsedTime();
+
+    if (this.qualityManager) {
+      this.qualityManager.update(delta);
+    }
 
     // 1. Camera Manager update
     this.cameraManager.update();

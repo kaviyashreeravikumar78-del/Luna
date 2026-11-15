@@ -396,6 +396,7 @@ export class Level5HUD {
       <div class="l5-modal-actions">
         <button class="btn-l5-primary" id="btn-pause-resume">Resume ▶</button>
         <button class="btn-l5-secondary" id="btn-pause-restart">Restart 🔄</button>
+        <button class="btn-l5-secondary" id="btn-pause-mute">${level5Audio.isMuted ? '🔇 Sound: MUTED' : '🔊 Sound: ON'}</button>
         <button class="btn-l5-secondary" id="btn-pause-exit">Mission Control 🚀</button>
       </div>
     `;
@@ -412,6 +413,14 @@ export class Level5HUD {
       level5Audio.playClick();
       backdrop.classList.remove('open');
       if (onRestart) onRestart();
+    });
+
+    const muteBtn = windowEl.querySelector('#btn-pause-mute');
+    muteBtn.addEventListener('click', () => {
+      level5Audio.setMuted(!level5Audio.isMuted);
+      muteBtn.textContent = level5Audio.isMuted ? '🔇 Sound: MUTED' : '🔊 Sound: ON';
+      level5Audio.playClick();
+      if (onMute) onMute(level5Audio.isMuted);
     });
 
     windowEl.querySelector('#btn-pause-exit').addEventListener('click', () => {

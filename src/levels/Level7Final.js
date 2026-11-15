@@ -4,6 +4,7 @@ import { Level7HUD } from './Level7HUD.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { orbitVoice } from '../audio/OrbitVoice.js';
 import { gameState } from '../simulation/GameState.js';
+import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
 import { createHabitat } from '../objects/Habitat.js';
 import { createGreenhouse } from '../objects/Greenhouse.js';
 import { createSolarArray } from '../objects/SolarArray.js';
@@ -137,6 +138,16 @@ export class Level7Final {
 
     // HUD
     this.hud = null;
+    this.activeTimers = [];
+  }
+
+  safeTimeout(fn, ms) {
+    const id = setTimeout(() => {
+      if (!this.isActive || !this.hud) return;
+      fn();
+    }, ms);
+    this.activeTimers.push(id);
+    return id;
   }
 
   /**
@@ -175,16 +186,9 @@ export class Level7Final {
   }
 
   setColonyVisibility(visible) {
-    if (this.game.platform) this.game.platform.visible = visible;
-    if (this.game.buildings) {
-      Object.values(this.game.buildings).forEach(b => {
-        if (b) b.visible = visible;
-      });
+    if (this.game.setColonyVisible) {
+      this.game.setColonyVisible(visible);
     }
-    if (this.game.astronautsGroup) this.game.astronautsGroup.visible = visible;
-    if (this.game.playerAstronaut) this.game.playerAstronaut.visible = visible;
-    if (this.game.rocks) this.game.rocks.visible = visible;
-    if (this.game.decorations) this.game.decorations.visible = visible;
   }
 
   /**
@@ -858,10 +862,28 @@ export class Level7Final {
 
   togglePause() {
     this.isPaused = !this.isPaused;
+    if (this.isPaused) {
+      if (this.hud) {
+        this.hud.showPauseModal(
+          () => { this.isPaused = false; },
+          () => {
+            this.dispose();
+            this.game.startLevel7(true);
+          },
+          (muted) => {},
+          () => {
+            this.game.exitLevelToMissionControl();
+          }
+        );
+      }
+    } else {
+      if (this.hud) this.hud.hideModals();
+    }
   }
 
   dispose() {
     this.isActive = false;
+    clearTimerArray(this.activeTimers);
 
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
@@ -871,18 +893,8 @@ export class Level7Final {
       this.hud = null;
     }
 
-    this.levelGroup.traverse(obj => {
-      if (obj.geometry) obj.geometry.dispose();
-      if (obj.material) {
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach(m => m.dispose());
-        } else {
-          obj.material.dispose();
-        }
-      }
-    });
-
-    this.scene.remove(this.levelGroup);
+    // Universal Three.js Resource Disposal
+    disposeThreeObject(this.levelGroup);
     this.setColonyVisibility(true);
 
     if (this.cameraManager && this.cameraManager.controls) {

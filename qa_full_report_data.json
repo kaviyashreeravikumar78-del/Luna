@@ -1,0 +1,324 @@
+{
+  "viewportsTested": [
+    {
+      "viewport": "Desktop",
+      "actualW": 1920,
+      "actualH": 1080,
+      "canvasW": 1920,
+      "canvasH": 1080,
+      "hudVisible": false,
+      "hasHorizontalScroll": false
+    },
+    {
+      "viewport": "Laptop",
+      "actualW": 1366,
+      "actualH": 768,
+      "canvasW": 1366,
+      "canvasH": 768,
+      "hudVisible": false,
+      "hasHorizontalScroll": false
+    },
+    {
+      "viewport": "Tablet",
+      "actualW": 768,
+      "actualH": 1024,
+      "canvasW": 768,
+      "canvasH": 1024,
+      "hudVisible": false,
+      "hasHorizontalScroll": false
+    },
+    {
+      "viewport": "Phone Portrait",
+      "actualW": 390,
+      "actualH": 844,
+      "canvasW": 390,
+      "canvasH": 844,
+      "hudVisible": false,
+      "hasHorizontalScroll": false
+    },
+    {
+      "viewport": "Phone Landscape",
+      "actualW": 844,
+      "actualH": 390,
+      "canvasW": 844,
+      "canvasH": 390,
+      "hudVisible": false,
+      "hasHorizontalScroll": false
+    },
+    {
+      "viewport": "Small Phone",
+      "actualW": 360,
+      "actualH": 640,
+      "canvasW": 360,
+      "canvasH": 640,
+      "hudVisible": false,
+      "hasHorizontalScroll": false
+    }
+  ],
+  "levelTests": {
+    "sol1": {
+      "entry": {
+        "success": true,
+        "hasOverlay": true,
+        "hasSkip": false
+      },
+      "state": {
+        "levelInstantiated": true,
+        "isActive": true,
+        "phase": 0,
+        "drawCalls": 86,
+        "triangles": 6620,
+        "geometries": 535,
+        "textures": 6
+      },
+      "failTest": {
+        "failTriggered": true
+      },
+      "retryTest": {
+        "retryClicked": false
+      },
+      "win": {
+        "winTriggered": true
+      }
+    },
+    "sol2": {
+      "entry": {
+        "success": true,
+        "hasOverlay": false,
+        "hasSkip": false
+      },
+      "state": {
+        "levelInstantiated": false,
+        "isActive": false,
+        "phase": 0,
+        "drawCalls": 659,
+        "triangles": 60424,
+        "geometries": 472,
+        "textures": 4
+      },
+      "failTest": {
+        "failTriggered": true
+      },
+      "retryTest": {
+        "retryClicked": false
+      },
+      "win": {
+        "winTriggered": true
+      }
+    },
+    "sol3": {
+      "entry": {
+        "success": true,
+        "hasOverlay": false,
+        "hasSkip": false
+      },
+      "state": {
+        "levelInstantiated": true,
+        "isActive": true,
+        "phase": 0,
+        "drawCalls": 122,
+        "triangles": 14220,
+        "geometries": 551,
+        "textures": 4
+      },
+      "failTest": {
+        "failTriggered": true
+      },
+      "retryTest": {
+        "retryClicked": false
+      },
+      "win": {
+        "winTriggered": true
+      }
+    },
+    "sol4": {
+      "entry": {
+        "success": true,
+        "hasOverlay": false,
+        "hasSkip": false
+      },
+      "state": {
+        "levelInstantiated": true,
+        "isActive": true,
+        "phase": 1,
+        "drawCalls": 987,
+        "triangles": 86424,
+        "geometries": 477,
+        "textures": 4
+      },
+      "win": {
+        "winTriggered": true
+      }
+    },
+    "sol5": {
+      "entry": {
+        "success": true,
+        "hasOverlay": false,
+        "hasSkip": false
+      },
+      "state": {
+        "levelInstantiated": true,
+        "isActive": true,
+        "phase": 0,
+        "drawCalls": 72,
+        "triangles": 3736,
+        "geometries": 529,
+        "textures": 4
+      },
+      "failTest": {
+        "failTriggered": true
+      },
+      "retryTest": {
+        "retryClicked": false
+      },
+      "win": {
+        "winTriggered": true
+      }
+    },
+    "sol6": {
+      "entry": {
+        "success": true,
+        "hasOverlay": false,
+        "hasSkip": false
+      },
+      "state": {
+        "levelInstantiated": true,
+        "isActive": true,
+        "phase": 0,
+        "drawCalls": 60,
+        "triangles": 7426,
+        "geometries": 521,
+        "textures": 4
+      },
+      "failTest": {
+        "failTriggered": true
+      },
+      "retryTest": {
+        "retryClicked": false
+      },
+      "win": {
+        "winTriggered": true
+      }
+    },
+    "sol7": {
+      "entry": {
+        "success": true,
+        "hasOverlay": false,
+        "hasSkip": false
+      },
+      "state": {
+        "levelInstantiated": true,
+        "isActive": true,
+        "phase": 0,
+        "drawCalls": 591,
+        "triangles": 45176,
+        "geometries": 746,
+        "textures": 4
+      },
+      "win": {
+        "winTriggered": true
+      }
+    }
+  },
+  "softLockTests": {
+    "keySpam": {
+      "active": true,
+      "hasError": false
+    },
+    "pauseResume": {
+      "hadPauseBtn": true,
+      "isPausedState": true,
+      "modalFound": false
+    },
+    "tabSwitch": {
+      "success": true,
+      "timeSurvivedMs": 1011.0999999940395
+    }
+  },
+  "leakTests": {
+    "baseline": {
+      "calls": 965,
+      "geometries": 482,
+      "textures": 4,
+      "heapMB": 56
+    },
+    "finalState": {
+      "calls": 12,
+      "geometries": 482,
+      "textures": 4,
+      "heapMB": 28
+    },
+    "cycles": [
+      {
+        "cycle": 1,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 47
+      },
+      {
+        "cycle": 2,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 38
+      },
+      {
+        "cycle": 3,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 48
+      },
+      {
+        "cycle": 4,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 35
+      },
+      {
+        "cycle": 5,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 47
+      },
+      {
+        "cycle": 6,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 47
+      },
+      {
+        "cycle": 7,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 48
+      },
+      {
+        "cycle": 8,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 53
+      },
+      {
+        "cycle": 9,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 54
+      },
+      {
+        "cycle": 10,
+        "geometries": 482,
+        "textures": 4,
+        "heapMB": 28
+      }
+    ]
+  },
+  "persistenceTests": {
+    "savedRawExists": false,
+    "savedDay": null,
+    "afterReset": {
+      "currentDay": 3,
+      "oxygen": 88
+    }
+  },
+  "errorsFound": [],
+  "warningsFound": []
+}

@@ -96,6 +96,13 @@ export class Level7HUD {
       <!-- GO! POPUP -->
       <div class="l7-go-popup" id="l7-go-popup">GO! 🚀</div>
 
+      <!-- PAUSE MODAL -->
+      <div class="l7-pause-modal-backdrop" id="l7-pause-backdrop">
+        <div class="l7-pause-window" id="l7-pause-window">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
       <!-- INTERACTIVE FACILITY CHALLENGE MODAL -->
       <div class="l7-challenge-modal-backdrop" id="l7-chal-backdrop">
         <div class="l7-challenge-window" id="l7-chal-window">
@@ -320,6 +327,60 @@ export class Level7HUD {
       backdrop.classList.remove('open');
       if (data.onExit) data.onExit();
     });
+  }
+
+  showPauseModal(onResume, onRestart, onMute, onExit) {
+    const backdrop = this.element.querySelector('#l7-pause-backdrop');
+    const windowEl = this.element.querySelector('#l7-pause-window');
+    if (!backdrop || !windowEl) return;
+
+    windowEl.innerHTML = `
+      <div style="font-size: 2.2rem;">⏸️</div>
+      <h3 class="l7-modal-title">Mission Paused</h3>
+      <p class="l7-modal-text">Colony Inspection in standby, Commander.</p>
+
+      <div class="l7-modal-actions">
+        <button class="btn-l7-cert-primary" id="btn-pause-resume">Resume ▶</button>
+        <button class="btn-l7-cert-secondary" id="btn-pause-restart">Restart 🔄</button>
+        <button class="btn-l7-cert-secondary" id="btn-pause-mute">${level7Audio.isMuted ? '🔇 Sound: MUTED' : '🔊 Sound: ON'}</button>
+        <button class="btn-l7-cert-secondary" id="btn-pause-exit">Mission Control 🚀</button>
+      </div>
+    `;
+
+    backdrop.classList.add('open');
+
+    windowEl.querySelector('#btn-pause-resume').addEventListener('click', () => {
+      level7Audio.playClick();
+      backdrop.classList.remove('open');
+      if (onResume) onResume();
+    });
+
+    windowEl.querySelector('#btn-pause-restart').addEventListener('click', () => {
+      level7Audio.playClick();
+      backdrop.classList.remove('open');
+      if (onRestart) onRestart();
+    });
+
+    const muteBtn = windowEl.querySelector('#btn-pause-mute');
+    muteBtn.addEventListener('click', () => {
+      level7Audio.setMuted(!level7Audio.isMuted);
+      muteBtn.textContent = level7Audio.isMuted ? '🔇 Sound: MUTED' : '🔊 Sound: ON';
+      level7Audio.playClick();
+      if (onMute) onMute(level7Audio.isMuted);
+    });
+
+    windowEl.querySelector('#btn-pause-exit').addEventListener('click', () => {
+      level7Audio.playClick();
+      backdrop.classList.remove('open');
+      if (onExit) onExit();
+    });
+  }
+
+  hideModals() {
+    const pBackdrop = this.element.querySelector('#l7-pause-backdrop');
+    if (pBackdrop) pBackdrop.classList.remove('open');
+    const cBackdrop = this.element.querySelector('#l7-chal-backdrop');
+    if (cBackdrop) cBackdrop.classList.remove('open');
   }
 
   dispose() {

@@ -24,11 +24,6 @@ import { MissionControlScene } from '../scenes/MissionControlScene.js';
 import { gameState } from '../simulation/GameState.js';
 import { PlayerController } from '../gameplay/PlayerController.js';
 import { RoverDrivingController } from '../gameplay/RoverDrivingController.js';
-import { SolarStormGame } from '../minigames/SolarStormGame.js';
-import { GreenhouseGame } from '../minigames/GreenhouseGame.js';
-import { HabitatPatchGame } from '../minigames/HabitatPatchGame.js';
-import { AntennaAlignmentGame } from '../minigames/AntennaAlignmentGame.js';
-import { FinalInspectionGame } from '../minigames/FinalInspectionGame.js';
 import { Adventure3DEngine } from '../gameplay/Adventure3DEngine.js';
 import { KidActionOverlay } from '../ui/KidActionOverlay.js';
 import { OrbitScienceDebriefModal } from '../ui/OrbitScienceDebriefModal.js';
@@ -344,32 +339,16 @@ export class Game {
     this.scienceDebrief = new OrbitScienceDebriefModal();
     this.adventure3D = new Adventure3DEngine(this);
 
-    // Fallback/reference mini-games
-    this.habitatPatchGame = new HabitatPatchGame({
-      onComplete: () => this.handleMiniGameSuccess(2, 'choice_2_a')
-    });
-
-    this.solarStormGame = new SolarStormGame({
-      onComplete: () => this.handleMiniGameSuccess(3, 'choice_3_a')
-    });
-
-    this.greenhouseGame = new GreenhouseGame({
-      onComplete: () => this.handleMiniGameSuccess(4, 'choice_4_a')
-    });
-
-    this.antennaAlignmentGame = new AntennaAlignmentGame({
-      onComplete: () => this.handleMiniGameSuccess(5, 'choice_5_a')
-    });
-
-    this.finalInspectionGame = new FinalInspectionGame({
-      onComplete: () => this.handleFinalInspectionSuccess()
-    });
-
     // 5. In-Game Adventure HUD
     this.gameHUD = new GameHUD({
       onOpenMissionControl: () => {
         this.gameHUD.hide();
         this.missionControl.show();
+      },
+      onReturnToMenu: () => {
+        this.gameHUD.hide();
+        this.navigation.switchScreen('welcome');
+        this.cameraManager.flyTo({ x: 26, y: 21, z: 30 }, { x: 0, y: 1.5, z: 0 }, 1500);
       },
       onResetCamera: () => {
         this.cameraManager.reset(1000);

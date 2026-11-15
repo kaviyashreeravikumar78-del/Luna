@@ -87,6 +87,9 @@ export class GameHUD {
           <button class="btn-hud-round" id="btn-hud-cam-reset" title="Reset Camera View">
             <span>🎥 View Base</span>
           </button>
+          <button class="btn-hud-round" id="btn-hud-main-menu" title="Return to Welcome Screen">
+            <span>🏠 Menu</span>
+          </button>
         </div>
       </div>
 
@@ -147,6 +150,16 @@ export class GameHUD {
         this.options.onResetCamera();
       }
     });
+
+    // Main Menu
+    const btnMenu = this.element.querySelector('#btn-hud-main-menu');
+    if (btnMenu) {
+      btnMenu.addEventListener('click', () => {
+        if (this.options.onReturnToMenu) {
+          this.options.onReturnToMenu();
+        }
+      });
+    }
 
     // Proximity Prompt Card Click
     const promptCard = this.element.querySelector('#hud-prompt-card');

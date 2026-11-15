@@ -38,3 +38,46 @@ Prior to this fix, opening the game resulted in two conflicting Level 1 experien
   - Ran `npm run build`:
   - **Result:** Built in 4.96s with **0 errors**.
   - **JS Bundle Size:** Reduced from 1,060.16 kB to 1,049.93 kB (-10.23 kB dead code removed).
+
+
+---
+
+## Part 2: Complete Inventory Cleanup of Legacy Minigames, Dead Methods & Duplicate Nav Overlays
+
+**Timestamp:** 2026-11-15T22:55:00+05:30  
+**Status:** COMPLETED & VERIFIED
+
+### 1. Root Cause & Inventory Analysis
+Following the cleanup of old Level 1, an inventory audit discovered:
+- Five legacy click-only 2D minigames remained in `src/minigames/` (`AntennaAlignmentGame.js`, `FinalInspectionGame.js`, `GreenhouseGame.js`, `HabitatPatchGame.js`, `SolarStormGame.js`), instantiated in `Game.js` but completely superseded by dedicated 3D levels (`Level2Water.js`, `Level3Storm.js`, `Level5Habitat.js`, `Level6Comms.js`, `Level7Final.js`, and `Adventure3DEngine.startLevel4Greenhouse`).
+- `Adventure3DEngine.js` retained deprecated routines from earlier prototype days (`startLevel2WaterPipe`, `triggerLevel2Pickup`, `triggerLevel2Seal`, `initBunkerShieldFX`, `startLevel3SolarStorm`, `triggerLevel3BunkerLock`, `initAntennaBeamFX`, `startLevel5Antenna`, `triggerLevel5Beam`, `startLevel6Rover`, `initVictoryCeremonyFX`, `startLevel7Victory`, `animateAstronautVictory`), plus dead particle loop updates (`level2Mist`, `confettiActive`).
+- `Navigation.js` rendered a duplicate `#screen-colony` with a hardcoded static top telemetry bar and bottom structure quick-dock that overlapped directly with `GameHUD.js` (`#game-adventure-hud`).
+
+### 2. Actions Taken & Items Deleted
+
+| Item | Type | Action Taken | Reason |
+| :--- | :--- | :--- | :--- |
+| `src/minigames/AntennaAlignmentGame.js` | File (6.5 KB) | **DELETED** | Superseded by dedicated 3D mini-game `Level6Comms.js`. |
+| `src/minigames/FinalInspectionGame.js` | File (7.1 KB) | **DELETED** | Superseded by dedicated 3D mini-game `Level7Final.js`. |
+| `src/minigames/GreenhouseGame.js` | File (6.2 KB) | **DELETED** | Superseded by 3D greenhouse sequence in `Adventure3DEngine.js`. |
+| `src/minigames/HabitatPatchGame.js` | File (7.9 KB) | **DELETED** | Superseded by dedicated 3D mini-game `Level5Habitat.js`. |
+| `src/minigames/SolarStormGame.js` | File (8.4 KB) | **DELETED** | Superseded by dedicated 3D mini-game `Level3Storm.js`. |
+| `src/minigames/` directory | Directory | **REMOVED** | All legacy minigames removed; folder deleted. |
+| `src/game/Game.js` minigame instances | Imports & Properties | **REMOVED** | Removed all imports of legacy minigames and their constructor calls. |
+| `Adventure3DEngine.js` legacy methods | 11 Methods (~450 lines) | **DELETED** | Removed `startLevel2WaterPipe`, `triggerLevel2Pickup`, `triggerLevel2Seal`, `initBunkerShieldFX`, `startLevel3SolarStorm`, `triggerLevel3BunkerLock`, `initAntennaBeamFX`, `startLevel5Antenna`, `triggerLevel5Beam`, `startLevel6Rover`, `initVictoryCeremonyFX`, `startLevel7Victory`, `animateAstronautVictory`. |
+| `Adventure3DEngine.js` dead particle checks | Update Loops | **CLEANED** | Removed dead `level2Mist` and `confettiActive` per-frame iterations in `update()`. |
+| `src/ui/Navigation.js` lines 70–121, 140–185 | Duplicate UI & Handlers | **DELETED** | Removed duplicate `#screen-colony` header and bottom dock; kept `#screen-colony` as clean screen container; added Menu button to `GameHUD.js`. |
+
+### 3. Verification & Proof
+- **Production Build:**
+  - Ran `npm run build`:
+  - **Result:** Built in 5.13s with **0 errors**.
+  - **JS Bundle Size:** Dropped from 1,049.93 kB to **997.68 kB** (-52.25 kB removed in Part 2; net -62.48 kB total removed across Parts 0 & 2).
+- **All 7 Days Canonical Mapping:**
+  - Day 1: `src/levels/Level1Power.js` (Power)
+  - Day 2: `src/levels/Level2Water.js` (Water)
+  - Day 3: `src/levels/Level3Storm.js` (Solar Storm)
+  - Day 4: `src/gameplay/Adventure3DEngine.js` (Greenhouse Harvest)
+  - Day 5: `src/levels/Level5Habitat.js` (Habitat Pressure)
+  - Day 6: `src/levels/Level6Comms.js` (Dish Communications)
+  - Day 7: `src/levels/Level7Final.js` (Final Certification)

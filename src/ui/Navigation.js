@@ -67,58 +67,7 @@ export class Navigation {
       </section>
 
       <!-- SCREEN 2: 3D COLONY HUD OVERLAY -->
-      <section id="screen-colony" class="game-screen colony-hud">
-        <!-- TOP HUD BAR -->
-        <header class="hud-top-bar">
-          <div class="hud-left">
-            <div class="hud-mission-logo">
-              <span class="logo-accent">LUNA</span>-01
-            </div>
-            <div class="hud-status-badge">
-              <span class="pulse-indicator"></span>
-              <span>DAY 1 OF 7 • SUNNY ON THE MOON ☀️</span>
-            </div>
-            <div class="hud-telemetry-item">
-              <span class="hud-label">CREW:</span>
-              <span class="hud-val text-green">4/4 HEALTHY & HAPPY</span>
-            </div>
-            <div class="hud-telemetry-item">
-              <span class="hud-label">POWER:</span>
-              <span class="hud-val text-blue">100% FULL</span>
-            </div>
-          </div>
-
-          <div class="hud-right">
-            <button id="btn-hud-orbit" class="btn-hud btn-hud-robot" title="Ask ORBIT for a tour!">
-              <span>⭐ ORBIT Guide</span>
-            </button>
-            <button id="btn-hud-reset-cam" class="btn-hud" title="Reset 3D Camera">
-              <span>🎥 Reset View</span>
-            </button>
-            <button id="btn-hud-mission-ctrl" class="btn-hud btn-hud-highlight" title="Enter Mission Control">
-              <span>🚀 Mission Control</span>
-            </button>
-            <button id="btn-hud-menu" class="btn-hud" title="Return to Main Menu">
-              <span>🏠 Main Menu</span>
-            </button>
-          </div>
-        </header>
-
-        <!-- BOTTOM STRUCTURE QUICK-DOCK -->
-        <footer class="hud-bottom-dock">
-          <div class="dock-container">
-            <span class="dock-label">LOOK AT:</span>
-            <div class="dock-buttons">
-              <button class="dock-btn" data-building="habitat">🏠 Space House</button>
-              <button class="dock-btn" data-building="greenhouse">🌱 Greenhouses</button>
-              <button class="dock-btn" data-building="solar_array">⚡ Sun Panels</button>
-              <button class="dock-btn" data-building="research_lab">🔬 Science Lab</button>
-              <button class="dock-btn" data-building="antenna">📡 Radio Dish</button>
-              <button class="dock-btn" data-building="rover">🚜 Moon Rover</button>
-            </div>
-          </div>
-        </footer>
-      </section>
+      <section id="screen-colony" class="game-screen colony-hud"></section>
     `;
 
     document.body.appendChild(this.navLayer);
@@ -128,60 +77,16 @@ export class Navigation {
   bindEvents() {
     // Welcome Screen -> Go directly to Mission Control Deck!
     const btnStart = this.navLayer.querySelector('#btn-start-mission');
-    btnStart.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-    btnStart.addEventListener('click', () => {
-      orbitVoice.playChirp('click');
-      this.switchScreen('colony');
-      if (this.options.onOpenMissionControl) {
-        this.options.onOpenMissionControl();
-      }
-    });
-
-    // Colony HUD buttons
-    const btnHudOrbit = this.navLayer.querySelector('#btn-hud-orbit');
-    btnHudOrbit.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-    btnHudOrbit.addEventListener('click', () => {
-      orbitVoice.playChirp('click');
-      if (this.options.onReplayOrbit) this.options.onReplayOrbit();
-    });
-
-    const btnResetCam = this.navLayer.querySelector('#btn-hud-reset-cam');
-    btnResetCam.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-    btnResetCam.addEventListener('click', () => {
-      orbitVoice.playChirp('click');
-      if (this.options.onResetCamera) this.options.onResetCamera();
-    });
-
-    const btnMC = this.navLayer.querySelector('#btn-hud-mission-ctrl');
-    btnMC.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-    btnMC.addEventListener('click', () => {
-      orbitVoice.playChirp('click');
-      if (this.options.onOpenMissionControl) {
-        this.options.onOpenMissionControl();
-      }
-    });
-
-    const btnMenu = this.navLayer.querySelector('#btn-hud-menu');
-    btnMenu.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-    btnMenu.addEventListener('click', () => {
-      orbitVoice.playChirp('click');
-      this.switchScreen('welcome');
-      if (this.options.onReturnToMenu) {
-        this.options.onReturnToMenu();
-      }
-    });
-
-    // Quick dock building buttons
-    this.navLayer.querySelectorAll('.dock-btn').forEach(btn => {
-      btn.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-      btn.addEventListener('click', (e) => {
+    if (btnStart) {
+      btnStart.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+      btnStart.addEventListener('click', () => {
         orbitVoice.playChirp('click');
-        const buildingId = e.currentTarget.getAttribute('data-building');
-        if (buildingId && this.options.onSelectBuilding) {
-          this.options.onSelectBuilding(buildingId);
+        this.switchScreen('colony');
+        if (this.options.onOpenMissionControl) {
+          this.options.onOpenMissionControl();
         }
       });
-    });
+    }
   }
 
   switchScreen(screenName) {

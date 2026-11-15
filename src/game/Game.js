@@ -39,6 +39,7 @@ import { LevelTransition } from '../core/LevelTransition.js';
 import { Level1Power } from '../levels/Level1Power.js';
 import { Level2Water } from '../levels/Level2Water.js';
 import { Level3Storm } from '../levels/Level3Storm.js';
+import { Level5Habitat } from '../levels/Level5Habitat.js';
 
 import '../styles/mission-control.css';
 import '../styles/gameplay.css';
@@ -534,6 +535,36 @@ export class Game {
     });
   }
 
+  startLevel5(skipIntro = false) {
+    if (this.currentLevel) {
+      this.currentLevel.dispose();
+      this.currentLevel = null;
+    }
+
+    if (this.gameHUD) this.gameHUD.hide();
+
+    // 1. Camera starts zoom toward habitat in colony view
+    const bData = BUILDINGS_DATA.habitat;
+    if (bData && bData.cameraView && this.cameraManager) {
+      this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 800);
+    }
+
+    // 2. Play smooth circular iris wipe into dedicated Level 5 scene
+    LevelTransition.play({
+      badge: "SOL 5 • LIFE SUPPORT",
+      title: 'DAY 5: <span class="title-accent">HABITAT REPAIR</span>',
+      subtitle: "A micro-leak has appeared in the habitat! Find and seal it to restore air pressure!",
+      skipIntro,
+      onMidpoint: () => {
+        this.currentLevel = new Level5Habitat(this);
+        this.currentLevel.init(skipIntro);
+      },
+      onComplete: () => {
+        console.log("Level 5 (Habitat Repair) interior stage active!");
+      }
+    });
+  }
+
   exitLevelToMissionControl() {
     LevelTransition.exitToMissionControl(
       () => {
@@ -590,14 +621,7 @@ export class Game {
         break;
       }
       case 5: {
-        const bData = BUILDINGS_DATA.antenna;
-        if (bData && bData.cameraView) {
-          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
-        }
-        if (this.interaction) this.interaction.highlightBuilding('antenna');
-        setTimeout(() => {
-          this.adventure3D.startLevel5Antenna(() => this.handleMiniGameSuccess(5, 'choice_5_a'));
-        }, 500);
+        this.startLevel5(false);
         break;
       }
       case 6: {
@@ -666,6 +690,8 @@ export class Game {
           this.adventure3D.startLevel2WaterPipe(() => this.handleMiniGameSuccess(2, 'choice_2_a'));
         } else if (currentSol === 3) {
           this.startLevel3(false);
+        } else if (currentSol === 5) {
+          this.startLevel5(false);
         } else {
           this.infoPanel.show('habitat');
         }

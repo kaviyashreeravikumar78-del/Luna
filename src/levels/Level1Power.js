@@ -3,12 +3,16 @@ import { CONFIG } from '../game/config.js';
 import { gameState } from '../simulation/GameState.js';
 import { orbit } from '../components/Orbit.js';
 import { orbitVoice } from '../audio/OrbitVoice.js';
+import { level1Audio } from '../audio/Level1Audio.js';
 import { LevelTransition } from '../core/LevelTransition.js';
+import { Level1HUD } from './Level1HUD.js';
 
 /**
  * LUNA: Mission Survival - Dedicated Level 1 (Sol 1: Power Up the Moon Base)
- * Features a dedicated, uncluttered 3D solar array stage with 6 solar panels,
- * a power hub substation, background colony scenery, and custom third-person camera framing.
+ * A complete, playable 3D mini-game with 3 interactive phases:
+ * Phase 1: Clean Lunar Dust off 6 Panels (Hold Space / Sweep Animation / Dust Puffs)
+ * Phase 2: Aim Panels at the Sun (Color Ring: Red -> Yellow -> Green / Snap & Ding)
+ * Phase 3: Reconnect Power Cable (Pick up, Unroll, Plug into Hub / Zap & Colony Lights)
  */
 export class Level1Power {
   constructor(game) {
@@ -24,73 +28,75 @@ export class Level1Power {
     this.powerHub = null;
     this.rocks = [];
     this.cables = [];
-    this.lights = [];
+    this.particles = [];
 
-    // Camera target framing for Level 1
-    this.targetCamPos = new THREE.Vector3(0, 7.5, 12.5);
+    // Camera setup
+    this.targetCamPos = new THREE.Vector3(0, 7.5, 12.8);
     this.targetCamLookAt = new THREE.Vector3(0, 1.2, 0);
 
-    // Level state
+    // State
     this.isActive = false;
-    this.phase = 0; // 0: Cinematic/Intro, 1: Clean, 2: Aim, 3: Cable
-    this.batteryLevel = 25; // Starts drained at 25%
-    this.maxBattery = 100;
+    this.phase = 0; // 0: Intro, 1: Clean, 2: Aim, 3: Cable, 4: Win, 5: Fail
+    this.batteryLevel = 28; // Starts low at 28%
+    this.batteryDrainSpeed = 0.55; // Gentle drain (~110 seconds buffer)
+    this.isActionPressed = false;
+    this.activeAimPanel = null;
+
+    // Cable state
+    this.hasCable = false;
+    this.cablePlugged = false;
+    this.cableSegments = [];
+
+    // Player inputs & physics
+    this.keys = { forward: false, backward: false, left: false, right: false, action: false, interact: false };
+    this.playerSpeed = 4.2;
+    this.walkTime = 0;
+    this.sweepTime = 0;
+    this.isSweeping = false;
+
+    // Statistics for 3-star rating
+    this.startTime = Date.now();
+    this.reDustedCount = 0;
   }
 
   /**
-   * Initializes the dedicated Level 1 Three.js stage
+   * Initializes the dedicated Level 1 stage
    */
   init() {
     this.isActive = true;
     this.scene.add(this.levelGroup);
 
-    // 1. Dim & hide main colony items to keep Level 1 completely clean & uncluttered
+    // 1. Hide colony structures to isolate the dedicated stage
     this.setColonyVisibility(false);
 
-    // 2. Build dedicated flat Moon ground stage
+    // 2. Build 3D World Stage
     this.buildGroundStage();
-
-    // 3. Build 6 High-Detail Solar Panels with procedural blue cells & dust layer
     this.buildSolarPanels();
-
-    // 4. Build Power Hub Substation with glowing socket
     this.buildPowerHub();
-
-    // 5. Build Background Colony Scenery (reusing iconic silhouette models)
     this.buildBackgroundScenery();
-
-    // 6. Build Decorative Lunar Boulders
     this.buildPerimeterRocks();
-
-    // 7. Setup Dedicated Level Lighting (Starts moody/low power)
+    this.buildCableDropItem();
     this.setupLighting();
 
-    // 8. Position the Camera to frame all 6 panels & the hub
+    // 3. Build Commander Astronaut for Level 1
+    this.buildCommander();
+
+    // 4. Setup Particle Systems (Dust puffs, sparks, sparkles)
+    this.initParticleSystems();
+
+    // 5. Build Level 1 Minimal HUD
+    this.initHUD();
+
+    // 6. Camera Framing
     this.setupCamera();
+
+    // 7. Bind Keyboard Controls
+    this.bindControls();
+
+    // 8. Start Entry Cinematic (Commander walk-in, wave, ORBIT dialogue)
+    this.playEntryCinematic();
   }
 
-  /**
-   * Sets up smooth lerped camera framing all 6 panels and power hub
-   */
-  setupCamera() {
-    if (this.cameraManager) {
-      if (this.cameraManager.controls) {
-        this.cameraManager.controls.enabled = false; // Lock free orbit during level
-      }
-      this.cameraManager.flyTo(
-        { x: this.targetCamPos.x, y: this.targetCamPos.y, z: this.targetCamPos.z },
-        { x: this.targetCamLookAt.x, y: this.targetCamLookAt.y, z: this.targetCamLookAt.z },
-        1200
-      );
-    } else {
-      this.camera.position.copy(this.targetCamPos);
-      this.camera.lookAt(this.targetCamLookAt);
-    }
-  }
-
-  /**
-   * Hides or shows main colony structures to isolate the dedicated mini-game stage
-   */
   setColonyVisibility(visible) {
     const g = this.game;
     if (g.habitat) g.habitat.visible = visible;
@@ -104,13 +110,26 @@ export class Level1Power {
     if (g.astronautData?.group) g.astronautData.group.visible = visible;
   }
 
-  /**
-   * Creates the dedicated flat Moon stage for the solar farm
-   */
+  setupCamera() {
+    if (this.cameraManager) {
+      if (this.cameraManager.controls) {
+        this.cameraManager.controls.enabled = false;
+      }
+      this.cameraManager.flyTo(
+        { x: this.targetCamPos.x, y: this.targetCamPos.y, z: this.targetCamPos.z },
+        { x: this.targetCamLookAt.x, y: this.targetCamLookAt.y, z: this.targetCamLookAt.z },
+        1000
+      );
+    } else {
+      this.camera.position.copy(this.targetCamPos);
+      this.camera.lookAt(this.targetCamLookAt);
+    }
+  }
+
   buildGroundStage() {
-    const stageGeo = new THREE.CylinderGeometry(14, 15, 2.5, 32);
+    const stageGeo = new THREE.CylinderGeometry(14.5, 15.5, 2.5, 32);
     const stageMat = new THREE.MeshStandardMaterial({
-      color: 0xD95736, // Warm rust-orange moon soil
+      color: 0xD95736,
       roughness: 0.85,
       metalness: 0.1,
       flatShading: true,
@@ -120,8 +139,7 @@ export class Level1Power {
     stage.receiveShadow = true;
     this.levelGroup.add(stage);
 
-    // Inner dusty rim decal (darker lunar regolith)
-    const rimGeo = new THREE.RingGeometry(0.1, 12.8, 32);
+    const rimGeo = new THREE.RingGeometry(0.1, 13.2, 32);
     const rimMat = new THREE.MeshStandardMaterial({
       color: 0xB84323,
       roughness: 0.9,
@@ -134,20 +152,15 @@ export class Level1Power {
     this.levelGroup.add(rim);
   }
 
-  /**
-   * Procedural canvas texture generator for shiny blue photovoltaic cells
-   */
   createSolarCellTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Deep space navy-blue base
     ctx.fillStyle = '#0E223D';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Silicon crystal gradient
     const grad = ctx.createLinearGradient(0, 0, 512, 512);
     grad.addColorStop(0, '#103366');
     grad.addColorStop(0.5, '#1B4D8C');
@@ -155,7 +168,6 @@ export class Level1Power {
     ctx.fillStyle = grad;
     ctx.fillRect(4, 4, 504, 504);
 
-    // Grid of solar wafer cells (4 rows x 6 cols)
     const rows = 4;
     const cols = 6;
     const cellW = 504 / cols;
@@ -169,11 +181,9 @@ export class Level1Power {
         ctx.fillStyle = '#184277';
         ctx.fillRect(x + 2, y + 2, cellW - 4, cellH - 4);
 
-        // Anti-reflective coating gleam
         ctx.fillStyle = 'rgba(0, 229, 255, 0.08)';
         ctx.fillRect(x + 4, y + 4, cellW - 8, (cellH - 8) * 0.4);
 
-        // Fine silver busbar wires
         ctx.strokeStyle = '#4A88CC';
         ctx.lineWidth = 1.2;
         ctx.beginPath();
@@ -185,31 +195,23 @@ export class Level1Power {
       }
     }
 
-    // Outer border
     ctx.strokeStyle = '#8AA3C2';
     ctx.lineWidth = 4;
     ctx.strokeRect(2, 2, 508, 508);
 
     const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.ClampToEdgeWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
     return texture;
   }
 
-  /**
-   * Procedural canvas texture generator for lunar dust layer
-   */
   createDustTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
 
-    // Semi-translucent grey-brown regolith dust base
     ctx.fillStyle = 'rgba(125, 118, 110, 0.9)';
     ctx.fillRect(0, 0, 256, 256);
 
-    // Random fine dust grains & micro-craters
     for (let i = 0; i < 400; i++) {
       const x = Math.random() * 256;
       const y = Math.random() * 256;
@@ -225,9 +227,6 @@ export class Level1Power {
     return texture;
   }
 
-  /**
-   * Builds the 6 Solar Panels in a neat 2x3 grid
-   */
   buildSolarPanels() {
     const cellTex = this.createSolarCellTexture();
     const dustTex = this.createDustTexture();
@@ -249,16 +248,13 @@ export class Level1Power {
       metalness: 0.85,
       roughness: 0.15,
       emissive: 0x00E5FF,
-      emissiveIntensity: 0.05 // Starts low; pulses bright on clean
+      emissiveIntensity: 0.05
     });
 
-    // 6 Panel Grid Positions: 2 rows of 3
     const panelLayout = [
-      // Back row (Z = -2.2)
       { id: 0, x: -4.5, z: -2.2, label: "Panel 1" },
       { id: 1, x:  0.0, z: -2.2, label: "Panel 2" },
       { id: 2, x:  4.5, z: -2.2, label: "Panel 3" },
-      // Front row (Z = 2.0)
       { id: 3, x: -4.5, z:  2.0, label: "Panel 4" },
       { id: 4, x:  0.0, z:  2.0, label: "Panel 5" },
       { id: 5, x:  4.5, z:  2.0, label: "Panel 6" },
@@ -270,44 +266,39 @@ export class Level1Power {
       const panelGroup = new THREE.Group();
       panelGroup.position.set(cfg.x, 0, cfg.z);
 
-      // 1. Support Column
       const postGeo = new THREE.CylinderGeometry(0.12, 0.16, 1.3, 12);
       const post = new THREE.Mesh(postGeo, standMat);
       post.position.y = 0.65;
       post.castShadow = true;
       panelGroup.add(post);
 
-      // Base mounting plate with bolts
       const plateGeo = new THREE.BoxGeometry(0.7, 0.08, 0.7);
       const plate = new THREE.Mesh(plateGeo, standMat);
       plate.position.y = 0.04;
       panelGroup.add(plate);
 
-      // 2. Swivel Hub / Pivot Sphere
       const pivotGeo = new THREE.SphereGeometry(0.2, 12, 12);
       const pivot = new THREE.Mesh(pivotGeo, frameMat);
       pivot.position.y = 1.3;
       panelGroup.add(pivot);
 
-      // 3. Tilting & Rotating Head Assembly
+      // Tilting & rotating head
       const headGroup = new THREE.Group();
       headGroup.position.y = 1.3;
-      headGroup.rotation.x = -Math.PI * 0.22; // Initial slight tilt
+      headGroup.rotation.x = -Math.PI * 0.15; // Initial tilt
 
-      // Metallic frame tray (2.4m wide x 1.4m long)
       const frameGeo = new THREE.BoxGeometry(2.4, 0.08, 1.4);
       const frame = new THREE.Mesh(frameGeo, frameMat);
       frame.castShadow = true;
       headGroup.add(frame);
 
-      // Blue Photovoltaic surface
       const cellGeo = new THREE.PlaneGeometry(2.32, 1.32);
       const cellMesh = new THREE.Mesh(cellGeo, cellMat.clone());
       cellMesh.rotation.x = -Math.PI / 2;
       cellMesh.position.y = 0.045;
       headGroup.add(cellMesh);
 
-      // 4. Grey Lunar Dust Layer (Semi-transparent mesh covering the panel)
+      // Dust Layer
       const dustMat = new THREE.MeshStandardMaterial({
         map: dustTex,
         transparent: true,
@@ -318,11 +309,11 @@ export class Level1Power {
       const dustGeo = new THREE.PlaneGeometry(2.32, 1.32);
       const dustMesh = new THREE.Mesh(dustGeo, dustMat);
       dustMesh.rotation.x = -Math.PI / 2;
-      dustMesh.position.y = 0.048; // Sits just above solar cells
+      dustMesh.position.y = 0.048;
       headGroup.add(dustMesh);
 
-      // 5. Interactive Alignment Target Ring (Hidden initially, for Phase 2)
-      const ringGeo = new THREE.RingGeometry(1.4, 1.55, 32);
+      // Alignment Color Ring (Phase 2)
+      const ringGeo = new THREE.RingGeometry(1.35, 1.5, 32);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0xFF3B30,
         side: THREE.DoubleSide,
@@ -331,13 +322,12 @@ export class Level1Power {
       });
       const ring = new THREE.Mesh(ringGeo, ringMat);
       ring.rotation.x = -Math.PI / 2;
-      ring.position.y = 0.05;
+      ring.position.y = 0.052;
       headGroup.add(ring);
 
       panelGroup.add(headGroup);
       this.levelGroup.add(panelGroup);
 
-      // Store panel metadata
       this.panels.push({
         id: cfg.id,
         label: cfg.label,
@@ -348,34 +338,26 @@ export class Level1Power {
         dustMat,
         ringMesh: ring,
         ringMat,
-        cleanProgress: 0,   // 0: Full dust, 1: 100% clean
+        cleanProgress: 0,
         isClean: false,
-        angleAlignment: 0,  // Target sun angle alignment
+        angleAlignment: (Math.random() - 0.5) * 1.4, // Random misaligned initial angle
+        targetAngle: -0.42, // Target sun angle
         isAligned: false
       });
     });
   }
 
-  /**
-   * Builds the Power Hub Substation with a glowing socket
-   */
   buildPowerHub() {
     const hubGroup = new THREE.Group();
     hubGroup.position.set(-8.5, 0, 0);
 
-    // Main transformer / accumulator housing
     const boxGeo = new THREE.BoxGeometry(1.8, 1.8, 1.8);
-    const boxMat = new THREE.MeshStandardMaterial({
-      color: 0xE6EAF0,
-      metalness: 0.6,
-      roughness: 0.3
-    });
+    const boxMat = new THREE.MeshStandardMaterial({ color: 0xE6EAF0, metalness: 0.6, roughness: 0.3 });
     const box = new THREE.Mesh(boxGeo, boxMat);
     box.position.y = 0.9;
     box.castShadow = true;
     hubGroup.add(box);
 
-    // Dark technical recessed bezel
     const bezelGeo = new THREE.BoxGeometry(1.2, 0.9, 0.1);
     const bezelMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.6 });
     const bezel = new THREE.Mesh(bezelGeo, bezelMat);
@@ -389,7 +371,6 @@ export class Level1Power {
     socketRing.position.set(0.3, 0.9, 0.96);
     hubGroup.add(socketRing);
 
-    // Socket interior core
     const socketCoreGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.15, 16);
     const socketCoreMat = new THREE.MeshStandardMaterial({
       color: 0x0B192C,
@@ -401,60 +382,39 @@ export class Level1Power {
     socketCore.position.set(0.3, 0.9, 0.94);
     hubGroup.add(socketCore);
 
-    // LED Battery Bar array on side of hub
-    for (let i = 0; i < 5; i++) {
-      const ledGeo = new THREE.BoxGeometry(0.18, 0.08, 0.04);
-      const ledMat = new THREE.MeshBasicMaterial({ color: i === 0 ? 0xFFB703 : 0x334155 });
-      const led = new THREE.Mesh(ledGeo, ledMat);
-      led.position.set(0.91, 0.5 + i * 0.2, 0.2);
-      hubGroup.add(led);
-    }
-
-    // High Voltage Warning Label
-    const tagGeo = new THREE.BoxGeometry(0.5, 0.18, 0.02);
-    const tagMat = new THREE.MeshBasicMaterial({ color: 0xFFD166 });
-    const tag = new THREE.Mesh(tagGeo, tagMat);
-    tag.position.set(0.3, 1.5, 0.91);
-    hubGroup.add(tag);
-
     this.levelGroup.add(hubGroup);
     this.powerHub = hubGroup;
-    this.hubSocketPos = new THREE.Vector3(-8.2, 0.9, 0.96);
+    this.hubSocket = socketRing;
+    this.socketPos = new THREE.Vector3(-8.2, 0.9, 0.96);
   }
 
-  /**
-   * Builds Background Colony Scenery to maintain spatial continuity
-   */
   buildBackgroundScenery() {
     const bgGroup = new THREE.Group();
     bgGroup.position.set(0, 0, -26);
 
-    // Distant ridge
     const ridgeGeo = new THREE.ConeGeometry(38, 7, 8);
-    const ridgeMat = new THREE.MeshStandardMaterial({
-      color: 0x822B14,
-      roughness: 0.9,
-      flatShading: true
-    });
+    const ridgeMat = new THREE.MeshStandardMaterial({ color: 0x822B14, roughness: 0.9, flatShading: true });
     const ridge = new THREE.Mesh(ridgeGeo, ridgeMat);
     ridge.position.set(0, 0, -4);
     ridge.rotation.y = Math.PI * 0.25;
     bgGroup.add(ridge);
 
-    // Silhouette Habitat Dome
+    // Silhouette Habitat
     const domeGeo = new THREE.SphereGeometry(3.5, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5);
     const domeMat = new THREE.MeshStandardMaterial({ color: 0x2A3B52, roughness: 0.6 });
     const dome = new THREE.Mesh(domeGeo, domeMat);
     dome.position.set(-6, 0.5, 0);
     bgGroup.add(dome);
+    this.bgHabitat = dome;
 
-    // Silhouette Greenhouse Tunnel
+    // Silhouette Greenhouse
     const ghGeo = new THREE.CylinderGeometry(1.8, 1.8, 6, 12);
     const ghMat = new THREE.MeshStandardMaterial({ color: 0x20354A, roughness: 0.5 });
     const gh = new THREE.Mesh(ghGeo, ghMat);
     gh.rotation.z = Math.PI / 2;
     gh.position.set(6, 1.2, 2);
     bgGroup.add(gh);
+    this.bgGreenhouse = gh;
 
     // Silhouette Radio Dish
     const dishGeo = new THREE.SphereGeometry(2.2, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.35);
@@ -463,22 +423,14 @@ export class Level1Power {
     dish.position.set(12, 5, -3);
     dish.rotation.x = Math.PI * 0.4;
     bgGroup.add(dish);
+    this.bgAntenna = dish;
 
     this.levelGroup.add(bgGroup);
-    this.bgColony = bgGroup;
   }
 
-  /**
-   * Builds decorative perimeter rocks around the solar field
-   */
   buildPerimeterRocks() {
     const rockGeo = new THREE.DodecahedronGeometry(0.65, 1);
-    const rockMat = new THREE.MeshStandardMaterial({
-      color: 0x6E2514,
-      roughness: 0.9,
-      flatShading: true
-    });
-
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x6E2514, roughness: 0.9, flatShading: true });
     const rockPositions = [
       { x: -9.5, z:  4.5, s: 1.1 },
       { x: -8.8, z: -4.2, s: 0.8 },
@@ -487,79 +439,767 @@ export class Level1Power {
       { x:  2.0, z: -5.8, s: 0.7 },
       { x: -3.2, z: -5.5, s: 1.0 },
     ];
-
     rockPositions.forEach(p => {
       const rock = new THREE.Mesh(rockGeo, rockMat);
       rock.position.set(p.x, p.s * 0.3, p.z);
       rock.scale.set(p.s, p.s * 0.8, p.s);
-      rock.rotation.set(Math.random(), Math.random(), Math.random());
       rock.castShadow = true;
-      rock.receiveShadow = true;
       this.levelGroup.add(rock);
-      this.rocks.push(rock);
     });
   }
 
-  /**
-   * Sets up lighting for Level 1 (Starts moody/low power)
-   */
+  buildCableDropItem() {
+    // Broken power cable spool near front panels
+    this.cableDropGroup = new THREE.Group();
+    this.cableDropGroup.position.set(2.5, 0.25, 4.0);
+
+    const spoolGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.4, 12);
+    const spoolMat = new THREE.MeshStandardMaterial({ color: 0x00E5FF, emissive: 0x0088CC });
+    const spool = new THREE.Mesh(spoolGeo, spoolMat);
+    spool.rotation.z = Math.PI / 2;
+    this.cableDropGroup.add(spool);
+
+    // Glowing spark beacon
+    const ringGeo = new THREE.RingGeometry(0.3, 0.45, 16);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xFFD166, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = -0.22;
+    this.cableDropGroup.add(ring);
+
+    this.levelGroup.add(this.cableDropGroup);
+    this.cableDropGroup.visible = false; // Becomes visible in Phase 3
+  }
+
   setupLighting() {
-    // Ambient fill
     this.ambientLight = new THREE.AmbientLight(0x1B2C44, 0.75);
     this.levelGroup.add(this.ambientLight);
 
-    // Warm Directional Sun Light
     this.sunLight = new THREE.DirectionalLight(0xFFE4C4, 1.4);
     this.sunLight.position.set(14, 18, 10);
     this.sunLight.castShadow = true;
     this.sunLight.shadow.mapSize.width = 1024;
     this.sunLight.shadow.mapSize.height = 1024;
-    this.sunLight.shadow.bias = -0.001;
     this.levelGroup.add(this.sunLight);
 
-    // Sun sprite / flare in the sky
     const sunGlowGeo = new THREE.SphereGeometry(2.5, 16, 16);
-    const sunGlowMat = new THREE.MeshBasicMaterial({
-      color: 0xFFD166,
-      transparent: true,
-      opacity: 0.85
+    const sunGlowMat = new THREE.MeshBasicMaterial({ color: 0xFFD166, transparent: true, opacity: 0.85 });
+    const sunOrb = new THREE.Mesh(sunGlowGeo, sunGlowMat);
+    sunOrb.position.set(24, 30, 16);
+    this.levelGroup.add(sunOrb);
+  }
+
+  buildCommander() {
+    // Articulated 3D Commander Astronaut
+    const astro = new THREE.Group();
+    astro.position.set(0, 0.3, -6.5); // Starts walking in from background
+    astro.rotation.y = 0;
+
+    const suitMat = new THREE.MeshStandardMaterial({ color: 0xF0F4F8, roughness: 0.45, metalness: 0.1 });
+    const visorMat = new THREE.MeshStandardMaterial({ color: 0x141B2D, roughness: 0.1, metalness: 0.9 });
+    const badgeMat = new THREE.MeshStandardMaterial({ color: 0xD95736 });
+    const bootMat = new THREE.MeshStandardMaterial({ color: 0x333F48 });
+
+    const scale = 0.55;
+    astro.scale.set(scale, scale, scale);
+
+    // Torso
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.85, 0.45), suitMat);
+    torso.position.y = 1.35;
+    torso.castShadow = true;
+    astro.add(torso);
+
+    const badge = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.25, 0.08), badgeMat);
+    badge.position.set(0, 1.45, 0.26);
+    astro.add(badge);
+
+    // Helmet & Visor
+    const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.38, 16, 16), suitMat);
+    helmet.position.y = 2.05;
+    helmet.castShadow = true;
+    astro.add(helmet);
+
+    const visor = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12, 0, Math.PI, 0, Math.PI * 0.7), visorMat);
+    visor.rotation.x = -Math.PI * 0.15;
+    visor.position.set(0, 2.05, 0.18);
+    astro.add(visor);
+
+    // Backpack
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.8, 0.3), suitMat);
+    pack.position.set(0, 1.35, -0.36);
+    pack.castShadow = true;
+    astro.add(pack);
+
+    // Articulated Arms
+    const leftArmPivot = new THREE.Group();
+    leftArmPivot.position.set(-0.48, 1.65, 0);
+    const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.11, 0.6, 8), suitMat);
+    leftArm.position.y = -0.3;
+    leftArmPivot.add(leftArm);
+    astro.add(leftArmPivot);
+
+    const rightArmPivot = new THREE.Group();
+    rightArmPivot.position.set(0.48, 1.65, 0);
+    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.11, 0.6, 8), suitMat);
+    rightArm.position.y = -0.3;
+    rightArmPivot.add(rightArm);
+    astro.add(rightArmPivot);
+
+    // Articulated Legs
+    const leftLegPivot = new THREE.Group();
+    leftLegPivot.position.set(-0.22, 0.95, 0);
+    const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.13, 0.7, 8), suitMat);
+    leftLeg.position.y = -0.35;
+    leftLegPivot.add(leftLeg);
+    const leftBoot = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.2, 0.38), bootMat);
+    leftBoot.position.set(0, -0.68, 0.06);
+    leftLegPivot.add(leftBoot);
+    astro.add(leftLegPivot);
+
+    const rightLegPivot = new THREE.Group();
+    rightLegPivot.position.set(0.22, 0.95, 0);
+    const rightLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.13, 0.7, 8), suitMat);
+    rightLeg.position.y = -0.35;
+    rightLegPivot.add(rightLeg);
+    const rightBoot = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.2, 0.38), bootMat);
+    rightBoot.position.set(0, -0.68, 0.06);
+    rightLegPivot.add(rightBoot);
+    astro.add(rightLegPivot);
+
+    // Space cleaning brush tool (attached to right arm)
+    const brushGroup = new THREE.Group();
+    brushGroup.position.set(0, -0.6, 0.1);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 8), bootMat);
+    brushGroup.add(handle);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.12), badgeMat);
+    head.position.y = -0.3;
+    brushGroup.add(head);
+    rightArmPivot.add(brushGroup);
+    brushGroup.visible = false;
+
+    this.commander = astro;
+    this.commander.userData = {
+      leftArm: leftArmPivot,
+      rightArm: rightArmPivot,
+      leftLeg: leftLegPivot,
+      rightLeg: rightLegPivot,
+      brush: brushGroup
+    };
+
+    this.levelGroup.add(this.commander);
+  }
+
+  initParticleSystems() {
+    // 1. Dust Puffs Pool
+    this.dustParticles = [];
+    const dustGeo = new THREE.DodecahedronGeometry(0.08, 0);
+    const dustMat = new THREE.MeshBasicMaterial({ color: 0x94A3B8, transparent: true, opacity: 0.8 });
+    for (let i = 0; i < 40; i++) {
+      const p = new THREE.Mesh(dustGeo, dustMat);
+      p.visible = false;
+      this.levelGroup.add(p);
+      this.dustParticles.push({ mesh: p, life: 0, vel: new THREE.Vector3() });
+    }
+
+    // 2. Electric Spark Particles Pool
+    this.sparkParticles = [];
+    const sparkGeo = new THREE.BoxGeometry(0.05, 0.05, 0.05);
+    const sparkMat = new THREE.MeshBasicMaterial({ color: 0x00E5FF });
+    for (let i = 0; i < 30; i++) {
+      const s = new THREE.Mesh(sparkGeo, sparkMat);
+      s.visible = false;
+      this.levelGroup.add(s);
+      this.sparkParticles.push({ mesh: s, life: 0, vel: new THREE.Vector3() });
+    }
+  }
+
+  emitDustPuff(pos) {
+    level1Audio.playBrush();
+    for (let i = 0; i < 8; i++) {
+      const p = this.dustParticles.find(dp => !dp.mesh.visible);
+      if (p) {
+        p.mesh.position.copy(pos);
+        p.mesh.position.x += (Math.random() - 0.5) * 0.8;
+        p.mesh.position.z += (Math.random() - 0.5) * 0.8;
+        p.vel.set((Math.random() - 0.5) * 1.5, 1.2 + Math.random() * 1.5, (Math.random() - 0.5) * 1.5);
+        p.life = 1.0;
+        p.mesh.visible = true;
+      }
+    }
+  }
+
+  emitElectricSparks(pos) {
+    level1Audio.playZap();
+    for (let i = 0; i < 15; i++) {
+      const s = this.sparkParticles.find(sp => !sp.mesh.visible);
+      if (s) {
+        s.mesh.position.copy(pos);
+        s.vel.set((Math.random() - 0.5) * 3.5, 1.5 + Math.random() * 3.0, (Math.random() - 0.5) * 3.5);
+        s.life = 0.8;
+        s.mesh.visible = true;
+      }
+    }
+  }
+
+  initHUD() {
+    this.hud = new Level1HUD({
+      onPause: () => {
+        this.isPaused = true;
+      },
+      onResume: () => {
+        this.isPaused = false;
+      },
+      onRestart: () => {
+        this.dispose();
+        this.game.startLevel1(true);
+      },
+      onReturnToMissionControl: () => {
+        this.game.exitLevelToMissionControl();
+      },
+      onWinContinue: () => {
+        this.onWin();
+      },
+      onActionPress: () => {
+        this.isActionPressed = true;
+      },
+      onActionRelease: () => {
+        this.isActionPressed = false;
+      },
+      onJoystickMove: (dx, dz) => {
+        this.touchMoveX = dx;
+        this.touchMoveZ = dz;
+      }
     });
-    this.sunOrb = new THREE.Mesh(sunGlowGeo, sunGlowMat);
-    this.sunOrb.position.set(24, 30, 16);
-    this.levelGroup.add(this.sunOrb);
+
+    this.hud.setBattery(this.batteryLevel);
+  }
+
+  bindControls() {
+    this.onKeyDown = (e) => {
+      switch (e.code) {
+        case 'KeyW': case 'ArrowUp': this.keys.forward = true; break;
+        case 'KeyS': case 'ArrowDown': this.keys.backward = true; break;
+        case 'KeyA': case 'ArrowLeft': this.keys.left = true; break;
+        case 'KeyD': case 'ArrowRight': this.keys.right = true; break;
+        case 'Space': this.keys.action = true; this.isActionPressed = true; break;
+        case 'KeyE': this.keys.interact = true; this.handleInteract(); break;
+      }
+    };
+
+    this.onKeyUp = (e) => {
+      switch (e.code) {
+        case 'KeyW': case 'ArrowUp': this.keys.forward = false; break;
+        case 'KeyS': case 'ArrowDown': this.keys.backward = false; break;
+        case 'KeyA': case 'ArrowLeft': this.keys.left = false; break;
+        case 'KeyD': case 'ArrowRight': this.keys.right = false; break;
+        case 'Space': this.keys.action = false; this.isActionPressed = false; break;
+        case 'KeyE': this.keys.interact = false; break;
+      }
+    };
+
+    window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('keyup', this.onKeyUp);
   }
 
   /**
-   * Animation update tick called from main render loop
+   * Entry Cinematic (Walk-in, wave, ORBIT voice, and "GO!" popup)
    */
-  update(delta) {
-    if (!this.isActive) return;
+  playEntryCinematic() {
+    this.phase = 0; // Cutscene lock
+    const startZ = -6.5;
+    const endZ = 3.6;
+    let progress = 0;
 
-    // Gentle socket glow pulsation
-    const time = performance.now() * 0.003;
-    if (this.powerHub) {
-      const socket = this.powerHub.children.find(c => c.material && c.material.color && c.material.color.getHex() === 0x00E5FF);
-      if (socket) {
-        socket.scale.setScalar(1.0 + Math.sin(time) * 0.08);
+    const walkInterval = setInterval(() => {
+      if (!this.isActive) {
+        clearInterval(walkInterval);
+        return;
+      }
+
+      progress += 0.025;
+      this.commander.position.z = THREE.MathUtils.lerp(startZ, endZ, progress);
+
+      // Walk bob
+      this.walkTime += 0.18;
+      this.commander.position.y = 0.3 + Math.abs(Math.sin(this.walkTime)) * 0.12;
+
+      const u = this.commander.userData;
+      if (u.leftArm && u.rightArm) {
+        u.leftArm.rotation.x = Math.sin(this.walkTime) * 0.6;
+        u.rightArm.rotation.x = -Math.sin(this.walkTime) * 0.6;
+      }
+      if (u.leftLeg && u.rightLeg) {
+        u.leftLeg.rotation.x = -Math.sin(this.walkTime) * 0.55;
+        u.rightLeg.rotation.x = Math.sin(this.walkTime) * 0.55;
+      }
+
+      if (progress >= 1.0) {
+        clearInterval(walkInterval);
+        this.commander.position.z = endZ;
+        this.commander.position.y = 0.3;
+
+        // Commander waves hello
+        if (u.rightArm) {
+          u.rightArm.rotation.x = -2.2;
+          u.rightArm.rotation.z = 0.4;
+        }
+
+        // ORBIT flies in with voice
+        orbit.flyTo(window.innerWidth - 180, 100);
+        orbit.say("Dust is blocking our solar panels! Hold Space to brush them clean!", {
+          emotion: 'worried',
+          gesture: 'point'
+        });
+
+        // Show "GO!" banner
+        setTimeout(() => {
+          if (u.rightArm) {
+            u.rightArm.rotation.set(0, 0, 0);
+          }
+          if (u.brush) u.brush.visible = true; // Show cleaning brush tool
+
+          this.hud.showGoBanner(() => {
+            this.phase = 1; // Phase 1 Active!
+            this.hud.setObjective("Clean the panels (0/6)", "🧹");
+          });
+        }, 1200);
+      }
+    }, 30);
+  }
+
+  /**
+   * Main game loop update
+   */
+  update(delta, elapsedTime) {
+    if (!this.isActive || this.isPaused) return;
+
+    // 1. Update Player Movement (when gameplay is active)
+    if (this.phase >= 1 && this.phase <= 3) {
+      this.updatePlayerMovement(delta);
+      this.updateBatteryDrain(delta);
+    }
+
+    // 2. Update Interactive Phases
+    if (this.phase === 1) {
+      this.updatePhase1Clean(delta);
+    } else if (this.phase === 2) {
+      this.updatePhase2Aim(delta);
+    } else if (this.phase === 3) {
+      this.updatePhase3Cable(delta);
+    }
+
+    // 3. Update Particles
+    this.updateParticles(delta);
+
+    // 4. Update Cable Visual Path (if carried)
+    if (this.hasCable && !this.cablePlugged) {
+      this.updateCarriedCable();
+    }
+  }
+
+  updatePlayerMovement(delta) {
+    let moveX = 0;
+    let moveZ = 0;
+
+    if (this.keys.forward) moveZ -= 1;
+    if (this.keys.backward) moveZ += 1;
+    if (this.keys.left) moveX -= 1;
+    if (this.keys.right) moveX += 1;
+
+    // Touch joystick support
+    if (this.touchMoveX || this.touchMoveZ) {
+      moveX += this.touchMoveX;
+      moveZ += this.touchMoveZ;
+    }
+
+    const isMoving = Math.abs(moveX) > 0.05 || Math.abs(moveZ) > 0.05;
+
+    if (isMoving && !this.isSweeping) {
+      const len = Math.hypot(moveX, moveZ);
+      moveX /= len;
+      moveZ /= len;
+
+      this.commander.position.x += moveX * this.playerSpeed * delta;
+      this.commander.position.z += moveZ * this.playerSpeed * delta;
+
+      // Stage boundary clamp (Radius = 12m)
+      const dist = Math.hypot(this.commander.position.x, this.commander.position.z);
+      if (dist > 11.5) {
+        this.commander.position.x = (this.commander.position.x / dist) * 11.5;
+        this.commander.position.z = (this.commander.position.z / dist) * 11.5;
+      }
+
+      // Smooth rotation towards movement direction
+      const targetAngle = Math.atan2(moveX, moveZ);
+      this.commander.rotation.y = THREE.MathUtils.lerp(this.commander.rotation.y, targetAngle, delta * 12);
+
+      // Walk cycle
+      this.walkTime += delta * 7.5;
+      this.commander.position.y = 0.3 + Math.abs(Math.sin(this.walkTime)) * 0.12;
+
+      const u = this.commander.userData;
+      if (u.leftLeg && u.rightLeg) {
+        u.leftLeg.rotation.x = -Math.sin(this.walkTime) * 0.55;
+        u.rightLeg.rotation.x = Math.sin(this.walkTime) * 0.55;
+      }
+
+      if (!this.hasCable && u.leftArm && u.rightArm) {
+        u.leftArm.rotation.x = Math.sin(this.walkTime) * 0.6;
+        u.rightArm.rotation.x = -Math.sin(this.walkTime) * 0.6;
+      }
+    } else if (!this.isSweeping) {
+      // Idle breathing
+      const u = this.commander.userData;
+      this.commander.position.y = 0.3 + Math.sin(performance.now() * 0.003) * 0.02;
+      if (u.leftLeg && u.rightLeg) {
+        u.leftLeg.rotation.x = THREE.MathUtils.lerp(u.leftLeg.rotation.x, 0, delta * 10);
+        u.rightLeg.rotation.x = THREE.MathUtils.lerp(u.rightLeg.rotation.x, 0, delta * 10);
+      }
+    }
+  }
+
+  updateBatteryDrain(delta) {
+    this.batteryLevel -= this.batteryDrainSpeed * delta;
+    this.hud.setBattery(this.batteryLevel);
+
+    if (this.batteryLevel < 15 && Math.floor(performance.now() / 1000) % 2 === 0) {
+      level1Audio.playLowPowerBeep();
+    }
+
+    if (this.batteryLevel <= 0) {
+      this.phase = 5; // Fail
+      this.hud.showFail();
+      orbit.say("Our battery ran out! Don't worry, tap retry and let's clean them faster!", {
+        emotion: 'sad',
+        gesture: 'wave'
+      });
+    }
+  }
+
+  /**
+   * Phase 1: Clean Panels (Hold Action / Sweep Animation / Dust Puffs)
+   */
+  updatePhase1Clean(delta) {
+    const pPos = this.commander.position;
+    let nearPanel = null;
+
+    // Check proximity to any dusty panel (2.4m radius)
+    for (const panel of this.panels) {
+      if (!panel.isClean) {
+        const d = pPos.distanceTo(panel.group.position);
+        if (d < 2.4) {
+          nearPanel = panel;
+          break;
+        }
+      }
+    }
+
+    if (nearPanel && this.isActionPressed) {
+      this.isSweeping = true;
+      this.sweepTime += delta * 6;
+
+      // Sweeping animation: Commander sweeps brush back and forth
+      const u = this.commander.userData;
+      if (u.rightArm) {
+        u.rightArm.rotation.x = -1.2 + Math.sin(this.sweepTime) * 0.5;
+        u.rightArm.rotation.z = Math.cos(this.sweepTime) * 0.4;
+      }
+      if (u.leftArm) {
+        u.leftArm.rotation.x = -0.8 + Math.cos(this.sweepTime) * 0.3;
+      }
+
+      // Progressively remove dust
+      nearPanel.cleanProgress += delta * 0.75; // Takes ~1.3s to clean
+      nearPanel.dustMat.opacity = Math.max(0, 0.92 * (1 - nearPanel.cleanProgress));
+
+      // Emit dust particles
+      if (Math.random() < 0.35) {
+        this.emitDustPuff(nearPanel.group.position);
+      }
+
+      if (nearPanel.cleanProgress >= 1.0) {
+        nearPanel.isClean = true;
+        nearPanel.cleanProgress = 1.0;
+        nearPanel.dustMesh.visible = false;
+        nearPanel.cellMesh.material.emissiveIntensity = 0.35; // Panel glows brightly!
+
+        // Battery boost + pop-up
+        this.batteryLevel = Math.min(100, this.batteryLevel + 10);
+        this.hud.setBattery(this.batteryLevel);
+        this.hud.showPowerPopup(window.innerWidth / 2, window.innerHeight * 0.4, "+10% Power! ⚡");
+        level1Audio.playDing();
+
+        const cleanedCount = this.panels.filter(p => p.isClean).length;
+        this.hud.setObjective(`Clean the panels (${cleanedCount}/6)`, "🧹");
+
+        // When all 6 are clean: Transition to Phase 2!
+        if (cleanedCount === 6) {
+          this.isSweeping = false;
+          if (u.brush) u.brush.visible = false; // Hide brush tool
+          this.phase = 2;
+
+          orbit.say("All 6 panels are shiny clean! Now let's aim them at the sun!", {
+            emotion: 'excited',
+            gesture: 'point'
+          });
+
+          this.hud.setObjective("Aim at the sun (0/6)", "☀️");
+          this.hud.setStars(1);
+        }
+      }
+    } else {
+      this.isSweeping = false;
+    }
+  }
+
+  /**
+   * Phase 2: Aim Panels at the Sun
+   */
+  updatePhase2Aim(delta) {
+    const pPos = this.commander.position;
+
+    // Check proximity to clean unaligned panels
+    for (const panel of this.panels) {
+      if (panel.isClean && !panel.isAligned) {
+        const d = pPos.distanceTo(panel.group.position);
+
+        if (d < 2.5) {
+          panel.ringMesh.visible = true;
+          panel.ringMat.opacity = 0.85;
+
+          // Interactive angle adjustment
+          if (this.keys.left || this.touchMoveX < -0.2) {
+            panel.angleAlignment -= delta * 1.5;
+          } else if (this.keys.right || this.touchMoveX > 0.2) {
+            panel.angleAlignment += delta * 1.5;
+          }
+
+          panel.head.rotation.x = panel.angleAlignment;
+
+          // Color Ring Feedback: Red -> Yellow -> Green
+          const angleDiff = Math.abs(panel.angleAlignment - panel.targetAngle);
+
+          if (angleDiff < 0.12) {
+            // Snaps into alignment!
+            panel.isAligned = true;
+            panel.angleAlignment = panel.targetAngle;
+            panel.head.rotation.x = panel.targetAngle;
+            panel.ringMat.color.setHex(0x06D6A0); // Bright green!
+
+            level1Audio.playDing();
+            this.batteryLevel = Math.min(100, this.batteryLevel + 6);
+            this.hud.setBattery(this.batteryLevel);
+            this.hud.showPowerPopup(window.innerWidth / 2, window.innerHeight * 0.45, "☀️ Aligned! +6% ⚡");
+
+            setTimeout(() => {
+              panel.ringMesh.visible = false;
+            }, 600);
+
+            const alignedCount = this.panels.filter(p => p.isAligned).length;
+            this.hud.setObjective(`Aim at the sun (${alignedCount}/6)`, "☀️");
+
+            // When all 6 are aligned: Transition to Phase 3!
+            if (alignedCount === 6) {
+              this.phase = 3;
+              this.cableDropGroup.visible = true; // Drop cable on the ground
+              this.hud.setStars(2);
+
+              orbit.say("Perfect sun alignment! Pick up the power cable and plug it in!", {
+                emotion: 'happy',
+                gesture: 'point'
+              });
+
+              this.hud.setObjective("Plug in the power cable!", "🔌");
+            }
+          } else if (angleDiff < 0.35) {
+            panel.ringMat.color.setHex(0xFFB703); // Yellow (getting close)
+          } else {
+            panel.ringMat.color.setHex(0xFF3B30); // Red (misaligned)
+          }
+        } else {
+          panel.ringMat.opacity = 0.0;
+        }
+      }
+    }
+  }
+
+  handleInteract() {
+    if (this.phase === 3 && !this.hasCable) {
+      // Pick up cable if near
+      const d = this.commander.position.distanceTo(this.cableDropGroup.position);
+      if (d < 2.5) {
+        this.pickUpCable();
       }
     }
   }
 
   /**
-   * Disposes of Level 1 resources and restores main colony visibility
+   * Phase 3: Cable Pickup, Carrying, and Hub Connection
+   */
+  pickUpCable() {
+    this.hasCable = true;
+    this.cableDropGroup.visible = false;
+    level1Audio.playZap();
+
+    // Carrying pose for Commander: Both arms outstretched holding cable
+    const u = this.commander.userData;
+    if (u.leftArm && u.rightArm) {
+      u.leftArm.rotation.set(-1.25, 0.2, 0.15);
+      u.rightArm.rotation.set(-1.25, -0.2, -0.15);
+    }
+
+    orbit.say("Carry the cable to the glowing socket on the Power Hub!", {
+      emotion: 'excited',
+      gesture: 'point'
+    });
+  }
+
+  updateCarriedCable() {
+    // Dynamically draw cable line unrolling behind Commander to the cable origin
+    const start = new THREE.Vector3(2.5, 0.1, 4.0);
+    const end = this.commander.position.clone();
+    end.y = 0.8;
+
+    if (!this.cableLineMesh) {
+      const lineGeo = new THREE.BufferGeometry().setFromPoints([start, end]);
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x00E5FF, linewidth: 4 });
+      this.cableLineMesh = new THREE.Line(lineGeo, lineMat);
+      this.levelGroup.add(this.cableLineMesh);
+    } else {
+      this.cableLineMesh.geometry.setFromPoints([start, end]);
+    }
+  }
+
+  updatePhase3Cable(delta) {
+    const pPos = this.commander.position;
+
+    if (!this.hasCable) {
+      const d = pPos.distanceTo(this.cableDropGroup.position);
+      if (d < 2.2) {
+        this.pickUpCable();
+      }
+    } else if (!this.cablePlugged) {
+      // Near power hub socket (X = -8.2, Z = 0.96)
+      const d = pPos.distanceTo(this.socketPos);
+      if (d < 2.2) {
+        this.plugCableIn();
+      }
+    }
+  }
+
+  plugCableIn() {
+    this.cablePlugged = true;
+    this.phase = 4; // Victory!
+
+    // Electric sparks + zap audio
+    this.emitElectricSparks(this.socketPos);
+    level1Audio.playZap();
+    level1Audio.playSuccessJingle();
+
+    // Connect cable to socket permanently
+    if (this.cableLineMesh) {
+      this.cableLineMesh.geometry.setFromPoints([
+        new THREE.Vector3(2.5, 0.1, 4.0),
+        new THREE.Vector3(-8.2, 0.9, 0.96)
+      ]);
+    }
+
+    // Battery jumps to 100%!
+    this.batteryLevel = 100;
+    this.hud.setBattery(100);
+    this.hud.setStars(3);
+
+    // Turn on background colony lights!
+    if (this.bgHabitat) this.bgHabitat.material.color.setHex(0x00E5FF);
+    if (this.bgGreenhouse) this.bgGreenhouse.material.color.setHex(0x06D6A0);
+    if (this.bgAntenna) this.bgAntenna.material.color.setHex(0xFFD166);
+
+    // Commander celebrates!
+    const u = this.commander.userData;
+    if (u.leftArm && u.rightArm) {
+      u.leftArm.rotation.set(-2.8, 0, -0.4);
+      u.rightArm.rotation.set(-2.8, 0, 0.4);
+    }
+
+    // ORBIT Confetti & Victory Cheer
+    orbit.celebrate();
+    orbit.say("Hooray! 100% clean solar power is flowing to the entire Moon base!", {
+      emotion: 'excited',
+      gesture: 'wave'
+    });
+
+    // Show Victory Screen after 1.5s
+    setTimeout(() => {
+      this.hud.showWin(3);
+    }, 1500);
+  }
+
+  updateParticles(delta) {
+    this.dustParticles.forEach(dp => {
+      if (dp.mesh.visible) {
+        dp.life -= delta * 1.5;
+        dp.mesh.position.addScaledVector(dp.vel, delta);
+        dp.vel.y -= delta * 2.0; // Lunar gravity
+        dp.mesh.scale.setScalar(dp.life);
+        if (dp.life <= 0) dp.mesh.visible = false;
+      }
+    });
+
+    this.sparkParticles.forEach(sp => {
+      if (sp.mesh.visible) {
+        sp.life -= delta * 2.2;
+        sp.mesh.position.addScaledVector(sp.vel, delta);
+        sp.vel.y -= delta * 3.5;
+        sp.mesh.scale.setScalar(sp.life);
+        if (sp.life <= 0) sp.mesh.visible = false;
+      }
+    });
+  }
+
+  /**
+   * On Win: Updates GameState (applies decision, advances day to Sol 2, saves progress),
+   * and triggers reverse iris transition back to Mission Control!
+   */
+  onWin() {
+    // 1. Apply Sol 1 decision & advance to Sol 2 in GameState
+    if (gameState.currentDay === 1 && !gameState.currentDayDecided) {
+      gameState.applyDecision('choice_1_a');
+      gameState.advanceDay();
+    }
+
+    // 2. Play reverse iris transition back to Mission Control
+    this.game.exitLevelToMissionControl();
+  }
+
+  onFail() {
+    this.dispose();
+    this.game.startLevel1(true);
+  }
+
+  /**
+   * Cleans up all Level 1 assets, geometries, materials, event listeners, and HUD
    */
   dispose() {
     this.isActive = false;
 
+    window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('keyup', this.onKeyUp);
+
+    // Dispose HUD
+    if (this.hud) {
+      this.hud.dispose();
+      this.hud = null;
+    }
+
     // Restore colony visibility
     this.setColonyVisibility(true);
 
-    // Remove Level 1 objects
+    // Remove Level 1 Group
     if (this.levelGroup && this.levelGroup.parent) {
       this.levelGroup.parent.remove(this.levelGroup);
     }
 
-    // Traverse and dispose geometries and materials
+    // Traverse and dispose Three.js objects
     this.levelGroup.traverse(child => {
       if (child.isMesh) {
         if (child.geometry) child.geometry.dispose();
@@ -573,21 +1213,8 @@ export class Level1Power {
       }
     });
 
-    this.panels = [];
-    this.rocks = [];
-    this.cables = [];
-
-    // Re-enable camera controls if available
     if (this.cameraManager && this.cameraManager.controls) {
       this.cameraManager.controls.enabled = true;
     }
-  }
-
-  onWin() {
-    console.log("Level 1 Completed Successfully!");
-  }
-
-  onFail() {
-    console.log("Level 1 Battery Depleted!");
   }
 }

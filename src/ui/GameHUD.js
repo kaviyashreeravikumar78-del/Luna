@@ -1,5 +1,6 @@
 import { orbitVoice } from '../audio/OrbitVoice.js';
 import { gameState } from '../simulation/GameState.js';
+import { orbit } from '../components/Orbit.js';
 
 /**
  * LUNA: Mission Survival - Child-Friendly In-Game Adventure HUD
@@ -115,25 +116,11 @@ export class GameHUD {
         </div>
       </div>
 
-      <!-- BOTTOM HUD BAR -->
+      <!-- BOTTOM HUD BAR (Clean, Uncluttered) -->
       <div class="hud-bottom-bar">
-        <!-- Virtual Joystick for Touch / Mobile -->
+        <!-- Virtual Joystick for Touch / Mobile Only -->
         <div class="hud-virtual-joystick" id="hud-virtual-joystick">
           <div class="hud-joystick-knob" id="hud-joystick-knob"></div>
-        </div>
-
-        <!-- ORBIT Speech Companion Bubble -->
-        <div class="hud-orbit-bubble" id="hud-orbit-bubble">
-          <span class="hud-orbit-face">🤖</span>
-          <p class="hud-orbit-msg" id="hud-orbit-msg">
-            Hello Commander! Walk with W, A, S, D or the Arrow keys. Approach any building to explore!
-          </p>
-        </div>
-
-        <!-- Proximity Action Prompt Card -->
-        <div class="hud-prompt-card" id="hud-prompt-card" style="display:none;">
-          <span class="hud-key-badge">[E] or TAP</span>
-          <span id="hud-prompt-text">Connect Solar Power ⚡</span>
         </div>
       </div>
     `;
@@ -162,11 +149,14 @@ export class GameHUD {
     });
 
     // Proximity Prompt Card Click
-    this.element.querySelector('#hud-prompt-card').addEventListener('click', () => {
-      if (this.currentPromptAction) {
-        this.currentPromptAction();
-      }
-    });
+    const promptCard = this.element.querySelector('#hud-prompt-card');
+    if (promptCard) {
+      promptCard.addEventListener('click', () => {
+        if (this.currentPromptAction) {
+          this.currentPromptAction();
+        }
+      });
+    }
 
     // Exit Rover HUD button
     this.element.querySelector('#btn-exit-rover-hud').addEventListener('click', () => {
@@ -454,17 +444,23 @@ export class GameHUD {
   }
 
   showProximityPrompt(station, onAction) {
+    this.currentPromptAction = onAction;
+    if (!station) return;
+
     const card = this.element.querySelector('#hud-prompt-card');
     const text = this.element.querySelector('#hud-prompt-text');
-
-    if (!station) {
-      this.hideProximityPrompt();
-      return;
+    if (card && text) {
+      text.textContent = station.prompt || `Inspect ${station.name}`;
+      card.style.display = 'flex';
     }
 
-    this.currentPromptAction = onAction;
-    text.textContent = station.prompt || `Inspect ${station.name}`;
-    card.style.display = 'flex';
+    // Cute Moon Buddy robot speaks the proximity guidance directly!
+    if (station.prompt) {
+      orbit.say(`${station.prompt}! Press [E] or Space!`, {
+        emotion: 'excited',
+        gesture: 'point'
+      });
+    }
   }
 
   hideProximityPrompt() {
@@ -501,12 +497,11 @@ export class GameHUD {
     if (panel) panel.style.display = 'none';
   }
 
-  speakOrbit(message) {
-    const msgEl = this.element.querySelector('#hud-orbit-msg');
-    if (msgEl) {
-      msgEl.textContent = message;
-    }
-    orbitVoice.speak(message);
+  speakOrbit(message, opts = {}) {
+    orbit.say(message, {
+      emotion: opts.emotion || 'happy',
+      gesture: opts.gesture || 'nod'
+    });
   }
 
   playOrbitHint() {

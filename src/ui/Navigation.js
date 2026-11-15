@@ -66,74 +66,7 @@ export class Navigation {
         </div>
       </section>
 
-      <!-- SCREEN 2: HOW TO PLAY WITH ORBIT (KID-FRIENDLY VISUAL TUTORIAL) -->
-      <section id="screen-how-to-play" class="game-screen">
-        <div class="how-to-play-container">
-          <!-- ORBIT Buddy Banner -->
-          <div class="htp-robot-banner">
-            <div class="htp-orbit-buddy-avatar">
-              <svg width="68" height="68" viewBox="0 0 140 160">
-                <!-- Mini Creature in Helmet -->
-                <circle cx="70" cy="64" r="38" fill="#FDE2D2"/>
-                <ellipse cx="45" cy="74" rx="7.5" ry="4.5" fill="#FF6584" opacity="0.75"/>
-                <ellipse cx="95" cy="74" rx="7.5" ry="4.5" fill="#FF6584" opacity="0.75"/>
-                <ellipse cx="70" cy="69" rx="3.5" ry="2.5" fill="#D95736"/>
-                <!-- Happy Eyes ^ ^ -->
-                <path d="M 44 65 Q 53 52 62 65" fill="none" stroke="#102C49" stroke-width="4" stroke-linecap="round"/>
-                <path d="M 78 65 Q 87 52 96 65" fill="none" stroke="#102C49" stroke-width="4" stroke-linecap="round"/>
-                <!-- Smile -->
-                <path d="M 61 74 Q 70 85 79 74 Z" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
-                <!-- Helmet -->
-                <circle cx="70" cy="64" r="46" fill="rgba(0, 229, 255, 0.15)" stroke="#94A3B8" stroke-width="2.5"/>
-              </svg>
-            </div>
-            <div class="htp-robot-text">
-              <div class="badge-pill">
-                <span class="pulse-indicator"></span>
-                <span>YOUR SPACE COMPANION</span>
-              </div>
-              <h2 class="htp-title">"Hi! I'm ORBIT! Here's how to explore!"</h2>
-              <p class="htp-subtitle">Commander, welcome to Outpost LUNA-01! Look after your 4 astronaut friends and explore your Moon base with these simple controls:</p>
-            </div>
-          </div>
-
-          <!-- 4 Tutorial Cards Grid -->
-          <div class="htp-cards-grid">
-            <div class="htp-card">
-              <div class="htp-card-icon">🖱️</div>
-              <h3 class="htp-card-title">1. Look Around in 3D</h3>
-              <p class="htp-card-desc">Click and drag your mouse (or swipe your finger) to spin the Moon base in any direction!</p>
-            </div>
-
-            <div class="htp-card">
-              <div class="htp-card-icon">🔍</div>
-              <h3 class="htp-card-title">2. Zoom Close & Far</h3>
-              <p class="htp-card-desc">Scroll your mouse wheel (or pinch your screen) to get super close to buildings and astronaut friends!</p>
-            </div>
-
-            <div class="htp-card">
-              <div class="htp-card-icon">👆</div>
-              <h3 class="htp-card-title">3. Click to Inspect</h3>
-              <p class="htp-card-desc">Click any building, rover, or greenhouse to open a fun info card and see how it works!</p>
-            </div>
-
-            <div class="htp-card">
-              <div class="htp-card-icon">⭐</div>
-              <h3 class="htp-card-title">4. Ask ORBIT Anytime</h3>
-              <p class="htp-card-desc">Click the <strong>'ORBIT Guide'</strong> button in the top bar whenever you want me to give you a tour!</p>
-            </div>
-          </div>
-
-          <div class="htp-footer">
-            <button id="btn-back-to-welcome" class="btn btn-secondary">← Back to Menu</button>
-            <button id="btn-enter-colony" class="btn-glow-large pulse-glow">
-              <span>LET'S GO TO THE MOON BASE! 🚀</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- SCREEN 3: 3D COLONY HUD OVERLAY -->
+      <!-- SCREEN 2: 3D COLONY HUD OVERLAY -->
       <section id="screen-colony" class="game-screen colony-hud">
         <!-- TOP HUD BAR -->
         <header class="hud-top-bar">
@@ -193,31 +126,15 @@ export class Navigation {
   }
 
   bindEvents() {
-    // Welcome Screen -> Go directly to How to Play
+    // Welcome Screen -> Go directly to Mission Control Deck!
     const btnStart = this.navLayer.querySelector('#btn-start-mission');
     btnStart.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
     btnStart.addEventListener('click', () => {
       orbitVoice.playChirp('click');
-      this.switchScreen('how-to-play');
-      if (this.options.onStartMission) this.options.onStartMission();
-    });
-
-    // How to Play Screen -> Back to Menu or Enter Colony
-    const btnBackWel = this.navLayer.querySelector('#btn-back-to-welcome');
-    if (btnBackWel) {
-      btnBackWel.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-      btnBackWel.addEventListener('click', () => {
-        orbitVoice.playChirp('click');
-        this.switchScreen('welcome');
-      });
-    }
-
-    const btnEnter = this.navLayer.querySelector('#btn-enter-colony');
-    btnEnter.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-    btnEnter.addEventListener('click', () => {
-      orbitVoice.playChirp('click');
       this.switchScreen('colony');
-      if (this.options.onEnterColony) this.options.onEnterColony();
+      if (this.options.onOpenMissionControl) {
+        this.options.onOpenMissionControl();
+      }
     });
 
     // Colony HUD buttons
@@ -249,6 +166,9 @@ export class Navigation {
     btnMenu.addEventListener('click', () => {
       orbitVoice.playChirp('click');
       this.switchScreen('welcome');
+      if (this.options.onReturnToMenu) {
+        this.options.onReturnToMenu();
+      }
     });
 
     // Quick dock building buttons

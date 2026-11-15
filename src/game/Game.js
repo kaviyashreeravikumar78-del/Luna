@@ -234,23 +234,27 @@ export class Game {
         this.missionControl.hide();
         this.navigation.switchScreen('colony');
         if (this.gameHUD) this.gameHUD.show();
+        this.cameraManager.reset(1200);
 
-        const bData = BUILDINGS_DATA[event.facilityId];
-        if (bData && bData.cameraView) {
-          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1000, () => {
-            this.handleStationAction(event.facilityId);
-          });
-        } else {
-          this.handleStationAction(event.facilityId);
+        if (this.interaction && event.facilityId) {
+          this.interaction.highlightBuilding(event.facilityId);
         }
+
+        // Cute Moon Buddy speaks the commander walking greeting!
+        setTimeout(() => {
+          orbit.say("Hello Commander! Walk with W, A, S, D or the Arrow keys. Approach any building to explore!", {
+            emotion: 'happy',
+            gesture: 'wave'
+          });
+        }, 1000);
       }
     });
     document.body.appendChild(this.missionControl.element);
 
     this.navigation = new Navigation({
       onStartMission: () => {
-        // Slow cinematic camera pan to welcome the commander
-        this.cameraManager.flyTo({ x: 26, y: 21, z: 30 }, { x: 0, y: 1.5, z: 0 }, 1500);
+        if (this.gameHUD) this.gameHUD.hide();
+        this.missionControl.show();
       },
       onEnterColony: () => {
         this.cameraManager.reset(1200);
@@ -261,16 +265,12 @@ export class Game {
           if (this.gameHUD) this.gameHUD.update(gameState);
         }
         
-        const tutorialDone = localStorage.getItem('luna_orbit_tutorial_completed') === 'true';
-        if (!tutorialDone) {
-          setTimeout(() => {
-            this.tutorial.start(false);
-          }, 1200);
-        } else {
-          setTimeout(() => {
-            this.startSolMission(gameState.currentDay);
-          }, 1200);
-        }
+        setTimeout(() => {
+          orbit.say("Hello Commander! Walk with W, A, S, D or the Arrow keys. Approach any building to explore!", {
+            emotion: 'happy',
+            gesture: 'wave'
+          });
+        }, 1000);
       },
       onResetCamera: () => {
         this.cameraManager.reset(1000);
@@ -281,6 +281,10 @@ export class Game {
       onOpenMissionControl: () => {
         if (this.gameHUD) this.gameHUD.hide();
         this.missionControl.show();
+      },
+      onReturnToMenu: () => {
+        if (this.gameHUD) this.gameHUD.hide();
+        this.cameraManager.flyTo({ x: 26, y: 21, z: 30 }, { x: 0, y: 1.5, z: 0 }, 1500);
       },
       onSelectBuilding: (buildingId) => {
         this.infoPanel.show(buildingId);

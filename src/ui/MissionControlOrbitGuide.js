@@ -64,6 +64,7 @@ export class MissionControlOrbitGuide {
   }
 
   runStep() {
+    if (!this.isRunning) return;
     if (this.currentStep >= MC_GUIDE_STEPS.length) {
       this.finish();
       return;
@@ -90,6 +91,7 @@ export class MissionControlOrbitGuide {
       showNextBtn: true,
       nextBtnText: isLast ? "Let's Go! 🚀" : "Next ➔",
       onComplete: () => {
+        if (!this.isRunning) return;
         this.currentStep++;
         if (this.currentStep < MC_GUIDE_STEPS.length) {
           this.runStep();

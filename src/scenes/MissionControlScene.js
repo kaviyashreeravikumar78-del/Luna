@@ -253,12 +253,22 @@ export class MissionControlScene {
   show() {
     this.container.classList.add('active');
     this.updateFromGameState(gameState);
-    setTimeout(() => {
-      this.orbitGuide.start(false);
+    if (this.guideTimeout) clearTimeout(this.guideTimeout);
+    this.guideTimeout = setTimeout(() => {
+      if (this.container && this.container.classList.contains('active')) {
+        this.orbitGuide.start(false);
+      }
     }, 700);
   }
 
   hide() {
+    if (this.guideTimeout) {
+      clearTimeout(this.guideTimeout);
+      this.guideTimeout = null;
+    }
+    if (this.orbitGuide) {
+      this.orbitGuide.skip();
+    }
     this.container.classList.remove('active');
   }
 

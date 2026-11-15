@@ -144,16 +144,9 @@ export class Level2Water {
   }
 
   setColonyVisibility(visible) {
-    const g = this.game;
-    if (g.habitat) g.habitat.visible = visible;
-    if (g.greenhouse) g.greenhouse.visible = visible;
-    if (g.solarArray) g.solarArray.visible = visible;
-    if (g.researchLab) g.researchLab.visible = visible;
-    if (g.antenna) g.antenna.visible = visible;
-    if (g.rover) g.rover.visible = visible;
-    if (g.decorations) g.decorations.visible = visible;
-    if (g.terrain) g.terrain.visible = visible;
-    if (g.astronautData?.group) g.astronautData.group.visible = visible;
+    if (this.game && this.game.setColonyVisible) {
+      this.game.setColonyVisible(visible);
+    }
   }
 
   /**

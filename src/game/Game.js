@@ -444,13 +444,25 @@ export class Game {
     });
   }
 
-  startLevel1(skipIntro = false) {
+  prepareForDedicatedLevel() {
     if (this.currentLevel) {
       this.currentLevel.dispose();
       this.currentLevel = null;
     }
-
+    if (this.cameraManager) {
+      this.cameraManager.isTransitioning = false;
+      if (this.cameraManager.controls) {
+        this.cameraManager.controls.enabled = false;
+      }
+    }
     if (this.gameHUD) this.gameHUD.hide();
+    if (this.infoPanel) this.infoPanel.hide();
+    if (this.playerController) this.playerController.enabled = false;
+    if (this.interaction) this.interaction.enabled = false;
+  }
+
+  startLevel1(skipIntro = false) {
+    this.prepareForDedicatedLevel();
 
     // 1. Camera starts zoom toward solar array in colony view
     const bData = BUILDINGS_DATA.solar_array;
@@ -465,9 +477,14 @@ export class Game {
       subtitle: "Lunar dust is blocking the solar panels. Clean them to restore colony power!",
       skipIntro,
       onMidpoint: () => {
+        if (this.cameraManager) {
+          this.cameraManager.isTransitioning = false;
+          if (this.cameraManager.controls) this.cameraManager.controls.enabled = false;
+        }
+        this.setColonyVisible(false);
         // Instantiate and init dedicated Level 1 scene
         this.currentLevel = new Level1Power(this);
-        this.currentLevel.init();
+        this.currentLevel.init(skipIntro);
       },
       onComplete: () => {
         console.log("Level 1 (Power Up) stage active and camera framed!");
@@ -476,12 +493,7 @@ export class Game {
   }
 
   startLevel2(skipIntro = false) {
-    if (this.currentLevel) {
-      this.currentLevel.dispose();
-      this.currentLevel = null;
-    }
-
-    if (this.gameHUD) this.gameHUD.hide();
+    this.prepareForDedicatedLevel();
 
     // 1. Camera starts zoom toward rover in colony view
     const bData = BUILDINGS_DATA.rover;
@@ -496,8 +508,13 @@ export class Game {
       subtitle: "Our water is low! Drive the lunar rover to find ice hidden in the dark crater!",
       skipIntro,
       onMidpoint: () => {
+        if (this.cameraManager) {
+          this.cameraManager.isTransitioning = false;
+          if (this.cameraManager.controls) this.cameraManager.controls.enabled = false;
+        }
+        this.setColonyVisible(false);
         this.currentLevel = new Level2Water(this);
-        this.currentLevel.init();
+        this.currentLevel.init(skipIntro);
       },
       onComplete: () => {
         console.log("Level 2 (Water Hunt) driving stage active!");
@@ -506,12 +523,7 @@ export class Game {
   }
 
   startLevel3(skipIntro = false) {
-    if (this.currentLevel) {
-      this.currentLevel.dispose();
-      this.currentLevel = null;
-    }
-
-    if (this.gameHUD) this.gameHUD.hide();
+    this.prepareForDedicatedLevel();
 
     // 1. Camera starts zoom toward habitat in colony view
     const bData = BUILDINGS_DATA.habitat;
@@ -526,6 +538,11 @@ export class Game {
       subtitle: "A high-speed solar particle storm is approaching! Get everyone into the shelter!",
       skipIntro,
       onMidpoint: () => {
+        if (this.cameraManager) {
+          this.cameraManager.isTransitioning = false;
+          if (this.cameraManager.controls) this.cameraManager.controls.enabled = false;
+        }
+        this.setColonyVisible(false);
         this.currentLevel = new Level3Storm(this);
         this.currentLevel.init(skipIntro);
       },
@@ -536,12 +553,7 @@ export class Game {
   }
 
   startLevel5(skipIntro = false) {
-    if (this.currentLevel) {
-      this.currentLevel.dispose();
-      this.currentLevel = null;
-    }
-
-    if (this.gameHUD) this.gameHUD.hide();
+    this.prepareForDedicatedLevel();
 
     // 1. Camera starts zoom toward habitat in colony view
     const bData = BUILDINGS_DATA.habitat;
@@ -556,6 +568,11 @@ export class Game {
       subtitle: "A micro-leak has appeared in the habitat! Find and seal it to restore air pressure!",
       skipIntro,
       onMidpoint: () => {
+        if (this.cameraManager) {
+          this.cameraManager.isTransitioning = false;
+          if (this.cameraManager.controls) this.cameraManager.controls.enabled = false;
+        }
+        this.setColonyVisible(false);
         this.currentLevel = new Level5Habitat(this);
         this.currentLevel.init(skipIntro);
       },
@@ -566,12 +583,7 @@ export class Game {
   }
 
   startLevel6(skipIntro = false) {
-    if (this.currentLevel) {
-      this.currentLevel.dispose();
-      this.currentLevel = null;
-    }
-
-    if (this.gameHUD) this.gameHUD.hide();
+    this.prepareForDedicatedLevel();
 
     // 1. Camera starts zoom toward antenna in colony view
     const bData = BUILDINGS_DATA.antenna;
@@ -586,6 +598,11 @@ export class Game {
       subtitle: "Aim the large space radio dish, lock onto the satellite, and transmit our message to Earth!",
       skipIntro,
       onMidpoint: () => {
+        if (this.cameraManager) {
+          this.cameraManager.isTransitioning = false;
+          if (this.cameraManager.controls) this.cameraManager.controls.enabled = false;
+        }
+        this.setColonyVisible(false);
         this.currentLevel = new Level6Comms(this);
         this.currentLevel.init(skipIntro);
       },
@@ -596,12 +613,7 @@ export class Game {
   }
 
   startLevel7(skipIntro = false) {
-    if (this.currentLevel) {
-      this.currentLevel.dispose();
-      this.currentLevel = null;
-    }
-
-    if (this.gameHUD) this.gameHUD.hide();
+    this.prepareForDedicatedLevel();
 
     // 1. Camera starts sweeping view of colony
     if (this.cameraManager) {
@@ -615,6 +627,11 @@ export class Game {
       subtitle: "Inspect all 5 colony facilities, celebrate with your crew, and earn your Lunar Survival Certificate!",
       skipIntro,
       onMidpoint: () => {
+        if (this.cameraManager) {
+          this.cameraManager.isTransitioning = false;
+          if (this.cameraManager.controls) this.cameraManager.controls.enabled = false;
+        }
+        this.setColonyVisible(false);
         this.currentLevel = new Level7Final(this);
         this.currentLevel.init(skipIntro);
       },
@@ -933,7 +950,7 @@ export class Game {
 
     // In Welcome screen or Mission Control: gentle panoramic camera drift over low-poly orange Moon
     const isMCActive = this.missionControl?.container?.classList.contains('active');
-    if ((this.navigation.currentScreen === 'welcome' || isMCActive) && !this.cameraManager.isTransitioning) {
+    if (!this.currentLevel && (this.navigation.currentScreen === 'welcome' || isMCActive) && !this.cameraManager.isTransitioning) {
       const radius = 28;
       const angle = elapsedTime * 0.05;
       this.camera.position.x = Math.sin(angle) * radius;
@@ -942,8 +959,8 @@ export class Game {
       this.camera.lookAt(0, 1.5, 0);
     }
 
-    // 3. 3D Player Walking Controller update & camera tracking
-    if (this.playerController && !this.roverController?.active) {
+    // 3. 3D Player Walking Controller update & camera tracking (ONLY when exploring colony)
+    if (!this.currentLevel && this.playerController && !this.roverController?.active) {
       this.playerController.update(delta);
       if (this.playerController.isMoving && !this.cameraManager.isTransitioning) {
         // Smoothly guide camera lookAt towards player position
@@ -955,7 +972,7 @@ export class Game {
     }
 
     // 4. 3D Lunar Rover Driving update (smooth third-person arcade chase camera)
-    if (this.roverController && this.roverController.active) {
+    if (!this.currentLevel && this.roverController && this.roverController.active) {
       this.roverController.update(delta, elapsedTime);
       this.cameraManager.controls.target.set(this.rover.position.x, 1.0, this.rover.position.z);
     }

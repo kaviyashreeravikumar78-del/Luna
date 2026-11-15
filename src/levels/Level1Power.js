@@ -73,7 +73,7 @@ export class Level1Power {
   /**
    * Initializes the dedicated Level 1 stage
    */
-  init() {
+  init(skipIntro = false) {
     this.isActive = true;
     this.scene.add(this.levelGroup);
 
@@ -105,38 +105,27 @@ export class Level1Power {
     this.bindControls();
 
     // 8. Start Entry Cinematic (Commander walk-in, wave, ORBIT dialogue)
-    this.playEntryCinematic();
+    if (skipIntro) {
+      this.skipEntryCinematic();
+    } else {
+      this.playEntryCinematic();
+    }
   }
 
   setColonyVisibility(visible) {
-    const g = this.game;
-    if (g.habitat) g.habitat.visible = visible;
-    if (g.greenhouse) g.greenhouse.visible = visible;
-    if (g.solarArray) g.solarArray.visible = visible;
-    if (g.researchLab) g.researchLab.visible = visible;
-    if (g.antenna) g.antenna.visible = visible;
-    if (g.rover) g.rover.visible = visible;
-    if (g.decorations?.group) g.decorations.group.visible = visible;
-    if (g.facilityAlerts) g.facilityAlerts.forEach(ring => ring.visible = visible);
-    if (g.terrain) g.terrain.visible = visible;
-    if (g.astronautData?.group) g.astronautData.group.visible = visible;
-    if (g.playerAstronaut) g.playerAstronaut.visible = visible;
-    if (g.orbitRobot) g.orbitRobot.visible = visible;
+    if (this.game && this.game.setColonyVisible) {
+      this.game.setColonyVisible(visible);
+    }
   }
 
   setupCamera() {
+    this.camera.position.set(this.targetCamPos.x, this.targetCamPos.y, this.targetCamPos.z);
+    this.camera.lookAt(this.targetCamLookAt.x, this.targetCamLookAt.y, this.targetCamLookAt.z);
     if (this.cameraManager) {
       if (this.cameraManager.controls) {
+        this.cameraManager.controls.target.set(this.targetCamLookAt.x, this.targetCamLookAt.y, this.targetCamLookAt.z);
         this.cameraManager.controls.enabled = false;
       }
-      this.cameraManager.flyTo(
-        { x: this.targetCamPos.x, y: this.targetCamPos.y, z: this.targetCamPos.z },
-        { x: this.targetCamLookAt.x, y: this.targetCamLookAt.y, z: this.targetCamLookAt.z },
-        1000
-      );
-    } else {
-      this.camera.position.copy(this.targetCamPos);
-      this.camera.lookAt(this.targetCamLookAt);
     }
   }
 
@@ -691,12 +680,12 @@ export class Level1Power {
   bindControls() {
     this.onKeyDown = (e) => {
       switch (e.code) {
-        case 'KeyW': case 'ArrowUp': this.keys.forward = true; break;
-        case 'KeyS': case 'ArrowDown': this.keys.backward = true; break;
-        case 'KeyA': case 'ArrowLeft': this.keys.left = true; break;
-        case 'KeyD': case 'ArrowRight': this.keys.right = true; break;
-        case 'Space': this.keys.action = true; this.isActionPressed = true; break;
-        case 'KeyE': this.keys.interact = true; this.handleInteract(); break;
+        case 'KeyW': case 'ArrowUp': this.keys.forward = true; e.preventDefault(); break;
+        case 'KeyS': case 'ArrowDown': this.keys.backward = true; e.preventDefault(); break;
+        case 'KeyA': case 'ArrowLeft': this.keys.left = true; e.preventDefault(); break;
+        case 'KeyD': case 'ArrowRight': this.keys.right = true; e.preventDefault(); break;
+        case 'Space': this.keys.action = true; this.isActionPressed = true; e.preventDefault(); break;
+        case 'KeyE': this.keys.interact = true; this.handleInteract(); e.preventDefault(); break;
       }
     };
 
@@ -713,6 +702,26 @@ export class Level1Power {
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
+  }
+
+  skipEntryCinematic() {
+    this.phase = 1;
+    this.commander.position.z = 3.6;
+    this.commander.position.y = 0.3;
+    const u = this.commander.userData;
+    if (u.rightArm) u.rightArm.rotation.set(0, 0, 0);
+    if (u.leftArm) u.leftArm.rotation.set(0, 0, 0);
+    if (u.brush) u.brush.visible = true;
+
+    orbit.flyTo(window.innerWidth - 180, 100);
+    orbit.say("Hold Space or tap Action to sweep dust off the panels!", {
+      emotion: 'worried',
+      gesture: 'point'
+    });
+
+    if (this.hud) {
+      this.hud.setObjective("Clean the panels (0/6)", "🧹");
+    }
   }
 
   /**

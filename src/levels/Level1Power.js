@@ -105,9 +105,12 @@ export class Level1Power {
     if (g.researchLab) g.researchLab.visible = visible;
     if (g.antenna) g.antenna.visible = visible;
     if (g.rover) g.rover.visible = visible;
-    if (g.decorations) g.decorations.visible = visible;
+    if (g.decorations?.group) g.decorations.group.visible = visible;
+    if (g.facilityAlerts) g.facilityAlerts.forEach(ring => ring.visible = visible);
     if (g.terrain) g.terrain.visible = visible;
     if (g.astronautData?.group) g.astronautData.group.visible = visible;
+    if (g.playerAstronaut) g.playerAstronaut.visible = visible;
+    if (g.orbitRobot) g.orbitRobot.visible = visible;
   }
 
   setupCamera() {

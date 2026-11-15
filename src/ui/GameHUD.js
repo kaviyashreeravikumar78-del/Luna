@@ -93,7 +93,7 @@ export class GameHUD {
       <!-- ACTIVE MISSION BANNER (Center) -->
       <div class="hud-mission-banner" id="hud-mission-banner">
         <span style="font-size:1.4rem;">🎯</span>
-        <span id="hud-mission-text">SOL 1: Walk to the Solar Panels to connect power cables!</span>
+        <span id="hud-mission-text">SOL 1: Open Mission Control to start Day 1 Power Up!</span>
       </div>
 
       <!-- ROVER DRIVING OVERLAY (Visible during Rover Mode) -->
@@ -359,8 +359,8 @@ export class GameHUD {
     switch (sol) {
       case 1:
         makeBannerHTML(
-          '⚡ Sol 1: Reconnect Solar Power Cable!',
-          '📍 Go to Station ➔',
+          '⚡ Sol 1: Power System Offline! Clean & aim solar panels in Mission Control',
+          '🚀 Start Mission ➔',
           () => this.options.onStartMissionSol && this.options.onStartMissionSol(1)
         );
         break;

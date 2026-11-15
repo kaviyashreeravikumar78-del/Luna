@@ -389,46 +389,6 @@
   transform: none;
 }
 
-/* Cable Connection Puzzle Grid */
-.cables-puzzle-container {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 24px;
-  padding: 10px;
-}
-
-.cable-nodes-col {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.cable-node-btn {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  border: 3px solid #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.6rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-}
-
-.cable-node-btn:hover {
-  transform: scale(1.1);
-}
-
-.cable-node-btn.connected {
-  border-color: #00FF88;
-  box-shadow: 0 0 20px #00FF88;
-  cursor: default;
-}
-
 /* Gardening Planter Boxes */
 .greenhouse-garden-row {
   display: flex;

@@ -24,7 +24,6 @@ import { MissionControlScene } from '../scenes/MissionControlScene.js';
 import { gameState } from '../simulation/GameState.js';
 import { PlayerController } from '../gameplay/PlayerController.js';
 import { RoverDrivingController } from '../gameplay/RoverDrivingController.js';
-import { SolarPowerGame } from '../minigames/SolarPowerGame.js';
 import { SolarStormGame } from '../minigames/SolarStormGame.js';
 import { GreenhouseGame } from '../minigames/GreenhouseGame.js';
 import { HabitatPatchGame } from '../minigames/HabitatPatchGame.js';
@@ -241,33 +240,7 @@ export class Game {
       onPlaySolAction: (event) => {
         this.missionControl.hide();
         this.navigation.switchScreen('colony');
-
-        // Sol 1: Launch dedicated Level 1 (Power Up) with smooth iris transition!
-        if (gameState.currentDay === 1 || (event && event.facilityId === 'solar_array')) {
-          this.startLevel1(false);
-          return;
-        }
-
-        // Sol 2: Launch dedicated Level 2 (Water Hunt Driving) with smooth iris transition!
-        if (gameState.currentDay === 2 || (event && event.facilityId === 'habitat' && gameState.currentDay === 2)) {
-          this.startLevel2(false);
-          return;
-        }
-
-        if (this.gameHUD) this.gameHUD.show();
-        this.cameraManager.reset(1200);
-
-        if (this.interaction && event.facilityId) {
-          this.interaction.highlightBuilding(event.facilityId);
-        }
-
-        // Cute Moon Buddy speaks the commander walking greeting!
-        setTimeout(() => {
-          orbit.say("Hello Commander! Walk with W, A, S, D or the Arrow keys. Approach any building to explore!", {
-            emotion: 'happy',
-            gesture: 'wave'
-          });
-        }, 1000);
+        this.startSolMission(gameState.currentDay);
       }
     });
     document.body.appendChild(this.missionControl.element);
@@ -372,10 +345,6 @@ export class Game {
     this.adventure3D = new Adventure3DEngine(this);
 
     // Fallback/reference mini-games
-    this.solarPowerGame = new SolarPowerGame({
-      onComplete: () => this.handleMiniGameSuccess(1, 'choice_1_a')
-    });
-
     this.habitatPatchGame = new HabitatPatchGame({
       onComplete: () => this.handleMiniGameSuccess(2, 'choice_2_a')
     });
@@ -725,19 +694,23 @@ export class Game {
     switch (stationId) {
       case 'solar_array':
         if (currentSol === 1) {
-          this.adventure3D.startLevel1Solar(() => this.handleMiniGameSuccess(1, 'choice_1_a'));
+          this.startLevel1(false);
         } else {
           this.infoPanel.show('solar_array');
         }
         break;
 
       case 'rover':
-        this.adventure3D.startLevel6Rover();
+        if (currentSol === 2) {
+          this.startLevel2(false);
+        } else {
+          this.infoPanel.show('rover');
+        }
         break;
 
       case 'habitat':
         if (currentSol === 2) {
-          this.adventure3D.startLevel2WaterPipe(() => this.handleMiniGameSuccess(2, 'choice_2_a'));
+          this.startLevel2(false);
         } else if (currentSol === 3) {
           this.startLevel3(false);
         } else if (currentSol === 5) {
@@ -764,9 +737,7 @@ export class Game {
         break;
 
       case 'research_lab':
-        if (currentSol === 6) {
-          this.adventure3D.startLevel6Rover();
-        } else if (currentSol === 7) {
+        if (currentSol === 7) {
           this.startLevel7(false);
         } else {
           this.infoPanel.show('research_lab');
@@ -1075,6 +1046,10 @@ export class Game {
       const isPending = (activeEv && !gameState.currentDayDecided);
 
       this.facilityAlerts.forEach((ring, fId) => {
+        if (this.currentLevel) {
+          ring.visible = false;
+          return;
+        }
         const fac = gameState.facilities[fId];
         const isEventTarget = (isPending && activeEv.facilityId === fId);
         const isDegraded = (fac && fac.condition < 70);

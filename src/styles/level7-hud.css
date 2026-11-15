@@ -1,0 +1,535 @@
+/* ==========================================================================
+   Level 7 (Day 7 - Final Colony Check & Grand Finale) Minimal Modern HUD
+   Aesthetic: NASA Golden Sunrise, Electric Cyan, Emerald Nominal, Radiant Gold
+   ========================================================================== */
+
+.l7-hud-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  color: #FFFFFF;
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   TOP HUD BAR
+   -------------------------------------------------------------------------- */
+.l7-top-bar {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: auto;
+  gap: 12px;
+}
+
+.l7-badge-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.l7-sol-pill {
+  background: rgba(6, 16, 30, 0.88);
+  border: 1.5px solid #FFD166;
+  color: #FFD166;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 5px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(255, 209, 102, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.l7-sol-dot {
+  width: 7px;
+  height: 7px;
+  background: #FFD166;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #FFD166;
+  animation: l7-pulse 1.4s infinite ease-in-out;
+}
+
+@keyframes l7-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+
+.l7-stars-pill {
+  background: rgba(6, 16, 30, 0.88);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  color: #FFD700;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+
+/* TOP-CENTER OBJECTIVE CHIP */
+.l7-objective-chip {
+  background: rgba(6, 16, 30, 0.92);
+  border: 2px solid #FFD166;
+  border-radius: 30px;
+  padding: 8px 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 20px rgba(255, 209, 102, 0.25);
+  transition: all 0.3s ease;
+}
+
+.l7-objective-chip.complete {
+  border-color: #06D6A0;
+  box-shadow: 0 6px 22px rgba(6, 214, 160, 0.4);
+}
+
+#l7-obj-icon {
+  font-size: 1.3rem;
+}
+
+#l7-obj-text {
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #FFFFFF;
+}
+
+/* TOP-RIGHT GROUP: 5-FACILITY CHECKLIST ROW + PAUSE */
+.l7-right-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.l7-facility-checklist-card {
+  background: rgba(6, 16, 30, 0.88);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.l7-fac-badges-wrap {
+  display: flex;
+  gap: 6px;
+}
+
+.l7-fac-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  opacity: 0.5;
+  filter: grayscale(80%);
+}
+
+.l7-fac-dot.checked {
+  opacity: 1;
+  filter: grayscale(0%);
+  border-color: #06D6A0;
+  background: rgba(6, 214, 160, 0.2);
+  box-shadow: 0 0 10px rgba(6, 214, 160, 0.5);
+  transform: scale(1.08);
+}
+
+.l7-fac-check-mark {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  background: #06D6A0;
+  color: #06101E;
+  font-size: 0.65rem;
+  font-weight: 900;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.l7-fac-dot.checked .l7-fac-check-mark {
+  display: flex;
+}
+
+.l7-fac-count-text {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #FFD166;
+  letter-spacing: 0.04em;
+  margin-left: 4px;
+}
+
+/* PAUSE BUTTON */
+.btn-l7-pause {
+  background: rgba(6, 16, 30, 0.88);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+}
+
+.btn-l7-pause:hover {
+  border-color: #00E5FF;
+  transform: scale(1.06);
+}
+
+/* --------------------------------------------------------------------------
+   BOTTOM-LEFT: MINI-MAP & VEHICLE TOGGLE
+   -------------------------------------------------------------------------- */
+.l7-bottom-left-group {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.l7-minimap-card {
+  width: 100px;
+  height: 100px;
+  background: rgba(6, 16, 30, 0.85);
+  border: 2px solid rgba(0, 229, 255, 0.4);
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+#l7-minimap-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.btn-l7-rover-toggle {
+  background: rgba(14, 28, 54, 0.9);
+  border: 1.5px solid #FFD166;
+  color: #FFD166;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 900;
+  padding: 8px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.btn-l7-rover-toggle:hover {
+  background: #FFD166;
+  color: #06101E;
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   TOUCH CONTROLS
+   -------------------------------------------------------------------------- */
+.l7-touch-controls {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  pointer-events: none;
+}
+
+.btn-l7-action {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFD166, #FF9E00);
+  border: 3px solid #FFFFFF;
+  color: #06101E;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(255, 209, 102, 0.5);
+  transition: transform 0.15s ease;
+  user-select: none;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.btn-l7-action:active {
+  transform: scale(0.92);
+}
+
+/* --------------------------------------------------------------------------
+   FACILITY MINI-CHALLENGE MODAL (15-20s INTERACTIVE)
+   -------------------------------------------------------------------------- */
+.l7-challenge-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(3, 8, 16, 0.75);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 150;
+}
+
+.l7-challenge-modal-backdrop.open {
+  display: flex;
+}
+
+.l7-challenge-window {
+  background: linear-gradient(180deg, #0E1E34 0%, #06101E 100%);
+  border: 2px solid #FFD166;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 440px;
+  padding: 24px 22px;
+  box-shadow: 0 16px 44px rgba(255, 209, 102, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  animation: l7-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes l7-pop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.l7-chal-icon {
+  font-size: 2.8rem;
+}
+
+.l7-chal-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.l7-chal-instruction {
+  font-size: 0.92rem;
+  color: #D6ECFF;
+  margin: 0;
+}
+
+.l7-chal-action-btn {
+  background: linear-gradient(135deg, #FFD166 0%, #FF9E00 100%);
+  color: #06101E;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 900;
+  padding: 12px 28px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 209, 102, 0.4);
+  transition: all 0.2s ease;
+}
+
+.l7-chal-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(255, 209, 102, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   GRAND FINALE CERTIFICATE SCREEN
+   -------------------------------------------------------------------------- */
+.l7-certificate-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(3, 8, 16, 0.88);
+  backdrop-filter: blur(12px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 220;
+}
+
+.l7-certificate-backdrop.open {
+  display: flex;
+}
+
+.l7-certificate-card {
+  background: linear-gradient(180deg, #0B192C 0%, #06101E 100%);
+  border: 3px solid #FFD166;
+  border-radius: 28px;
+  width: 90%;
+  max-width: 600px;
+  padding: 32px 28px;
+  box-shadow: 0 20px 60px rgba(255, 209, 102, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  position: relative;
+  animation: l7-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.l7-cert-header-icon {
+  font-size: 3rem;
+}
+
+.l7-cert-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+.l7-cert-rank-pill {
+  background: linear-gradient(90deg, rgba(255, 209, 102, 0.2), rgba(255, 158, 0, 0.2));
+  border: 1.5px solid #FFD166;
+  color: #FFD166;
+  font-size: 0.92rem;
+  font-weight: 900;
+  padding: 6px 18px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+}
+
+.l7-cert-stars-total {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #FFD700;
+  letter-spacing: 0.05em;
+}
+
+.l7-cert-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.l7-cert-stat-box {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.l7-cert-stat-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94A3B8;
+  text-transform: uppercase;
+}
+
+.l7-cert-stat-val {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #00E5FF;
+}
+
+.l7-cert-real-idea {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid #06D6A0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: #CBD5E1;
+  text-align: left;
+}
+
+.l7-cert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.btn-l7-cert-primary {
+  background: linear-gradient(135deg, #FFD166 0%, #FF9E00 100%);
+  color: #06101E;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 900;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 209, 102, 0.4);
+}
+
+.btn-l7-cert-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .l7-top-bar {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+  .l7-objective-chip {
+    padding: 6px 14px;
+  }
+  #l7-obj-text {
+    font-size: 0.82rem;
+  }
+  .l7-cert-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

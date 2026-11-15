@@ -41,6 +41,7 @@ import { Level2Water } from '../levels/Level2Water.js';
 import { Level3Storm } from '../levels/Level3Storm.js';
 import { Level5Habitat } from '../levels/Level5Habitat.js';
 import { Level6Comms } from '../levels/Level6Comms.js';
+import { Level7Final } from '../levels/Level7Final.js';
 
 import '../styles/mission-control.css';
 import '../styles/gameplay.css';
@@ -356,9 +357,7 @@ export class Game {
         this.exitRoverMode();
       },
       onClaimVictory: () => {
-        if (this.adventure3D) {
-          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
-        }
+        this.startLevel7(false);
       },
       onScoopIce: () => {
         if (this.roverController && this.roverController.active) {
@@ -596,6 +595,35 @@ export class Game {
     });
   }
 
+  startLevel7(skipIntro = false) {
+    if (this.currentLevel) {
+      this.currentLevel.dispose();
+      this.currentLevel = null;
+    }
+
+    if (this.gameHUD) this.gameHUD.hide();
+
+    // 1. Camera starts sweeping view of colony
+    if (this.cameraManager) {
+      this.cameraManager.flyTo({ x: 0, y: 14, z: 24 }, { x: 0, y: 0, z: 0 }, 1000);
+    }
+
+    // 2. Play smooth circular iris wipe into dedicated Level 7 scene
+    LevelTransition.play({
+      badge: "SOL 7 • MISSION FINALE",
+      title: 'DAY 7: <span class="title-accent">FINAL COLONY CHECK</span>',
+      subtitle: "Inspect all 5 colony facilities, celebrate with your crew, and earn your Lunar Survival Certificate!",
+      skipIntro,
+      onMidpoint: () => {
+        this.currentLevel = new Level7Final(this);
+        this.currentLevel.init(skipIntro);
+      },
+      onComplete: () => {
+        console.log("Level 7 (Final Colony Check) grand finale stage active!");
+      }
+    });
+  }
+
   exitLevelToMissionControl() {
     LevelTransition.exitToMissionControl(
       () => {
@@ -661,9 +689,7 @@ export class Game {
       }
       case 7: {
         if (this.interaction) this.interaction.highlightBuilding(null);
-        setTimeout(() => {
-          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
-        }, 500);
+        this.startLevel7(false);
         break;
       }
       default:
@@ -690,9 +716,9 @@ export class Game {
       return;
     }
 
-    // On Sol 7: any station interaction triggers the Victory Celebration!
+    // On Sol 7: any station interaction triggers Level 7 dedicated finale!
     if (currentSol === 7) {
-      this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+      this.startLevel7(false);
       return;
     }
 
@@ -741,7 +767,7 @@ export class Game {
         if (currentSol === 6) {
           this.adventure3D.startLevel6Rover();
         } else if (currentSol === 7) {
-          this.adventure3D.startLevel7Victory(() => this.handleFinalInspectionSuccess());
+          this.startLevel7(false);
         } else {
           this.infoPanel.show('research_lab');
         }

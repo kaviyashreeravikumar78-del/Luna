@@ -1,7 +1,13 @@
+import { orbitVoice } from '../audio/OrbitVoice.js';
+
 /**
- * LUNA: Mission Survival - Module 2 & 3: Mission Control Top Header
- * Features live telemetry indicators, animated radio audio equalizer spectrum,
- * and command deck status.
+ * LUNA: Mission Survival - Mission Control Top HUD Header
+ * Clean, unclipped game mission-select HUD matching the home screen's visual identity.
+ * Shows:
+ *  - Mission badge (LUNA-01)
+ *  - Sol status (Day X of 7)
+ *  - Crew status (4 small astronaut icons, green = healthy)
+ *  - Action buttons ("Back to Colony", "Help" with ORBIT, "Reset")
  */
 export class MissionHeader {
   constructor(options) {
@@ -15,70 +21,84 @@ export class MissionHeader {
     header.id = 'mc-section-header';
 
     header.innerHTML = `
+      <!-- LEFT: Mission Badge, Sol Pill, Crew Dots -->
       <div class="mc-header-left">
         <div class="mc-brand-box">
           <span class="mc-logo-badge">LUNA-01</span>
-          <div class="mc-title-group">
-            <h1 class="mc-header-title">MISSION CONTROL</h1>
-            <span class="mc-header-sub">Outpost Command & Telemetry Deck</span>
-          </div>
-
-          <!-- Animated Deep Space Radio Audio Spectrum Equalizer -->
-          <div class="mc-audio-visualizer" title="Deep Space Radio Uplink Frequency">
-            <span class="eq-bar eq-bar-1"></span>
-            <span class="eq-bar eq-bar-2"></span>
-            <span class="eq-bar eq-bar-3"></span>
-            <span class="eq-bar eq-bar-4"></span>
-            <span class="eq-bar eq-bar-5"></span>
-            <span class="eq-bar eq-bar-6"></span>
-            <span class="eq-bar eq-bar-7"></span>
+          <div class="mc-sol-pill" id="header-sol-pill">
+            <span class="pulse-indicator"></span>
+            <span id="header-sol-text">Day 1 of 7</span>
           </div>
         </div>
 
-        <div class="mc-telemetry-pill-group">
-          <div class="mc-badge-pill" id="header-status-pill">
-            <span class="pulse-indicator"></span>
-            <span id="header-status-text">STATUS: OPERATIONAL</span>
-          </div>
-          <div class="mc-stat-item">
-            <span class="mc-stat-label">LOCATION:</span>
-            <span class="mc-stat-val">Lunar South Pole</span>
-          </div>
-          <div class="mc-stat-item">
-            <span class="mc-stat-label">TIMELINE:</span>
-            <span class="mc-stat-val text-gold" id="header-sol-text">SOL 1 OF 7</span>
-          </div>
-          <div class="mc-stat-item">
-            <span class="mc-stat-label">CREW:</span>
-            <span class="mc-stat-val text-cyan" id="header-crew-text">4 / 4 HEALTHY</span>
+        <!-- 4 Astronaut Health Icons -->
+        <div class="mc-crew-dots-strip" title="Crew Vitals Status">
+          <span class="mc-crew-dots-label">Crew:</span>
+          <div class="mc-crew-dots" id="header-crew-dots">
+            <div class="mc-crew-dot healthy" data-crew="evelyn" title="Cmdr. Evelyn: Healthy">
+              <span>👩‍🚀</span>
+              <span class="dot-indicator"></span>
+            </div>
+            <div class="mc-crew-dot healthy" data-crew="marcus" title="Eng. Marcus: Healthy">
+              <span>👨‍🔧</span>
+              <span class="dot-indicator"></span>
+            </div>
+            <div class="mc-crew-dot healthy" data-crew="chen" title="Bio. Aris: Healthy">
+              <span>🌱</span>
+              <span class="dot-indicator"></span>
+            </div>
+            <div class="mc-crew-dot healthy" data-crew="maya" title="Spec. Maya: Healthy">
+              <span>📡</span>
+              <span class="dot-indicator"></span>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- CENTER: Title -->
+      <div class="mc-header-center">
+        <h1 class="mc-header-title">MISSION CONTROL</h1>
+        <span class="mc-header-sub">South Pole Outpost Command</span>
+      </div>
+
+      <!-- RIGHT: Action Buttons -->
       <div class="mc-header-right">
-        <button id="btn-mc-reset-mission" class="btn-mc-reset-mission" title="Reset mission and start fresh">
-          🔄 Reset
+        <button id="btn-mc-return-colony" class="btn-mc btn-mc-secondary" title="Return to 3D Lunar Colony">
+          <span>← Back to Colony</span>
         </button>
-        <button id="btn-mc-orbit-guide" class="btn-mc btn-mc-robot" title="Ask ORBIT to explain this deck!">
-          <span>🤖 Explain Dashboard</span>
+        <button id="btn-mc-orbit-guide" class="btn-mc btn-mc-help" title="Ask ORBIT for help!">
+          <span>❓ Help</span>
         </button>
-        <button id="btn-mc-return-colony" class="btn-mc btn-mc-primary" title="Return to the 3D Lunar Colony">
-          <span>← Return to 3D Colony</span>
+        <button id="btn-mc-reset-mission" class="btn-mc btn-mc-reset" title="Reset mission and start fresh">
+          <span>🔄 Reset</span>
         </button>
       </div>
     `;
 
-    header.querySelector('#btn-mc-reset-mission').addEventListener('click', () => {
-      if (confirm("Are you sure you want to abort the current mission and restart at Sol 1?")) {
+    // Audio micro-interactions & event listeners
+    const resetBtn = header.querySelector('#btn-mc-reset-mission');
+    const helpBtn = header.querySelector('#btn-mc-orbit-guide');
+    const colonyBtn = header.querySelector('#btn-mc-return-colony');
+
+    [resetBtn, helpBtn, colonyBtn].forEach(btn => {
+      if (!btn) return;
+      btn.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    });
+
+    resetBtn.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
+      if (confirm("Reset mission? This will restart the 7-day expedition from Sol 1.")) {
         if (this.options.onResetMission) this.options.onResetMission();
       }
     });
 
-    header.querySelector('#btn-mc-orbit-guide').addEventListener('click', () => {
+    helpBtn.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       if (this.options.onExplainDashboard) this.options.onExplainDashboard();
     });
 
-    header.querySelector('#btn-mc-return-colony').addEventListener('click', () => {
+    colonyBtn.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       if (this.options.onReturnToColony) this.options.onReturnToColony();
     });
 
@@ -88,32 +108,32 @@ export class MissionHeader {
   update(gameState) {
     if (!gameState) return;
 
-    // 1. Sol Timeline
+    // 1. Sol Timeline pill
     const solEl = this.element.querySelector('#header-sol-text');
     if (solEl) {
-      solEl.textContent = `SOL ${gameState.currentDay} OF ${gameState.maxDays}`;
+      solEl.textContent = `Day ${gameState.currentDay} of ${gameState.maxDays || 7}`;
     }
 
-    // 2. Crew Count
-    const healthyCount = Object.values(gameState.crew).filter(c => c.health >= 60).length;
-    const crewEl = this.element.querySelector('#header-crew-text');
-    if (crewEl) {
-      crewEl.textContent = `${healthyCount} / 4 HEALTHY`;
-      crewEl.className = healthyCount === 4 ? 'mc-stat-val text-cyan' : 'mc-stat-val text-gold';
-    }
-
-    // 3. Status
-    const statusEl = this.element.querySelector('#header-status-text');
-    if (statusEl) {
-      if (gameState.missionStatus === 'completed') {
-        statusEl.textContent = 'STATUS: EXPEDITION COMPLETED 🏆';
-      } else if (gameState.missionStatus === 'failed') {
-        statusEl.textContent = 'STATUS: EMERGENCY FAILURE ❌';
-      } else if (gameState.warnings && gameState.warnings.length > 0) {
-        statusEl.textContent = `STATUS: ${gameState.warnings.length} WARNINGS ⚠️`;
-      } else {
-        statusEl.textContent = 'STATUS: OPERATIONAL ✅';
-      }
+    // 2. Crew 4-dot status
+    if (gameState.crew) {
+      const crewKeys = ['evelyn', 'marcus', 'chen', 'maya'];
+      crewKeys.forEach(key => {
+        const member = gameState.crew[key];
+        const dot = this.element.querySelector(`.mc-crew-dot[data-crew="${key}"]`);
+        if (dot && member) {
+          dot.classList.remove('healthy', 'warning', 'critical');
+          if (member.health >= 70) {
+            dot.classList.add('healthy');
+            dot.title = `${member.name}: ${member.health}% Healthy`;
+          } else if (member.health >= 40) {
+            dot.classList.add('warning');
+            dot.title = `${member.name}: ${member.health}% Injured`;
+          } else {
+            dot.classList.add('critical');
+            dot.title = `${member.name}: ${member.health}% Critical!`;
+          }
+        }
+      });
     }
   }
 }

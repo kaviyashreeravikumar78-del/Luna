@@ -741,8 +741,9 @@ export class Game {
       this.interaction.update(elapsedTime);
     }
 
-    // In Welcome screen: gentle panoramic camera drift
-    if (this.navigation.currentScreen === 'welcome' && !this.cameraManager.isTransitioning) {
+    // In Welcome screen or Mission Control: gentle panoramic camera drift over low-poly orange Moon
+    const isMCActive = this.missionControl?.container?.classList.contains('active');
+    if ((this.navigation.currentScreen === 'welcome' || isMCActive) && !this.cameraManager.isTransitioning) {
       const radius = 28;
       const angle = elapsedTime * 0.05;
       this.camera.position.x = Math.sin(angle) * radius;

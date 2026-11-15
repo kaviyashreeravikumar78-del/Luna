@@ -1,12 +1,14 @@
 import { MISSION_DATA } from '../data/mission.js';
 import { BUILDINGS_DATA } from '../data/buildings.js';
+import { orbitVoice } from '../audio/OrbitVoice.js';
 
 /**
  * Game Screen Navigation Manager
- * Friendly, kid-friendly flow with interactive "How to Play with ORBIT" tutorial screen
+ * Kid-friendly flow with interactive "How to Play with ORBIT" tutorial screen
+ * Redesigned with warm rounded glass aesthetics matching the home screen.
  */
 export class Navigation {
-  constructor(options) {
+  constructor(options = {}) {
     this.options = options; // { onStartMission, onEnterColony, onResetCamera, onReplayOrbit, onSelectBuilding }
     this.currentScreen = 'welcome';
     this.createDOM();
@@ -64,20 +66,21 @@ export class Navigation {
         </div>
       </section>
 
-      <!-- SCREEN 2: MISSION BRIEFING -->
+      <!-- SCREEN 2: MISSION BRIEFING (MEET YOUR CREW & BASE) -->
       <section id="screen-briefing" class="game-screen">
         <div class="briefing-container">
           <div class="briefing-header">
             <div class="badge-pill">
               <span class="pulse-indicator"></span>
-              <span>YOUR MISSION ASSIGNMENT 📋</span>
+              <span>EXPEDITION BRIEFING 📋</span>
             </div>
             <h2 class="briefing-title">MEET YOUR CREW & BASE!</h2>
             <p class="briefing-objective">
-              <strong>YOUR GOAL:</strong> Keep your 4 space friends safe, warm, and happy while exploring the Moon base!
+              <strong>YOUR MISSION:</strong> Keep your 4 space friends safe, warm, and happy while exploring Outpost LUNA-01!
             </p>
           </div>
 
+          <!-- Crew Cards -->
           <div class="briefing-crew-section">
             <h3 class="section-heading">YOUR 4 ASTRONAUT FRIENDS</h3>
             <div class="crew-cards-row">
@@ -91,7 +94,7 @@ export class Navigation {
                     <span class="crew-role">${c.role}</span>
                     <div class="crew-status-row">
                       <span class="crew-status-dot"></span>
-                      <span>${c.status} • O2: ${c.oxygenLevel}%</span>
+                      <span>100% Healthy • O₂ 99%</span>
                     </div>
                   </div>
                 </div>
@@ -99,65 +102,84 @@ export class Navigation {
             </div>
           </div>
 
+          <!-- Base Facilities Highlight -->
           <div class="briefing-base-preview">
             <div class="spec-highlight-card">
               <span class="spec-title">BASE TELEMETRY</span>
-              <span class="spec-detail">6 Surface Facilities Operational • Autonomous Power Active • Comms Linked</span>
+              <span class="spec-detail">🏠 Habitat • 🌱 Greenhouses • ⚡ Solar Array • 🔬 Lab • 📡 Deep Space Dish • 🚜 Rover</span>
             </div>
           </div>
 
           <div class="briefing-footer">
             <button id="btn-back-to-welcome" class="btn btn-secondary">← Back to Menu</button>
-            <button id="btn-to-how-to-play" class="btn btn-primary btn-large">
-              <span>HOW TO PLAY WITH ORBIT 🤖 →</span>
+            <button id="btn-to-how-to-play" class="btn btn-primary btn-large btn-glow-large">
+              <span>MEET ORBIT & HOW TO PLAY ⭐ →</span>
             </button>
           </div>
         </div>
       </section>
 
-      <!-- SCREEN 2.5: HOW TO PLAY WITH THE ROBOT (KID-FRIENDLY TUTORIAL SCREEN) -->
+      <!-- SCREEN 2.5: HOW TO PLAY WITH ORBIT -->
       <section id="screen-how-to-play" class="game-screen">
         <div class="how-to-play-container">
+          <!-- ORBIT Buddy Banner -->
           <div class="htp-robot-banner">
-            <div class="htp-robot-avatar">
-              <div class="orbit-eye-pulse"></div>
+            <div class="htp-orbit-buddy-avatar">
+              <svg width="68" height="68" viewBox="0 0 140 160">
+                <!-- Mini Creature in Helmet -->
+                <circle cx="70" cy="64" r="38" fill="#FDE2D2"/>
+                <ellipse cx="45" cy="74" rx="7.5" ry="4.5" fill="#FF6584" opacity="0.75"/>
+                <ellipse cx="95" cy="74" rx="7.5" ry="4.5" fill="#FF6584" opacity="0.75"/>
+                <ellipse cx="70" cy="69" rx="3.5" ry="2.5" fill="#D95736"/>
+                <!-- Happy Eyes ^ ^ -->
+                <path d="M 44 65 Q 53 52 62 65" fill="none" stroke="#102C49" stroke-width="4" stroke-linecap="round"/>
+                <path d="M 78 65 Q 87 52 96 65" fill="none" stroke="#102C49" stroke-width="4" stroke-linecap="round"/>
+                <!-- Smile -->
+                <path d="M 61 74 Q 70 85 79 74 Z" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
+                <!-- Helmet -->
+                <circle cx="70" cy="64" r="46" fill="rgba(0, 229, 255, 0.15)" stroke="#94A3B8" stroke-width="2.5"/>
+              </svg>
             </div>
             <div class="htp-robot-text">
-              <span class="htp-badge">MEET YOUR ROBOT GUIDE</span>
-              <h2 class="htp-title">"Hi! I'm ORBIT! Here's how to play!"</h2>
-              <p class="htp-subtitle">Exploring the Moon base is super fun and easy. Here are the 4 simple controls:</p>
+              <div class="badge-pill">
+                <span class="pulse-indicator"></span>
+                <span>YOUR SPACE COMPANION</span>
+              </div>
+              <h2 class="htp-title">"Hi! I'm ORBIT! Here's how to explore!"</h2>
+              <p class="htp-subtitle">Exploring your Moon base is super fun and easy. Here are the 4 simple controls:</p>
             </div>
           </div>
 
+          <!-- 4 Tutorial Cards Grid -->
           <div class="htp-cards-grid">
             <div class="htp-card">
               <div class="htp-card-icon">🖱️</div>
               <h3 class="htp-card-title">1. Look Around in 3D</h3>
-              <p class="htp-card-desc">Click and drag your mouse (or swipe your finger) to spin the Moon base around in any direction!</p>
+              <p class="htp-card-desc">Click and drag your mouse (or swipe your finger) to spin the Moon base in any direction!</p>
             </div>
 
             <div class="htp-card">
               <div class="htp-card-icon">🔍</div>
               <h3 class="htp-card-title">2. Zoom Close & Far</h3>
-              <p class="htp-card-desc">Scroll your mouse wheel (or pinch the screen) to get super close to buildings and astronaut friends!</p>
+              <p class="htp-card-desc">Scroll your mouse wheel (or pinch your screen) to get super close to buildings and astronaut friends!</p>
             </div>
 
             <div class="htp-card">
               <div class="htp-card-icon">👆</div>
-              <h3 class="htp-card-title">3. Click to Explore</h3>
-              <p class="htp-card-desc">Click any building, rover, or greenhouse to open a fun info card and see what it does!</p>
+              <h3 class="htp-card-title">3. Click to Inspect</h3>
+              <p class="htp-card-desc">Click any building, rover, or greenhouse to open a fun info card and see how it works!</p>
             </div>
 
             <div class="htp-card">
-              <div class="htp-card-icon">🤖</div>
+              <div class="htp-card-icon">⭐</div>
               <h3 class="htp-card-title">4. Ask ORBIT Anytime</h3>
-              <p class="htp-card-desc">Click the <strong>'ORBIT Guide'</strong> button in the top bar whenever you want me to give you a guided tour!</p>
+              <p class="htp-card-desc">Click the <strong>'ORBIT Guide'</strong> button in the top bar whenever you want me to give you a tour!</p>
             </div>
           </div>
 
           <div class="htp-footer">
             <button id="btn-back-to-briefing" class="btn btn-secondary">← Back to Crew</button>
-            <button id="btn-enter-colony" class="btn btn-primary btn-large btn-glow-pulse">
+            <button id="btn-enter-colony" class="btn-glow-large pulse-glow">
               <span>LET'S GO TO THE MOON BASE! 🚀</span>
             </button>
           </div>
@@ -188,7 +210,7 @@ export class Navigation {
 
           <div class="hud-right">
             <button id="btn-hud-orbit" class="btn-hud btn-hud-robot" title="Ask ORBIT for a tour!">
-              <span>🤖 ORBIT Guide</span>
+              <span>⭐ ORBIT Guide</span>
             </button>
             <button id="btn-hud-reset-cam" class="btn-hud" title="Reset 3D Camera">
               <span>🎥 Reset View</span>
@@ -225,52 +247,81 @@ export class Navigation {
 
   bindEvents() {
     // Welcome Screen -> Go to Briefing
-    this.navLayer.querySelector('#btn-start-mission').addEventListener('click', () => {
+    const btnStart = this.navLayer.querySelector('#btn-start-mission');
+    btnStart.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    btnStart.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       this.switchScreen('briefing');
       if (this.options.onStartMission) this.options.onStartMission();
     });
 
     // Briefing Screen -> Go to How to Play or Back
-    this.navLayer.querySelector('#btn-back-to-welcome').addEventListener('click', () => {
+    const btnBackWel = this.navLayer.querySelector('#btn-back-to-welcome');
+    btnBackWel.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    btnBackWel.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       this.switchScreen('welcome');
     });
 
-    this.navLayer.querySelector('#btn-to-how-to-play').addEventListener('click', () => {
+    const btnToHtp = this.navLayer.querySelector('#btn-to-how-to-play');
+    btnToHtp.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    btnToHtp.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       this.switchScreen('how-to-play');
     });
 
     // How to Play Screen -> Go to Colony or Back
-    this.navLayer.querySelector('#btn-back-to-briefing').addEventListener('click', () => {
+    const btnBackBrief = this.navLayer.querySelector('#btn-back-to-briefing');
+    btnBackBrief.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    btnBackBrief.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       this.switchScreen('briefing');
     });
 
-    this.navLayer.querySelector('#btn-enter-colony').addEventListener('click', () => {
+    const btnEnter = this.navLayer.querySelector('#btn-enter-colony');
+    btnEnter.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    btnEnter.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       this.switchScreen('colony');
       if (this.options.onEnterColony) this.options.onEnterColony();
     });
 
     // Colony HUD buttons
-    this.navLayer.querySelector('#btn-hud-orbit').addEventListener('click', () => {
+    const btnHudOrbit = this.navLayer.querySelector('#btn-hud-orbit');
+    btnHudOrbit.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    btnHudOrbit.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       if (this.options.onReplayOrbit) this.options.onReplayOrbit();
     });
 
-    this.navLayer.querySelector('#btn-hud-reset-cam').addEventListener('click', () => {
+    const btnResetCam = this.navLayer.querySelector('#btn-hud-reset-cam');
+    btnResetCam.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    btnResetCam.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       if (this.options.onResetCamera) this.options.onResetCamera();
     });
 
-    this.navLayer.querySelector('#btn-hud-mission-ctrl').addEventListener('click', () => {
+    const btnMC = this.navLayer.querySelector('#btn-hud-mission-ctrl');
+    btnMC.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    btnMC.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       if (this.options.onOpenMissionControl) {
         this.options.onOpenMissionControl();
       }
     });
 
-    this.navLayer.querySelector('#btn-hud-menu').addEventListener('click', () => {
+    const btnMenu = this.navLayer.querySelector('#btn-hud-menu');
+    btnMenu.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+    btnMenu.addEventListener('click', () => {
+      orbitVoice.playChirp('click');
       this.switchScreen('welcome');
     });
 
     // Quick dock building buttons
     this.navLayer.querySelectorAll('.dock-btn').forEach(btn => {
+      btn.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
       btn.addEventListener('click', (e) => {
+        orbitVoice.playChirp('click');
         const buildingId = e.currentTarget.getAttribute('data-building');
         if (buildingId && this.options.onSelectBuilding) {
           this.options.onSelectBuilding(buildingId);

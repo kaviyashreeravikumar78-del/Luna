@@ -1,174 +1,123 @@
-import { orbitVoice } from '../audio/OrbitVoice.js';
+import { orbit } from '../components/Orbit.js';
 
 /**
- * LUNA: Mission Survival - Module 2: Dedicated 5-Step Mission Control ORBIT Guide
+ * LUNA: Mission Survival - Mission Control ORBIT Guided Tour
+ * 5 short steps where ORBIT flies to each part of the screen, points, and speaks 1 short sentence:
+ *  1. Day Timeline (Expedition Map)
+ *  2. Resource Gauges (Life Support)
+ *  3. Crew Cards (Astronauts)
+ *  4. Base Facilities (Surface Buildings)
+ *  5. Start Mission Pill Button (Action Bar)
  */
-export const MC_TUTORIAL_STEPS = [
+export const MC_GUIDE_STEPS = [
   {
-    stepIndex: 1,
-    targetSectionId: "mc-section-header",
-    title: "Welcome to Mission Control! 🚀",
-    message: "Commander, welcome to your central command deck! Look up at the top bar—it shows your mission name (LUNA-01), your location at the Moon's South Pole, and confirms that all 4 crew members are safe on Day 1!",
+    targetId: 'mc-section-timeline',
+    emotion: 'happy',
+    gesture: 'point',
+    text: "Here is your 7-Sol expedition map with shiny stars to earn!"
   },
   {
-    stepIndex: 2,
-    targetSectionId: "mc-section-resources",
-    title: "1. Vital Colony Resources 💧",
-    message: "Here are our four vital survival resources: Oxygen, Water, Food, and Power! All are at 100% Excellent right now. Click any resource card anytime to learn where it comes from and how it works!",
+    targetId: 'mc-section-resources',
+    emotion: 'thinking',
+    gesture: 'point',
+    text: "These 4 big gauges monitor our Oxygen, Water, Food, and Power!"
   },
   {
-    stepIndex: 3,
-    targetSectionId: "mc-section-crew",
-    title: "2. Your Astronaut Crew 👩‍🚀",
-    message: "Meet your 4 space friends: Commander Evelyn, Chief Engineer Marcus, Astrobiologist Aris, and Communications Specialist Maya! Their health is 100% full. Click any astronaut to read their bio and daily activities!",
+    targetId: 'mc-section-crew',
+    emotion: 'happy',
+    gesture: 'wave',
+    text: "Keep our 4 astronaut friends healthy and happy all week!"
   },
   {
-    stepIndex: 4,
-    targetSectionId: "mc-section-facilities",
-    title: "3. Base Facilities & 3D Link 🏛️",
-    message: "This section monitors our 5 main surface buildings. Everything is 100% Operational! If you click a building, you can press 'View in 3D Colony' to immediately fly the 3D camera right to it on the Moon!",
+    targetId: 'mc-section-facilities',
+    emotion: 'excited',
+    gesture: 'point',
+    text: "These 5 base buildings keep our Moon colony running smoothly!"
   },
   {
-    stepIndex: 5,
-    targetSectionId: "mc-section-timeline",
-    title: "4. Seven-Day Mission Timeline 🗓️",
-    message: "Here is your 7-day survival timeline! Day 1 is active right now. Days 2 through 7 are locked for future adventures. Whenever you're ready, click 'Return to 3D Colony' at the top to explore the Moon base again!",
+    targetId: 'mc-survival-action-bar',
+    emotion: 'celebrate',
+    gesture: 'celebrate',
+    text: "Click this big button to start today's physical mission! Have fun!"
   }
 ];
 
 export class MissionControlOrbitGuide {
-  constructor(onCompleteCallback) {
+  constructor(onCompleteCallback = null) {
     this.onComplete = onCompleteCallback;
     this.currentStep = 0;
-    this.storageKey = 'luna_mc_tutorial_completed';
-    this.createDOM();
-  }
-
-  createDOM() {
-    this.container = document.createElement('div');
-    this.container.className = 'mc-orbit-guide-box';
-    this.container.style.display = 'none';
-
-    this.container.innerHTML = `
-      <div class="orbit-avatar-badge">
-        <div class="orbit-eye-pulse"></div>
-        <span class="orbit-label">O.R.B.I.T.</span>
-        <button class="btn-voice-toggle" id="mc-voice-toggle" title="Toggle Robot Voice">
-          ${orbitVoice.isMuted ? '🔇 Muted' : '🔊 Voice ON'}
-        </button>
-      </div>
-      <div class="orbit-dialogue-content">
-        <div class="orbit-step-counter" id="mc-orbit-counter">Step 1 of 5</div>
-        <h4 class="orbit-step-title" id="mc-orbit-title">Welcome</h4>
-        <p class="orbit-message-text" id="mc-orbit-text">Message</p>
-        <div class="orbit-btn-row">
-          <button class="btn-orbit-secondary" id="mc-orbit-back">← Back</button>
-          <button class="btn-orbit-skip" id="mc-orbit-skip">Skip</button>
-          <button class="btn-orbit-primary" id="mc-orbit-next">Next →</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(this.container);
-
-    this.container.querySelector('#mc-orbit-back').addEventListener('click', () => this.prevStep());
-    this.container.querySelector('#mc-orbit-next').addEventListener('click', () => this.nextStep());
-    this.container.querySelector('#mc-orbit-skip').addEventListener('click', () => this.skip());
-
-    const voiceBtn = this.container.querySelector('#mc-voice-toggle');
-    voiceBtn.addEventListener('click', () => {
-      const active = orbitVoice.toggleMute();
-      voiceBtn.textContent = active ? '🔊 Voice ON' : '🔇 Muted';
-      if (active) {
-        const step = MC_TUTORIAL_STEPS[this.currentStep];
-        if (step) orbitVoice.speak(step.message);
-      }
-    });
+    this.storageKey = 'luna_mc_orbit_guide_seen';
+    this.isRunning = false;
   }
 
   start(force = false) {
-    if (!force && localStorage.getItem(this.storageKey) === 'true') {
+    if (!force && typeof localStorage !== 'undefined' && localStorage.getItem(this.storageKey) === 'true') {
       return;
     }
     this.currentStep = 0;
-    this.container.style.display = 'flex';
-    this.renderStep();
-  }
-
-  renderStep() {
-    const step = MC_TUTORIAL_STEPS[this.currentStep];
-    if (!step) return;
-
-    this.container.querySelector('#mc-orbit-counter').textContent = `Step ${step.stepIndex} of ${MC_TUTORIAL_STEPS.length}`;
-    this.container.querySelector('#mc-orbit-title').textContent = step.title;
-    this.container.querySelector('#mc-orbit-text').textContent = step.message;
-
-    const backBtn = this.container.querySelector('#mc-orbit-back');
-    const nextBtn = this.container.querySelector('#mc-orbit-next');
-    backBtn.disabled = this.currentStep === 0;
-
-    if (this.currentStep === MC_TUTORIAL_STEPS.length - 1) {
-      nextBtn.textContent = 'Got it! ✓';
-    } else {
-      nextBtn.textContent = 'Next →';
-    }
-
-    // Highlight target section
-    this.highlightSection(step.targetSectionId);
-
-    // Speak message with robot voice
-    orbitVoice.speak(step.message);
-  }
-
-  highlightSection(sectionId) {
-    // Remove existing highlights
-    document.querySelectorAll('.mc-tutorial-highlighted').forEach(el => {
-      el.classList.remove('mc-tutorial-highlighted');
-    });
-
-    if (sectionId) {
-      const el = document.getElementById(sectionId);
-      if (el) {
-        el.classList.add('mc-tutorial-highlighted');
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }
-
-  nextStep() {
-    orbitVoice.stop();
-    if (this.currentStep < MC_TUTORIAL_STEPS.length - 1) {
-      this.currentStep++;
-      this.renderStep();
-    } else {
-      this.complete();
-    }
-  }
-
-  prevStep() {
-    orbitVoice.stop();
-    if (this.currentStep > 0) {
-      this.currentStep--;
-      this.renderStep();
-    }
-  }
-
-  skip() {
-    orbitVoice.stop();
-    this.complete();
-  }
-
-  complete() {
-    orbitVoice.stop();
-    localStorage.setItem(this.storageKey, 'true');
-    this.container.style.display = 'none';
-    document.querySelectorAll('.mc-tutorial-highlighted').forEach(el => {
-      el.classList.remove('mc-tutorial-highlighted');
-    });
-    if (this.onComplete) this.onComplete();
+    this.isRunning = true;
+    this.runStep();
   }
 
   replay() {
     this.start(true);
+  }
+
+  runStep() {
+    if (this.currentStep >= MC_GUIDE_STEPS.length) {
+      this.finish();
+      return;
+    }
+
+    const step = MC_GUIDE_STEPS[this.currentStep];
+    const isLast = this.currentStep === MC_GUIDE_STEPS.length - 1;
+    const targetEl = document.getElementById(step.targetId);
+
+    // Fly ORBIT near target element
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const rect = targetEl.getBoundingClientRect();
+      const targetX = Math.max(20, Math.min(window.innerWidth - 200, rect.left + rect.width - 160));
+      const targetY = Math.max(80, Math.min(window.innerHeight - 200, rect.top + 20));
+      orbit.flyTo(targetX, targetY);
+      orbit.pointAt(targetEl);
+    }
+
+    // Speak single short sentence with Next button on bubble
+    orbit.say(step.text, {
+      emotion: step.emotion,
+      gesture: step.gesture,
+      showNextBtn: true,
+      nextBtnText: isLast ? "Let's Go! 🚀" : "Next ➔",
+      onComplete: () => {
+        this.currentStep++;
+        if (this.currentStep < MC_GUIDE_STEPS.length) {
+          this.runStep();
+        } else {
+          this.finish();
+        }
+      }
+    });
+  }
+
+  finish() {
+    this.isRunning = false;
+    orbit.clearPoint();
+    orbit.hideBubble();
+    orbit.setEmotion('happy');
+    orbit.setGesture('wave');
+
+    // Fly safely back to corner
+    orbit.flyTo(window.innerWidth - 185, window.innerHeight - 245);
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(this.storageKey, 'true');
+    }
+
+    if (this.onComplete) this.onComplete();
+  }
+
+  skip() {
+    this.finish();
   }
 }

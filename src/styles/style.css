@@ -422,8 +422,19 @@ html, body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.htp-robot-avatar {
+.htp-robot-avatar,
+.htp-orbit-buddy-avatar {
   flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: rgba(16, 44, 73, 0.9);
+  border: 2px solid var(--color-gold-accent);
+  box-shadow: 0 0 20px rgba(255, 209, 102, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: creatureHover 3.2s ease-in-out infinite;
 }
 
 .htp-robot-text {

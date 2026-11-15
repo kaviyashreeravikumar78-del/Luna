@@ -1,18 +1,58 @@
-import { CREW_DATA } from '../data/crew.js';
+import { orbitVoice } from '../audio/OrbitVoice.js';
+
+const CREW_BIOS = {
+  evelyn: {
+    id: 'evelyn',
+    name: 'Dr. Evelyn Vance',
+    role: 'Mission Commander',
+    roleIcon: '👩‍🚀',
+    avatarEmoji: '👩‍🚀',
+    avatarColor: '#D95736',
+    fact: "Dr. Evelyn has logged over 450 spacewalk hours! She keeps everyone working safely together.",
+    specialty: "Flight Command & Base Safety"
+  },
+  marcus: {
+    id: 'marcus',
+    name: 'Marcus Diaz',
+    role: 'Chief Engineer',
+    roleIcon: '👨‍🔧',
+    avatarEmoji: '👨‍🔧',
+    avatarColor: '#3A86FF',
+    fact: "Marcus designed our lunar solar array tracking joints and repairs any broken rover parts!",
+    specialty: "Robotics & Power Systems"
+  },
+  aris: {
+    id: 'aris',
+    name: 'Dr. Aris Thorne',
+    role: 'Astrobiologist',
+    roleIcon: '🌱',
+    avatarEmoji: '🌱',
+    avatarColor: '#06D6A0',
+    fact: "Dr. Aris grows fresh salad greens in our bio-dome to give the crew fresh food and crisp oxygen!",
+    specialty: "Plant Science & Oxygen Cycle"
+  },
+  maya: {
+    id: 'maya',
+    name: 'Maya Lin',
+    role: 'Comms Specialist',
+    roleIcon: '📡',
+    avatarEmoji: '📡',
+    avatarColor: '#FFD166',
+    fact: "Maya beams messages across 384,000 km so we can chat with Earth in just 1.3 seconds!",
+    specialty: "Deep Space Radio & Telemetry"
+  }
+};
 
 /**
- * LUNA: Mission Survival - Module 2 & 3: Animated Crew Monitoring & ECG Oscilloscope
- * Features live animated real-time ECG cardiac oscilloscope waveforms for all 4 astronauts,
- * biometric telemetry meters, and interactive medical detail modal.
+ * LUNA: Mission Survival - Module 2 & 3: Crew Character Cards
+ * 4 character cards with avatars, role badges, animated ECG heartbeat lines,
+ * and tap-for-fact popups (max 2 short lines).
  */
 export class CrewPanel {
   constructor() {
     this.currentCrew = {};
-    this.ecgAnimId = null;
-    this.ecgData = {};
     this.element = this.createDOM();
     this.createModal();
-    this.initECGAnimation();
   }
 
   createDOM() {
@@ -24,50 +64,45 @@ export class CrewPanel {
       <div class="mc-panel-header">
         <div class="mc-panel-title-row">
           <span class="mc-panel-icon">👩‍🚀</span>
-          <h2 class="mc-panel-title">EXPEDITION CREW BIOMETRICS & DOSSIERS (4/4)</h2>
+          <h2 class="mc-panel-title">EXPEDITION ASTRONAUT CREW (4)</h2>
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span class="pulse-indicator"></span>
-          <span class="mc-panel-hint">Live Biometric ECG Waveforms Active • Click any card for dossier</span>
-        </div>
+        <span class="mc-panel-hint">Tap any astronaut to view their mission dossier</span>
       </div>
 
-      <div class="mc-crew-grid">
-        ${CREW_DATA.map(crew => {
-          const bpm = crew.id === 'marcus' ? 72 : crew.id === 'elena' ? 68 : crew.id === 'chen' ? 74 : 70;
+      <!-- 4 Character Cards Grid -->
+      <div class="mc-crew-cards-grid">
+        ${Object.keys(CREW_BIOS).map(key => {
+          const c = CREW_BIOS[key];
           return `
-            <div class="crew-profile-card" data-crew-id="${crew.id}">
-              <div class="crew-card-top">
-                <div class="crew-avatar-ring" style="border-color: ${crew.avatarColor}">
-                  <span class="crew-avatar-initial">${crew.avatarInitial}</span>
-                  <div class="crew-holo-scan-bar"></div>
-                </div>
-                <div class="crew-name-box">
-                  <h3 class="crew-card-name">${crew.name}</h3>
-                  <span class="crew-card-role">${crew.role}</span>
-                </div>
-                <span class="crew-health-pill" id="crew-health-pill-${crew.id}">100% HEALTH</span>
+            <div class="mc-crew-char-card" data-crew-id="${c.id}" title="Inspect ${c.name}">
+              <div class="mc-char-avatar-box" style="border-color: ${c.avatarColor}">
+                <span class="mc-char-emoji">${c.avatarEmoji}</span>
+                <span class="mc-char-status-dot healthy" id="crew-dot-${c.id}"></span>
               </div>
 
-              <!-- Live Animated ECG Oscilloscope Waveform -->
-              <div class="crew-ecg-container">
-                <div class="crew-ecg-header">
-                  <span class="crew-ecg-heart" id="crew-ecg-bpm-${crew.id}">♥ ${bpm} BPM</span>
-                  <span class="crew-ecg-stats" id="crew-ecg-vitals-${crew.id}">O₂ 99% • 36.8°C</span>
+              <div class="mc-char-info">
+                <div class="mc-char-name-row">
+                  <h3 class="mc-char-name">${c.name}</h3>
+                  <span class="mc-char-role-badge" style="background: ${c.avatarColor}20; color:${c.avatarColor}; border-color:${c.avatarColor}40">
+                    ${c.roleIcon} ${c.role}
+                  </span>
                 </div>
-                <canvas class="crew-ecg-canvas" id="ecg-canvas-${crew.id}" width="280" height="48"></canvas>
-              </div>
 
-              <div class="crew-health-bar-track">
-                <div class="crew-health-bar-fill" id="crew-health-bar-${crew.id}" style="width: 100%; background: ${crew.avatarColor}"></div>
-              </div>
-
-              <div class="crew-activity-box">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span class="crew-activity-label">STATUS CONDITION:</span>
-                  <span class="crew-live-dot">● LIVE</span>
+                <!-- Animated Heartbeat / ECG Line -->
+                <div class="mc-char-heartbeat-box">
+                  <svg class="mc-char-ecg-svg" viewBox="0 0 160 28">
+                    <path class="mc-ecg-trace" d="M 0 14 L 30 14 L 35 14 L 40 4 L 45 24 L 50 10 L 55 18 L 60 14 L 160 14" stroke="${c.avatarColor}"/>
+                  </svg>
+                  <span class="mc-char-bpm" id="crew-bpm-${c.id}">♥ 72 BPM</span>
                 </div>
-                <p class="crew-activity-text" id="crew-cond-text-${crew.id}">Nominal vital signs</p>
+
+                <!-- Health Bar & Pct -->
+                <div class="mc-char-health-row">
+                  <div class="mc-char-bar-track">
+                    <div class="mc-char-bar-fill" id="crew-bar-${c.id}" style="width: 100%; background: ${c.avatarColor}"></div>
+                  </div>
+                  <span class="mc-char-hp-val" id="crew-val-${c.id}">100%</span>
+                </div>
               </div>
             </div>
           `;
@@ -75,8 +110,11 @@ export class CrewPanel {
       </div>
     `;
 
-    section.querySelectorAll('.crew-profile-card').forEach(card => {
+    // Click & hover interactions
+    section.querySelectorAll('.mc-crew-char-card').forEach(card => {
+      card.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
       card.addEventListener('click', (e) => {
+        orbitVoice.playChirp('click');
         const id = e.currentTarget.getAttribute('data-crew-id');
         this.openModal(id);
       });
@@ -85,256 +123,125 @@ export class CrewPanel {
     return section;
   }
 
-  initECGAnimation() {
-    // Setup state for each astronaut's ECG trace
-    CREW_DATA.forEach(crew => {
-      this.ecgData[crew.id] = {
-        x: 0,
-        bpm: crew.id === 'marcus' ? 72 : crew.id === 'elena' ? 68 : crew.id === 'chen' ? 74 : 70,
-        color: crew.avatarColor || '#00E5FF',
-        points: new Array(280).fill(24),
-        phase: Math.random() * 100
-      };
-    });
-
-    const draw = () => {
-      this.ecgAnimId = requestAnimationFrame(draw);
-
-      CREW_DATA.forEach(crew => {
-        const canvas = this.element.querySelector(`#ecg-canvas-${crew.id}`);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const data = this.ecgData[crew.id];
-
-        const w = canvas.width;
-        const h = canvas.height;
-        const baseline = h / 2;
-
-        // Advance sweep
-        data.phase += 1;
-        const beatInterval = Math.round(3600 / data.bpm); // Frames per beat cycle
-        const cyclePos = data.phase % beatInterval;
-
-        let y = baseline;
-        if (cyclePos >= 10 && cyclePos < 16) {
-          // P-wave (small bump)
-          y = baseline - Math.sin((cyclePos - 10) / 6 * Math.PI) * 4;
-        } else if (cyclePos >= 18 && cyclePos < 20) {
-          // Q-wave (small dip)
-          y = baseline + 3;
-        } else if (cyclePos >= 20 && cyclePos < 24) {
-          // R-spike (giant sharp heart contraction spike)
-          y = baseline - 20;
-        } else if (cyclePos >= 24 && cyclePos < 27) {
-          // S-wave (sharp dip)
-          y = baseline + 8;
-        } else if (cyclePos >= 34 && cyclePos < 44) {
-          // T-wave (medium rounded bump)
-          y = baseline - Math.sin((cyclePos - 34) / 10 * Math.PI) * 6;
-        } else {
-          // Resting baseline with tiny biological noise
-          y = baseline + (Math.random() - 0.5) * 1.2;
-        }
-
-        data.points[data.x] = y;
-
-        // Render CRT-style oscilloscope display
-        ctx.fillStyle = 'rgba(6, 16, 30, 0.22)';
-        ctx.fillRect(0, 0, w, h);
-
-        // Draw faint medical grid
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.08)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let gx = 0; gx < w; gx += 20) { ctx.moveTo(gx, 0); ctx.lineTo(gx, h); }
-        for (let gy = 0; gy < h; gy += 12) { ctx.moveTo(0, gy); ctx.lineTo(w, gy); }
-        ctx.stroke();
-
-        // Draw ECG waveform trace
-        ctx.lineWidth = 2.0;
-        ctx.strokeStyle = data.color;
-        ctx.shadowColor = data.color;
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-
-        for (let i = 0; i < w; i++) {
-          if (i === 0) {
-            ctx.moveTo(i, data.points[i]);
-          } else {
-            ctx.lineTo(i, data.points[i]);
-          }
-        }
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Draw sweeping blip
-        ctx.fillStyle = '#FFFFFF';
-        ctx.shadowColor = '#FFFFFF';
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.arc(data.x, y, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // Advance sweep cursor
-        data.x = (data.x + 2) % w;
-      });
-    };
-
-    draw();
-  }
-
   createModal() {
     this.modal = document.createElement('div');
     this.modal.className = 'mc-modal-overlay';
     this.modal.style.display = 'none';
 
     this.modal.innerHTML = `
-      <div class="mc-modal-card">
+      <div class="mc-modal-card mc-crew-modal-card">
         <button class="mc-modal-close" aria-label="Close">✕</button>
         <div class="mc-modal-header">
-          <div class="crew-avatar-ring modal-avatar" id="crew-modal-avatar">
-            <span class="crew-avatar-initial" id="crew-modal-initial">E</span>
-          </div>
+          <div class="mc-modal-icon-wrap" id="crew-modal-avatar">👩‍🚀</div>
           <div>
             <div class="mc-modal-status-row">
-              <span class="res-status-badge status-excellent" id="crew-modal-health">100% Health</span>
-              <span class="crew-station-tag" id="crew-modal-station">Station: HAB-01</span>
+              <span class="res-status-badge status-excellent" id="crew-modal-status">100% HEALTHY</span>
+              <span class="day-number-tag" id="crew-modal-role">Commander</span>
             </div>
             <h3 class="mc-modal-title" id="crew-modal-name">Astronaut Name</h3>
-            <span class="mc-modal-subtitle" id="crew-modal-role">Role</span>
           </div>
         </div>
 
         <div class="mc-modal-body">
           <div class="mc-modal-section">
-            <h4 class="mc-section-heading">Current Medical Condition & Log</h4>
-            <p class="mc-modal-text" id="crew-modal-reason" style="color:#00E5FF; font-weight:600;">Nominal</p>
+            <h4 class="mc-section-heading">Astronaut Fun Fact</h4>
+            <p class="mc-modal-text" id="crew-modal-fact" style="font-size: 1.05rem; font-weight: 600; color: #F8FAFC;">Fact</p>
           </div>
 
           <div class="mc-modal-section">
-            <h4 class="mc-section-heading">Live Biometric Telemetry</h4>
-            <div class="mc-metrics-grid" id="crew-modal-vitals">
-              <!-- Dynamically populated -->
-            </div>
+            <h4 class="mc-section-heading">Moon Base Specialty</h4>
+            <p class="mc-modal-text" id="crew-modal-specialty">Specialty</p>
           </div>
+        </div>
 
-          <div class="mc-modal-section">
-            <h4 class="mc-section-heading">Astronaut Profile & Background</h4>
-            <p class="mc-modal-text" id="crew-modal-bio">Bio</p>
-          </div>
+        <div class="mc-modal-footer">
+          <button class="btn-mc btn-mc-primary mc-modal-dismiss-btn">Got it! ✓</button>
         </div>
       </div>
     `;
 
     document.body.appendChild(this.modal);
 
-    this.modal.querySelector('.mc-modal-close').addEventListener('click', () => {
-      this.closeModal();
+    const closeBtn = this.modal.querySelector('.mc-modal-close');
+    const dismissBtn = this.modal.querySelector('.mc-modal-dismiss-btn');
+    [closeBtn, dismissBtn].forEach(b => {
+      b.addEventListener('click', () => {
+        orbitVoice.playChirp('click');
+        this.closeModal();
+      });
     });
-
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.closeModal();
     });
   }
 
-  openModal(crewId) {
-    const data = CREW_DATA.find(c => c.id === crewId);
-    if (!data) return;
+  update(crew) {
+    if (!crew) return;
+    this.currentCrew = { ...crew };
 
-    const liveState = this.currentCrew[crewId] || {};
-    const health = liveState.health !== undefined ? liveState.health : 100;
-    const condition = liveState.condition || 'Nominal vital signs';
+    const keys = ['evelyn', 'marcus', 'aris', 'maya'];
+    keys.forEach(key => {
+      const data = crew[key] || (key === 'aris' ? crew['chen'] : null);
+      if (!data) return;
 
-    const avatarRing = this.modal.querySelector('#crew-modal-avatar');
-    avatarRing.style.borderColor = data.avatarColor;
-    this.modal.querySelector('#crew-modal-initial').textContent = data.avatarInitial;
-    this.modal.querySelector('#crew-modal-name').textContent = data.name;
-    this.modal.querySelector('#crew-modal-role').textContent = data.role;
-    this.modal.querySelector('#crew-modal-station').textContent = `Station: ${data.assignedStation}`;
+      const health = Math.max(0, Math.min(100, Math.round(data.health || 0)));
+      const barEl = this.element.querySelector(`#crew-bar-${key}`);
+      const valEl = this.element.querySelector(`#crew-val-${key}`);
+      const dotEl = this.element.querySelector(`#crew-dot-${key}`);
+      const bpmEl = this.element.querySelector(`#crew-bpm-${key}`);
 
-    const healthBadge = this.modal.querySelector('#crew-modal-health');
-    healthBadge.textContent = `${health}% Health`;
-    healthBadge.className = 'res-status-badge ' + (health > 80 ? 'status-excellent' : health > 50 ? 'status-warning' : 'status-critical');
+      if (barEl) barEl.style.width = `${health}%`;
+      if (valEl) valEl.textContent = `${health}%`;
 
-    this.modal.querySelector('#crew-modal-reason').textContent = condition;
-    this.modal.querySelector('#crew-modal-bio').textContent = data.bio;
-
-    const vitalsWrap = this.modal.querySelector('#crew-modal-vitals');
-    vitalsWrap.innerHTML = `
-      <div class="mc-metric-item">
-        <span class="mc-metric-label">Heart Rate (ECG)</span>
-        <span class="mc-metric-value" style="color:#06D6A0">♥ ${this.ecgData[crewId]?.bpm || 72} BPM</span>
-      </div>
-      <div class="mc-metric-item">
-        <span class="mc-metric-label">Suit O₂ Saturation</span>
-        <span class="mc-metric-value" style="color:#00E5FF">99.2% SpO₂</span>
-      </div>
-      <div class="mc-metric-item">
-        <span class="mc-metric-label">Core Temperature</span>
-        <span class="mc-metric-value" style="color:#FFB703">36.8°C</span>
-      </div>
-      <div class="mc-metric-item">
-        <span class="mc-metric-label">Radiation Exposure</span>
-        <span class="mc-metric-value" style="color:#A7C98D">0.08 mSv/day (Safe)</span>
-      </div>
-    `;
-
-    this.modal.style.display = 'flex';
-  }
-
-  closeModal() {
-    this.modal.style.display = 'none';
-  }
-
-  update(crewState) {
-    if (!crewState) return;
-    this.currentCrew = crewState;
-
-    Object.keys(crewState).forEach(id => {
-      const live = crewState[id];
-      if (!live) return;
-
-      const healthPill = this.element.querySelector(`#crew-health-pill-${id}`);
-      const healthBar = this.element.querySelector(`#crew-health-bar-${id}`);
-      const condText = this.element.querySelector(`#crew-cond-text-${id}`);
-      const bpmText = this.element.querySelector(`#crew-ecg-bpm-${id}`);
-
-      if (healthPill) {
-        healthPill.textContent = `${live.health}% HEALTH`;
-        healthPill.style.background = live.health > 80 ? 'rgba(6,214,160,0.2)' : live.health > 50 ? 'rgba(255,183,3,0.2)' : 'rgba(255,59,48,0.25)';
-        healthPill.style.color = live.health > 80 ? '#06D6A0' : live.health > 50 ? '#FFB703' : '#FF3B30';
-      }
-
-      if (healthBar) {
-        healthBar.style.width = `${live.health}%`;
-        healthBar.style.background = live.health > 80 ? '#06D6A0' : live.health > 50 ? '#FFB703' : '#FF3B30';
-      }
-
-      if (condText && live.condition) {
-        condText.textContent = live.condition;
-      }
-
-      // If health drops, ECG bpm increases and changes color!
-      if (this.ecgData[id]) {
-        if (live.health < 60) {
-          this.ecgData[id].bpm = 108;
-          this.ecgData[id].color = '#FF3B30';
-          if (bpmText) bpmText.textContent = `♥ 108 BPM (HIGH)`;
-        } else if (live.health < 80) {
-          this.ecgData[id].bpm = 88;
-          this.ecgData[id].color = '#FFB703';
-          if (bpmText) bpmText.textContent = `♥ 88 BPM`;
+      if (dotEl) {
+        dotEl.className = 'mc-char-status-dot';
+        if (health >= 70) {
+          dotEl.classList.add('healthy');
+          if (bpmEl) bpmEl.textContent = '♥ 72 BPM';
+        } else if (health >= 40) {
+          dotEl.classList.add('warning');
+          if (bpmEl) bpmEl.textContent = '♥ 88 BPM';
         } else {
-          this.ecgData[id].bpm = id === 'marcus' ? 72 : id === 'elena' ? 68 : id === 'chen' ? 74 : 70;
-          this.ecgData[id].color = CREW_DATA.find(c => c.id === id)?.avatarColor || '#00E5FF';
-          if (bpmText) bpmText.textContent = `♥ ${this.ecgData[id].bpm} BPM`;
+          dotEl.classList.add('critical');
+          if (bpmEl) bpmEl.textContent = '♥ 105 BPM ⚠️';
         }
       }
     });
   }
 
-  destroy() {
-    if (this.ecgAnimId) cancelAnimationFrame(this.ecgAnimId);
+  openModal(crewId) {
+    const bio = CREW_BIOS[crewId];
+    if (!bio) return;
+
+    const data = this.currentCrew[crewId] || (crewId === 'aris' ? this.currentCrew['chen'] : null);
+    const health = data ? data.health : 100;
+
+    this.modal.querySelector('#crew-modal-avatar').textContent = bio.avatarEmoji;
+    this.modal.querySelector('#crew-modal-name').textContent = bio.name;
+    this.modal.querySelector('#crew-modal-role').textContent = bio.role;
+    this.modal.querySelector('#crew-modal-fact').textContent = bio.fact;
+    this.modal.querySelector('#crew-modal-specialty').textContent = bio.specialty;
+
+    const statusBadge = this.modal.querySelector('#crew-modal-status');
+    if (health >= 70) {
+      statusBadge.textContent = `${health}% • HEALTHY & HAPPY`;
+      statusBadge.className = 'res-status-badge status-excellent';
+    } else if (health >= 40) {
+      statusBadge.textContent = `${health}% • FATIGUED`;
+      statusBadge.className = 'res-status-badge status-warning';
+    } else {
+      statusBadge.textContent = `${health}% • NEEDS MEDICAL AID`;
+      statusBadge.className = 'res-status-badge status-critical';
+    }
+
+    this.modal.style.display = 'flex';
+    requestAnimationFrame(() => this.modal.classList.add('active'));
+  }
+
+  closeModal() {
+    this.modal.classList.remove('active');
+    setTimeout(() => {
+      this.modal.style.display = 'none';
+    }, 200);
   }
 }

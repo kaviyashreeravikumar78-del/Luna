@@ -1,17 +1,17 @@
 import { RESOURCES_DATA, getResourceStatus } from '../data/resources.js';
+import { orbitVoice } from '../audio/OrbitVoice.js';
 
 /**
- * LUNA: Mission Survival - Module 2 & 3: Animated Resource Monitoring & Liquid Wave Tanks
- * Renders real-time animated liquid waveforms with bubbles and plasma sparks for each vital colony resource.
+ * LUNA: Mission Survival - Module 2 & 3: Big Animated Circular Resource Gauges
+ * Features 4 big animated radial gauges (Oxygen, Water, Food, Power) with icons,
+ * smooth number counters, color-coded health states, warning pulses, and hover tooltips.
  */
 export class ResourcePanel {
   constructor() {
     this.currentResources = { oxygen: 100, water: 100, food: 100, power: 100 };
-    this.waveAnimId = null;
-    this.waveStates = {};
+    this.displayedValues = { oxygen: 100, water: 100, food: 100, power: 100 };
     this.element = this.createDOM();
     this.createModal();
-    this.initWaveAnimation();
   }
 
   createDOM() {
@@ -22,40 +22,48 @@ export class ResourcePanel {
     section.innerHTML = `
       <div class="mc-panel-header">
         <div class="mc-panel-title-row">
-          <span class="mc-panel-icon">📊</span>
-          <h2 class="mc-panel-title">VITAL COLONY LIFE SUPPORT RESERVES</h2>
+          <span class="mc-panel-icon">⚡</span>
+          <h2 class="mc-panel-title">VITAL LIFE SUPPORT RESERVES</h2>
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div class="mc-panel-telemetry-badge">
           <span class="pulse-indicator"></span>
-          <span class="mc-panel-hint">Live Hydrostatic Telemetry Active • Click any card for details</span>
+          <span>4 Systems Synchronized</span>
         </div>
       </div>
 
-      <div class="mc-resource-grid">
+      <!-- 4 Big Animated Circular Gauges Grid -->
+      <div class="mc-gauge-grid">
         ${RESOURCES_DATA.map(res => {
           const statusInfo = getResourceStatus(res.percentage);
+          const circumference = 2 * Math.PI * 46; // Radius = 46, Circumference ~ 289
           return `
-            <div class="resource-card" data-resource-id="${res.id}">
-              <div class="res-card-top">
-                <span class="res-icon" style="background: ${res.color}15; border-color: ${res.color}40">${res.icon}</span>
-                <div class="res-title-group">
-                  <h3 class="res-name">${res.name}</h3>
-                  <span class="res-status-badge ${statusInfo.class}" id="res-badge-${res.id}">${statusInfo.label}</span>
-                </div>
-                <div class="res-pct-val" id="res-val-${res.id}" style="color: ${res.color}">
-                  ${res.percentage}%
+            <div class="mc-gauge-card state-${statusInfo.class}" data-resource-id="${res.id}" title="Click to inspect ${res.name}">
+              <div class="mc-gauge-ring-wrap">
+                <svg class="mc-gauge-svg" viewBox="0 0 110 110">
+                  <!-- Background Track -->
+                  <circle cx="55" cy="55" r="46" class="mc-gauge-track"/>
+                  <!-- Glowing Foreground Progress Ring -->
+                  <circle
+                    cx="55" cy="55" r="46"
+                    class="mc-gauge-bar bar-${res.id}"
+                    id="gauge-ring-${res.id}"
+                    stroke-dasharray="${circumference}"
+                    stroke-dashoffset="0"
+                  />
+                </svg>
+
+                <!-- Center Content: Icon, Smooth Number, Resource Name -->
+                <div class="mc-gauge-center">
+                  <span class="mc-gauge-icon">${res.icon}</span>
+                  <span class="mc-gauge-val" id="gauge-val-${res.id}">100%</span>
+                  <span class="mc-gauge-name">${res.name}</span>
                 </div>
               </div>
 
-              <!-- Live Animated Hydrodynamic Liquid Tank -->
-              <div class="res-tank-frame">
-                <canvas class="res-liquid-canvas" id="res-canvas-${res.id}" width="280" height="44"></canvas>
-                <div class="res-tank-glass-glare"></div>
-              </div>
-
-              <div class="res-card-bottom-info">
-                <p class="res-short-desc">${res.shortDesc}</p>
-                <span class="res-flow-rate" id="res-flow-${res.id}">Flow: Nominal</span>
+              <!-- State Tag & 1-Line Info -->
+              <div class="mc-gauge-footer">
+                <span class="mc-gauge-badge ${statusInfo.class}" id="gauge-badge-${res.id}">${statusInfo.label}</span>
+                <span class="mc-gauge-subtext" id="gauge-sub-${res.id}">Nominal consumption rate</span>
               </div>
             </div>
           `;
@@ -63,115 +71,17 @@ export class ResourcePanel {
       </div>
     `;
 
-    section.querySelectorAll('.resource-card').forEach(card => {
+    // Click & hover interactions
+    section.querySelectorAll('.mc-gauge-card').forEach(card => {
+      card.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
       card.addEventListener('click', (e) => {
+        orbitVoice.playChirp('click');
         const id = e.currentTarget.getAttribute('data-resource-id');
         this.openModal(id);
       });
     });
 
     return section;
-  }
-
-  initWaveAnimation() {
-    RESOURCES_DATA.forEach(res => {
-      this.waveStates[res.id] = {
-        phase: Math.random() * 10,
-        color: res.color,
-        pct: 100,
-        bubbles: Array.from({ length: 8 }, () => ({
-          x: Math.random() * 280,
-          y: 20 + Math.random() * 20,
-          s: 1.2 + Math.random() * 2.2,
-          vy: 0.4 + Math.random() * 0.6
-        }))
-      };
-    });
-
-    const draw = () => {
-      this.waveAnimId = requestAnimationFrame(draw);
-
-      RESOURCES_DATA.forEach(res => {
-        const canvas = this.element.querySelector(`#res-canvas-${res.id}`);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const state = this.waveStates[res.id];
-
-        const w = canvas.width;
-        const h = canvas.height;
-
-        state.phase += 0.045;
-
-        // Clear canvas with dark tank interior
-        ctx.fillStyle = '#06101E';
-        ctx.fillRect(0, 0, w, h);
-
-        // Water level Y based on percentage
-        const fillHeight = (state.pct / 100) * (h - 8);
-        const baseY = h - fillHeight;
-
-        // Draw Liquid Gradient
-        const grad = ctx.createLinearGradient(0, baseY, 0, h);
-        grad.addColorStop(0, state.color);
-        grad.addColorStop(1, '#06101E');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(0, h);
-
-        // Primary Sinusoidal Wave
-        for (let x = 0; x <= w; x += 4) {
-          const wave1 = Math.sin(x * 0.035 + state.phase) * 3.5;
-          const wave2 = Math.cos(x * 0.02 - state.phase * 0.7) * 2.0;
-          ctx.lineTo(x, baseY + wave1 + wave2);
-        }
-
-        ctx.lineTo(w, h);
-        ctx.closePath();
-        ctx.fill();
-
-        // Wave surface crest highlight
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 1.5;
-        ctx.shadowColor = state.color;
-        ctx.shadowBlur = 6;
-        ctx.beginPath();
-        for (let x = 0; x <= w; x += 4) {
-          const wave1 = Math.sin(x * 0.035 + state.phase) * 3.5;
-          const wave2 = Math.cos(x * 0.02 - state.phase * 0.7) * 2.0;
-          if (x === 0) ctx.moveTo(x, baseY + wave1 + wave2);
-          else ctx.lineTo(x, baseY + wave1 + wave2);
-        }
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Animated rising bubbles
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-        state.bubbles.forEach(b => {
-          b.y -= b.vy;
-          if (b.y < baseY) {
-            b.y = h - 2;
-            b.x = Math.random() * w;
-          }
-          ctx.beginPath();
-          ctx.arc(b.x, b.y, b.s, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
-        // Special electric sparks on Power tank
-        if (res.id === 'power' && state.pct > 20) {
-          ctx.strokeStyle = '#FFD166';
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          const sparkX = Math.random() * w;
-          ctx.moveTo(sparkX, baseY);
-          ctx.lineTo(sparkX + (Math.random() - 0.5) * 16, baseY - 6 + (Math.random() - 0.5) * 8);
-          ctx.stroke();
-        }
-      });
-    };
-
-    draw();
   }
 
   createModal() {
@@ -183,140 +93,144 @@ export class ResourcePanel {
       <div class="mc-modal-card">
         <button class="mc-modal-close" aria-label="Close">✕</button>
         <div class="mc-modal-header">
-          <div class="mc-modal-icon-wrap" id="res-modal-icon">💨</div>
+          <div class="mc-modal-icon-wrap" id="res-modal-icon">💧</div>
           <div>
             <div class="mc-modal-status-row">
-              <span class="res-status-badge status-excellent" id="res-modal-status">Excellent</span>
-              <span class="res-pct-badge" id="res-modal-pct">100% Full</span>
+              <span class="res-status-badge status-excellent" id="res-modal-status">100% • EXCELLENT</span>
+              <span class="res-pct-badge" id="res-modal-val">100%</span>
             </div>
-            <h3 class="mc-modal-title" id="res-modal-title">Resource Name</h3>
+            <h3 class="mc-modal-title" id="res-modal-name">Resource Name</h3>
           </div>
         </div>
 
         <div class="mc-modal-body">
           <div class="mc-modal-section">
-            <h4 class="mc-section-heading">Why is this vital for the Moon base?</h4>
-            <p class="mc-modal-text" id="res-modal-desc">Description</p>
+            <h4 class="mc-section-heading">Kid-Friendly Science Fact</h4>
+            <p class="mc-modal-text" id="res-modal-fact">Did you know? Moon ice under dark craters can make water and rocket fuel!</p>
           </div>
 
           <div class="mc-modal-section">
-            <h4 class="mc-section-heading">Supporting Facility</h4>
-            <div class="mc-facility-link-box" id="res-modal-facility">
-              <span class="mc-link-icon">⚙️</span>
-              <span class="mc-link-name">Facility Name</span>
-            </div>
+            <h4 class="mc-section-heading">How Our Moon Base Produces It</h4>
+            <p class="mc-modal-text" id="res-modal-how">Autonomous life-support recycling.</p>
           </div>
+        </div>
 
-          <div class="mc-modal-section">
-            <h4 class="mc-section-heading">Live Telemetry Metrics</h4>
-            <div class="mc-metrics-grid" id="res-modal-metrics">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
+        <div class="mc-modal-footer">
+          <button class="btn-mc btn-mc-primary mc-modal-dismiss-btn">Got it! ✓</button>
         </div>
       </div>
     `;
 
     document.body.appendChild(this.modal);
 
-    this.modal.querySelector('.mc-modal-close').addEventListener('click', () => {
-      this.closeModal();
+    const closeBtn = this.modal.querySelector('.mc-modal-close');
+    const dismissBtn = this.modal.querySelector('.mc-modal-dismiss-btn');
+    [closeBtn, dismissBtn].forEach(b => {
+      b.addEventListener('click', () => {
+        orbitVoice.playChirp('click');
+        this.closeModal();
+      });
     });
-
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.closeModal();
     });
+  }
+
+  update(resources) {
+    if (!resources) return;
+    this.currentResources = { ...resources };
+
+    const circumference = 2 * Math.PI * 46;
+
+    Object.keys(resources).forEach(key => {
+      const targetVal = Math.round(resources[key] || 0);
+      const card = this.element.querySelector(`.mc-gauge-card[data-resource-id="${key}"]`);
+      const valEl = this.element.querySelector(`#gauge-val-${key}`);
+      const ringEl = this.element.querySelector(`#gauge-ring-${key}`);
+      const badgeEl = this.element.querySelector(`#gauge-badge-${key}`);
+      const subEl = this.element.querySelector(`#gauge-sub-${key}`);
+
+      if (!card || !valEl || !ringEl) return;
+
+      // Animate stroke dashoffset
+      const offset = circumference - (targetVal / 100) * circumference;
+      ringEl.style.strokeDashoffset = `${offset}`;
+
+      // Smooth number count animation
+      this.animateCounter(key, valEl, targetVal);
+
+      // Color coding & warning pulse
+      card.classList.remove('state-excellent', 'state-good', 'state-warning', 'state-critical', 'state-pulsing');
+      if (targetVal >= 70) {
+        card.classList.add('state-excellent');
+        if (badgeEl) { badgeEl.textContent = 'NOMINAL'; badgeEl.className = 'mc-gauge-badge status-excellent'; }
+        if (subEl) subEl.textContent = 'Full capacity reserves';
+      } else if (targetVal >= 40) {
+        card.classList.add('state-good');
+        if (badgeEl) { badgeEl.textContent = 'SUFFICIENT'; badgeEl.className = 'mc-gauge-badge status-good'; }
+        if (subEl) subEl.textContent = 'Controlled consumption';
+      } else if (targetVal >= 20) {
+        card.classList.add('state-warning', 'state-pulsing');
+        if (badgeEl) { badgeEl.textContent = 'LOW ⚠️'; badgeEl.className = 'mc-gauge-badge status-warning'; }
+        if (subEl) subEl.textContent = 'Conserve usage!';
+      } else {
+        card.classList.add('state-critical', 'state-pulsing');
+        if (badgeEl) { badgeEl.textContent = 'CRITICAL 🚨'; badgeEl.className = 'mc-gauge-badge status-critical'; }
+        if (subEl) subEl.textContent = 'Emergency depletion danger!';
+      }
+    });
+  }
+
+  animateCounter(key, el, targetVal) {
+    const current = this.displayedValues[key] ?? targetVal;
+    if (current === targetVal) {
+      el.textContent = `${targetVal}%`;
+      return;
+    }
+
+    const step = targetVal > current ? 1 : -1;
+    const interval = setInterval(() => {
+      this.displayedValues[key] += step;
+      el.textContent = `${this.displayedValues[key]}%`;
+      if (this.displayedValues[key] === targetVal) {
+        clearInterval(interval);
+      }
+    }, 25);
   }
 
   openModal(resourceId) {
     const data = RESOURCES_DATA.find(r => r.id === resourceId);
     if (!data) return;
 
-    const currentPct = this.currentResources[resourceId] !== undefined ? this.currentResources[resourceId] : data.percentage;
-    const statusInfo = getResourceStatus(currentPct);
+    const currentVal = this.currentResources[resourceId] ?? data.percentage;
 
     this.modal.querySelector('#res-modal-icon').textContent = data.icon;
-    this.modal.querySelector('#res-modal-title').textContent = data.name;
-    this.modal.querySelector('#res-modal-desc').textContent = data.description;
+    this.modal.querySelector('#res-modal-name').textContent = data.name;
+    this.modal.querySelector('#res-modal-val').textContent = `${currentVal}%`;
 
     const statusBadge = this.modal.querySelector('#res-modal-status');
-    statusBadge.textContent = statusInfo.label;
-    statusBadge.className = `res-status-badge ${statusInfo.class}`;
+    if (currentVal >= 70) {
+      statusBadge.textContent = 'SAFE & STABLE';
+      statusBadge.className = 'res-status-badge status-excellent';
+    } else if (currentVal >= 40) {
+      statusBadge.textContent = 'NORMAL';
+      statusBadge.className = 'res-status-badge status-good';
+    } else {
+      statusBadge.textContent = 'LOW SUPPLY WARNING';
+      statusBadge.className = 'res-status-badge status-critical';
+    }
 
-    const pctBadge = this.modal.querySelector('#res-modal-pct');
-    pctBadge.textContent = `${currentPct}% Remaining`;
-    pctBadge.style.color = data.color;
-
-    this.modal.querySelector('#res-modal-facility').innerHTML = `
-      <span class="mc-link-icon">⚙️</span>
-      <span class="mc-link-name">${data.facility}</span>
-    `;
-
-    const metricsWrap = this.modal.querySelector('#res-modal-metrics');
-    metricsWrap.innerHTML = `
-      <div class="mc-metric-item">
-        <span class="mc-metric-label">Daily Outpost Consumption</span>
-        <span class="mc-metric-value" style="color:#00E5FF">${data.consumptionRate}</span>
-      </div>
-      <div class="mc-metric-item">
-        <span class="mc-metric-label">Reserve Runway</span>
-        <span class="mc-metric-value" style="color:#06D6A0">${Math.round(currentPct / 12)} Sols buffer</span>
-      </div>
-      <div class="mc-metric-item">
-        <span class="mc-metric-label">Critical Warning Threshold</span>
-        <span class="mc-metric-value" style="color:#FFB703">&lt; 30% Storage</span>
-      </div>
-      <div class="mc-metric-item">
-        <span class="mc-metric-label">Purification Efficiency</span>
-        <span class="mc-metric-value" style="color:#E8B76B">98.4% Closed-Loop</span>
-      </div>
-    `;
+    this.modal.querySelector('#res-modal-fact').textContent = data.scienceFact || data.shortDesc;
+    this.modal.querySelector('#res-modal-how').textContent = data.howItWorks || "Recycled continuously through closed-loop life-support systems on the base.";
 
     this.modal.style.display = 'flex';
+    requestAnimationFrame(() => this.modal.classList.add('active'));
   }
 
   closeModal() {
-    this.modal.style.display = 'none';
-  }
-
-  update(resourcesState) {
-    if (!resourcesState) return;
-    this.currentResources = resourcesState;
-
-    Object.keys(resourcesState).forEach(id => {
-      const pct = resourcesState[id];
-      const valEl = this.element.querySelector(`#res-val-${id}`);
-      const badgeEl = this.element.querySelector(`#res-badge-${id}`);
-      const flowEl = this.element.querySelector(`#res-flow-${id}`);
-
-      if (valEl) valEl.textContent = `${pct}%`;
-
-      if (badgeEl) {
-        const statusInfo = getResourceStatus(pct);
-        badgeEl.textContent = statusInfo.label;
-        badgeEl.className = `res-status-badge ${statusInfo.class}`;
-      }
-
-      if (flowEl) {
-        flowEl.textContent = pct > 75 ? 'Flow: Nominal ✅' : pct > 40 ? 'Flow: Compensating ⚠️' : 'Flow: CRITICAL 🚨';
-        flowEl.style.color = pct > 75 ? '#06D6A0' : pct > 40 ? '#FFB703' : '#FF3B30';
-      }
-
-      // Update liquid level
-      if (this.waveStates[id]) {
-        this.waveStates[id].pct = pct;
-        if (pct < 30) {
-          this.waveStates[id].color = '#FF3B30';
-        } else if (pct < 60) {
-          this.waveStates[id].color = '#FFB703';
-        } else {
-          this.waveStates[id].color = RESOURCES_DATA.find(r => r.id === id)?.color || '#00E5FF';
-        }
-      }
-    });
-  }
-
-  destroy() {
-    if (this.waveAnimId) cancelAnimationFrame(this.waveAnimId);
+    this.modal.classList.remove('active');
+    setTimeout(() => {
+      this.modal.style.display = 'none';
+    }, 200);
   }
 }

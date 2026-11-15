@@ -79,13 +79,49 @@ export class OrbitVoiceManager {
         osc.frequency.setValueAtTime(740, now);
         osc.frequency.exponentialRampToValueAtTime(960, now + 0.05);
 
-        gain.gain.setValueAtTime(0.06, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
 
         osc.connect(gain);
         gain.connect(this.audioCtx.destination);
         osc.start(now);
-        osc.stop(now + 0.08);
+        osc.stop(now + 0.07);
+      } else if (type === 'hover') {
+        // Gentle soft UI hover tick
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(1020, now + 0.03);
+
+        gain.gain.setValueAtTime(0.02, now);
+        gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.04);
+
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } else if (type === 'success') {
+        // Upbeat game reward chime
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+          const o = this.audioCtx.createOscillator();
+          const g = this.audioCtx.createGain();
+          o.type = 'triangle';
+          o.frequency.setValueAtTime(freq, now + i * 0.07);
+          g.gain.setValueAtTime(0.06, now + i * 0.07);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.07 + 0.25);
+          o.connect(g);
+          g.connect(this.audioCtx.destination);
+          o.start(now + i * 0.07);
+          o.stop(now + i * 0.07 + 0.26);
+        });
+      } else if (type === 'warning') {
+        // Soft alert pulse
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(370, now + 0.09);
+        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.24);
       }
     } catch (e) {
       // AudioContext policy gracefully handled

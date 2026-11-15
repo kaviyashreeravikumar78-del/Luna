@@ -1,11 +1,16 @@
 import { TIMELINE_DATA } from '../data/timeline.js';
+import { orbitVoice } from '../audio/OrbitVoice.js';
 
 /**
- * LUNA: Mission Survival - Module 2 & 3: Seven-Day Mission Progression Timeline
- * Dynamically highlights completed, active, and upcoming Sols based on GameState.
+ * LUNA: Mission Survival - Module 2 & 3: 7-Node Game Level Map Timeline
+ * Visual 7-node game progression path:
+ *  - Completed: Gold stars (⭐⭐⭐) & glowing route
+ *  - Current: Pulsing orange node with PLAY indicator
+ *  - Locked: Padlock (🔒) with frosted node
  */
 export class TimelinePanel {
-  constructor() {
+  constructor(options = {}) {
+    this.options = options; // { onSelectDay }
     this.currentDay = 1;
     this.currentDayDecided = false;
     this.element = this.createDOM();
@@ -20,39 +25,54 @@ export class TimelinePanel {
     section.innerHTML = `
       <div class="mc-panel-header">
         <div class="mc-panel-title-row">
-          <span class="mc-panel-icon">🗓️</span>
-          <h2 class="mc-panel-title">SEVEN-DAY MISSION PROGRESSION TIMELINE</h2>
+          <span class="mc-panel-icon">🗺️</span>
+          <h2 class="mc-panel-title">MISSION EXPEDITION MAP (7 SOLS)</h2>
         </div>
-        <span class="mc-panel-hint">Click any day to view planned mission activities</span>
+        <span class="mc-panel-hint">Tap any Sol node to inspect mission objectives</span>
       </div>
 
-      <div class="mc-timeline-track">
-        ${TIMELINE_DATA.map(day => {
-          const isActive = (day.dayNumber === 1);
-          return `
-            <div class="timeline-day-card ${isActive ? 'day-active' : 'day-locked'}" data-day="${day.dayNumber}">
-              <div class="day-card-badge-row">
-                <span class="day-number-tag">DAY ${day.dayNumber}</span>
-                <span class="day-state-tag ${isActive ? 'state-active' : 'state-locked'}">
-                  ${isActive ? '● CURRENT SOL' : '🔒 LOCKED'}
-                </span>
-              </div>
+      <!-- 7-Node Visual Game Level Progression Track -->
+      <div class="mc-level-map-container">
+        <!-- Connecting Line / Path -->
+        <div class="mc-level-track-rail">
+          <div class="mc-level-track-progress" id="timeline-progress-bar" style="width: 14%;"></div>
+        </div>
 
-              <div class="day-card-icon">${day.icon}</div>
-              <h3 class="day-card-title">${day.title}</h3>
-              <p class="day-card-desc">${day.shortDesc}</p>
+        <div class="mc-level-nodes-row" id="timeline-nodes-row">
+          ${TIMELINE_DATA.map(day => {
+            const isFirst = day.dayNumber === 1;
+            return `
+              <div class="mc-level-node ${isFirst ? 'node-active' : 'node-locked'}" data-day="${day.dayNumber}">
+                <div class="mc-node-halo"></div>
+                <div class="mc-node-disc">
+                  <div class="mc-node-icon-box">
+                    <span class="mc-node-symbol">${day.icon}</span>
+                  </div>
+                  <div class="mc-node-status-indicator">
+                    <span class="mc-node-status-symbol">${isFirst ? '▶' : '🔒'}</span>
+                  </div>
+                </div>
 
-              <div class="day-card-footer">
-                <span class="day-action-hint">${isActive ? 'Active Now' : 'Upcoming'}</span>
+                <div class="mc-node-stars" id="node-stars-${day.dayNumber}">
+                  <!-- Dynamically populated stars -->
+                </div>
+
+                <div class="mc-node-label-box">
+                  <span class="mc-node-sol">SOL ${day.dayNumber}</span>
+                  <span class="mc-node-name">${day.title}</span>
+                </div>
               </div>
-            </div>
-          `;
-        }).join('')}
+            `;
+          }).join('')}
+        </div>
       </div>
     `;
 
-    section.querySelectorAll('.timeline-day-card').forEach(card => {
-      card.addEventListener('click', (e) => {
+    // Click & hover interactions
+    section.querySelectorAll('.mc-level-node').forEach(node => {
+      node.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+      node.addEventListener('click', (e) => {
+        orbitVoice.playChirp('click');
         const dayNum = parseInt(e.currentTarget.getAttribute('data-day'), 10);
         this.openModal(dayNum);
       });
@@ -74,7 +94,7 @@ export class TimelinePanel {
           <div>
             <div class="mc-modal-status-row">
               <span class="res-status-badge status-excellent" id="day-modal-status">ACTIVE SOL 1</span>
-              <span class="day-number-tag" id="day-modal-num">DAY 1</span>
+              <span class="day-number-tag" id="day-modal-num">SOL 1</span>
             </div>
             <h3 class="mc-modal-title" id="day-modal-title">Activity Title</h3>
           </div>
@@ -82,34 +102,34 @@ export class TimelinePanel {
 
         <div class="mc-modal-body">
           <div class="mc-modal-section">
-            <h4 class="mc-section-heading">Day Overview</h4>
+            <h4 class="mc-section-heading">Mission Brief</h4>
             <p class="mc-modal-text" id="day-modal-desc">Description</p>
           </div>
 
           <div class="mc-modal-section">
-            <h4 class="mc-section-heading">Planned Mission Objectives</h4>
+            <h4 class="mc-section-heading">Core Objectives</h4>
             <ul class="crew-resp-list" id="day-modal-objectives">
               <!-- Dynamically populated -->
             </ul>
           </div>
-
-          <div class="mc-modal-section">
-            <div class="day-notice-box" id="day-modal-notice">
-              Notice
-            </div>
-          </div>
         </div>
 
         <div class="mc-modal-footer">
-          <button class="btn-mc btn-mc-primary mc-modal-dismiss-btn">Dismiss Briefing</button>
+          <button class="btn-mc btn-mc-primary mc-modal-dismiss-btn">Got it! ✓</button>
         </div>
       </div>
     `;
 
     document.body.appendChild(this.modal);
 
-    this.modal.querySelector('.mc-modal-close').addEventListener('click', () => this.closeModal());
-    this.modal.querySelector('.mc-modal-dismiss-btn').addEventListener('click', () => this.closeModal());
+    const closeBtn = this.modal.querySelector('.mc-modal-close');
+    const dismissBtn = this.modal.querySelector('.mc-modal-dismiss-btn');
+    [closeBtn, dismissBtn].forEach(b => {
+      b.addEventListener('click', () => {
+        orbitVoice.playChirp('click');
+        this.closeModal();
+      });
+    });
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.closeModal();
     });
@@ -119,34 +139,42 @@ export class TimelinePanel {
     this.currentDay = currentDay || 1;
     this.currentDayDecided = currentDayDecided || false;
 
-    this.element.querySelectorAll('.timeline-day-card').forEach(card => {
-      const dayNum = parseInt(card.getAttribute('data-day'), 10);
-      const stateBadge = card.querySelector('.day-state-tag');
-      const hint = card.querySelector('.day-action-hint');
+    // Update progress bar width across 7 nodes
+    const progressBar = this.element.querySelector('#timeline-progress-bar');
+    if (progressBar) {
+      const pct = Math.min(100, Math.max(14, ((this.currentDay - 1) / 6) * 100));
+      progressBar.style.width = `${pct}%`;
+    }
 
-      card.classList.remove('day-completed', 'day-active', 'day-locked');
+    this.element.querySelectorAll('.mc-level-node').forEach(node => {
+      const dayNum = parseInt(node.getAttribute('data-day'), 10);
+      const symbolEl = node.querySelector('.mc-node-status-symbol');
+      const starsBox = node.querySelector(`#node-stars-${dayNum}`);
+
+      node.classList.remove('node-completed', 'node-active', 'node-locked');
 
       if (dayNum < this.currentDay) {
-        card.classList.add('day-completed');
-        if (stateBadge) {
-          stateBadge.textContent = '✅ COMPLETED';
-          stateBadge.className = 'day-state-tag state-active';
+        node.classList.add('node-completed');
+        if (symbolEl) symbolEl.textContent = '★';
+        if (starsBox) {
+          starsBox.innerHTML = `
+            <span class="mc-star filled">⭐</span>
+            <span class="mc-star filled">⭐</span>
+            <span class="mc-star filled">⭐</span>
+          `;
         }
-        if (hint) hint.textContent = 'Survived';
       } else if (dayNum === this.currentDay) {
-        card.classList.add('day-active');
-        if (stateBadge) {
-          stateBadge.textContent = this.currentDayDecided ? '✅ ORDERS APPLIED' : '🚨 EVENT PENDING';
-          stateBadge.className = 'day-state-tag state-active';
+        node.classList.add('node-active');
+        if (symbolEl) symbolEl.textContent = this.currentDayDecided ? '✓' : '▶';
+        if (starsBox) {
+          starsBox.innerHTML = `<span class="mc-node-current-tag">ACTIVE</span>`;
         }
-        if (hint) hint.textContent = this.currentDayDecided ? 'Ready to advance' : 'Decision required';
       } else {
-        card.classList.add('day-locked');
-        if (stateBadge) {
-          stateBadge.textContent = '🔒 UPCOMING';
-          stateBadge.className = 'day-state-tag state-locked';
+        node.classList.add('node-locked');
+        if (symbolEl) symbolEl.textContent = '🔒';
+        if (starsBox) {
+          starsBox.innerHTML = `<span class="mc-star locked">☆</span>`;
         }
-        if (hint) hint.textContent = 'Locked';
       }
     });
   }
@@ -158,26 +186,22 @@ export class TimelinePanel {
     this.modal.querySelector('#day-modal-icon').textContent = data.icon;
     this.modal.querySelector('#day-modal-num').textContent = `SOL ${data.dayNumber}`;
     this.modal.querySelector('#day-modal-title').textContent = data.title;
-    this.modal.querySelector('#day-modal-desc').textContent = data.fullDesc;
+    this.modal.querySelector('#day-modal-desc').textContent = data.shortDesc;
 
     const statusBadge = this.modal.querySelector('#day-modal-status');
     if (dayNumber < this.currentDay) {
-      statusBadge.textContent = 'SOL COMPLETED';
+      statusBadge.textContent = 'SOL COMPLETED ⭐⭐⭐';
       statusBadge.className = 'res-status-badge status-excellent';
     } else if (dayNumber === this.currentDay) {
-      statusBadge.textContent = `CURRENT SOL (${this.currentDayDecided ? 'DECIDED' : 'PENDING'})`;
+      statusBadge.textContent = `CURRENT SOL (${this.currentDayDecided ? 'ORDERS EXECUTED' : 'READY TO PLAY'})`;
       statusBadge.className = 'res-status-badge status-warning';
     } else {
-      statusBadge.textContent = 'UPCOMING SOL';
+      statusBadge.textContent = 'LOCKED SOL 🔒';
       statusBadge.className = 'res-status-badge status-critical';
     }
 
     const objContainer = this.modal.querySelector('#day-modal-objectives');
-    objContainer.innerHTML = data.objectives.map(o => `<li>${o}</li>`).join('');
-
-    this.modal.querySelector('#day-modal-notice').innerHTML = `
-      <strong>Expedition Note:</strong> ${data.shortDesc}
-    `;
+    objContainer.innerHTML = (data.objectives || []).slice(0, 3).map(o => `<li>${o}</li>`).join('');
 
     this.modal.style.display = 'flex';
     requestAnimationFrame(() => this.modal.classList.add('active'));

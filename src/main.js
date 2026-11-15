@@ -1,4 +1,5 @@
 import { Game } from './game/Game.js';
+import { orbit } from './components/Orbit.js';
 import './styles/style.css';
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -11,6 +12,7 @@ window.addEventListener('DOMContentLoaded', () => {
   try {
     const game = new Game(container);
     window.LUNA_GAME = game; // Expose on window for debugging & tests
+    window.ORBIT = orbit; // Expose ORBIT companion globally
     console.log('🚀 LUNA: Mission Survival initialized successfully in 3D with Three.js.');
   } catch (err) {
     console.error('Critical failure launching LUNA 3D engine:', err);

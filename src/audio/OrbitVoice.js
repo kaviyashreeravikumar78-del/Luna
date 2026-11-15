@@ -93,9 +93,10 @@ export class OrbitVoiceManager {
   }
 
   /**
-   * Speaks dialogue with a friendly robotic pitch and cadence
+   * Speaks dialogue with a friendly robotic pitch and cadence.
+   * Supports real-time speech synthesis lifecycle events for animation sync.
    */
-  speak(text, onEnd = null) {
+  speak(text, onEnd = null, onBoundary = null, onStart = null) {
     if (this.isMuted || !this.synth) {
       if (onEnd) onEnd();
       return;
@@ -125,6 +126,12 @@ export class OrbitVoiceManager {
     utterance.rate = 1.05;  // Brisk and cheerful cadence
     utterance.volume = 1.0;
 
+    if (onStart) {
+      utterance.onstart = onStart;
+    }
+    if (onBoundary) {
+      utterance.onboundary = onBoundary;
+    }
     if (onEnd) {
       utterance.onend = onEnd;
       utterance.onerror = onEnd;

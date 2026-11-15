@@ -1,0 +1,604 @@
+/* ====================================================================
+   ORBIT - The Hilarious & Adorable Cosmic Moon Buddy
+   LUNA: Mission Survival (NASA Space Apps 2026)
+   ==================================================================== */
+
+:root {
+  --orbit-orange: #D95736;
+  --orbit-coral: #F47752;
+  --orbit-navy: #102C49;
+  --orbit-deep: #070F1B;
+  --orbit-white: #F8FAFC;
+  --orbit-cyan: #00E5FF;
+  --orbit-gold: #FFD166;
+  --orbit-green: #06D6A0;
+  --orbit-red: #FF3B30;
+  --orbit-pink: #FF6584;
+}
+
+/* Master Fixed / Floating Container */
+.orbit-companion-container {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  transition: transform 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.35s ease;
+  user-select: none;
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+}
+
+.orbit-companion-container.hidden {
+  opacity: 0;
+  transform: translateY(60px) scale(0.6);
+  pointer-events: none !important;
+}
+
+/* Character Wrap */
+.orbit-robot-wrap {
+  position: relative;
+  width: 145px;
+  height: 165px;
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 14px 28px rgba(7, 15, 27, 0.55));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.orbit-robot-wrap:hover {
+  transform: scale(1.08) rotate(1.5deg);
+}
+
+.orbit-robot-wrap:active {
+  transform: scale(0.95);
+}
+
+/* --- ANIMATION STATES --- */
+
+/* Idle Floating */
+.orbit-robot-wrap.state-idle .orbit-svg-creature-group {
+  animation: creatureHover 3.4s ease-in-out infinite;
+}
+
+/* Talking Head/Body Bob */
+.orbit-robot-wrap.state-talking .orbit-svg-creature-group {
+  animation: creatureTalkBob 0.32s ease-in-out infinite alternate;
+}
+
+/* Happy Bounce */
+.orbit-robot-wrap.state-happy .orbit-svg-creature-group {
+  animation: creatureHappyBounce 0.55s ease-in-out infinite alternate;
+}
+
+/* Excited Spin / Jump */
+.orbit-robot-wrap.state-excited .orbit-svg-creature-group {
+  animation: creatureExcitedJump 0.95s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+/* Worried Shake */
+.orbit-robot-wrap.state-worried .orbit-svg-creature-group {
+  animation: creatureWorriedShake 0.16s ease-in-out infinite;
+}
+
+/* Sad Droop */
+.orbit-robot-wrap.state-sad .orbit-svg-creature-group {
+  animation: creatureSadDroop 2.4s ease-in-out infinite;
+}
+
+/* Thinking Tilt */
+.orbit-robot-wrap.state-thinking .orbit-svg-creature-group {
+  animation: creatureThinkingTilt 2.0s ease-in-out infinite alternate;
+}
+
+/* --- SPRING ANTENNA WIGGLE --- */
+.orbit-spring-antenna-left {
+  transform-origin: 52px 28px;
+  animation: antennaSpring 2.8s ease-in-out infinite alternate;
+}
+
+.orbit-spring-antenna-right {
+  transform-origin: 88px 28px;
+  animation: antennaSpring 3.1s ease-in-out infinite alternate-reverse;
+}
+
+.orbit-robot-wrap.state-excited .orbit-spring-antenna-left,
+.orbit-robot-wrap.state-excited .orbit-spring-antenna-right {
+  animation: antennaExcitedWiggle 0.28s infinite alternate !important;
+}
+
+/* Eye Blinking */
+.orbit-eye {
+  transform-origin: center;
+  transition: all 0.15s ease;
+}
+
+.orbit-robot-wrap.state-idle .orbit-eye-left,
+.orbit-robot-wrap.state-idle .orbit-eye-right {
+  animation: creatureBlink 4.2s infinite;
+}
+
+/* Mouth Talking Animation */
+.orbit-robot-wrap.state-talking #orbit-creature-mouth {
+  animation: mouthTalkPop 0.22s ease-in-out infinite alternate;
+}
+
+/* Cute Cheeks Pulse */
+.orbit-blush-cheek {
+  animation: blushPulse 2.5s infinite alternate ease-in-out;
+}
+
+/* Thruster Stars Pulse */
+.orbit-thruster-star {
+  transform-origin: center;
+  animation: thrusterStarPulse 0.4s infinite alternate ease-in-out;
+}
+
+/* Arms & Paws Gestures */
+.orbit-arm-right {
+  transform-origin: 108px 105px;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.orbit-arm-left {
+  transform-origin: 32px 105px;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Waving Hand */
+.orbit-robot-wrap.gesture-wave .orbit-arm-right {
+  animation: pawWave 0.55s ease-in-out infinite alternate;
+}
+
+/* Pointing Hand */
+.orbit-robot-wrap.gesture-point .orbit-arm-right {
+  transform: rotate(-44deg) translate(8px, -14px);
+}
+
+/* Celebrate / Double Thumbs-Up */
+.orbit-robot-wrap.gesture-celebrate .orbit-arm-left {
+  transform: rotate(62deg) translate(-6px, -20px);
+}
+.orbit-robot-wrap.gesture-celebrate .orbit-arm-right {
+  transform: rotate(-62deg) translate(6px, -20px);
+}
+
+/* Nod Head */
+.orbit-robot-wrap.gesture-nod .orbit-svg-creature-group {
+  animation: creatureNod 0.45s ease-in-out 3;
+}
+
+/* --- HOLOGRAPHIC POINTER LINE & BEACON --- */
+.orbit-pointer-arrow {
+  position: absolute;
+  pointer-events: none;
+  z-index: 9999;
+  display: none;
+  filter: drop-shadow(0 0 10px #FFD166);
+  transition: all 0.3s ease;
+}
+
+.orbit-pointer-arrow.visible {
+  display: block;
+}
+
+/* Target element pulsing highlight */
+.orbit-element-highlight {
+  position: relative;
+  outline: 3px solid #00E5FF !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.75), inset 0 0 15px rgba(0, 229, 255, 0.25) !important;
+  border-radius: 14px;
+  animation: targetHighlightPulse 1.4s infinite alternate ease-in-out;
+  transition: outline 0.2s ease, box-shadow 0.2s ease;
+}
+
+@keyframes targetHighlightPulse {
+  0% {
+    outline-color: #00E5FF;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+  }
+  100% {
+    outline-color: #F47752;
+    box-shadow: 0 0 30px rgba(244, 119, 82, 0.85);
+  }
+}
+
+/* --- COMIC-STYLE SPEECH BUBBLE --- */
+.orbit-speech-bubble-wrap {
+  position: absolute;
+  pointer-events: auto;
+  z-index: 10001;
+  max-width: 330px;
+  min-width: 210px;
+  background: rgba(16, 44, 73, 0.95);
+  border: 2.5px solid var(--orbit-gold);
+  border-radius: 22px;
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.65), 0 0 25px rgba(255, 209, 102, 0.3);
+  backdrop-filter: blur(16px);
+  padding: 14px 18px;
+  color: #FFFFFF;
+  opacity: 0;
+  transform: scale(0.85) translateY(10px);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orbit-speech-bubble-wrap.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Dynamic Tail Positions */
+.orbit-speech-bubble-wrap.tail-left::after {
+  content: '';
+  position: absolute;
+  top: 35px;
+  left: -12px;
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-right: 13px solid var(--orbit-gold);
+}
+
+.orbit-speech-bubble-wrap.tail-right::after {
+  content: '';
+  position: absolute;
+  top: 35px;
+  right: -12px;
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 13px solid var(--orbit-gold);
+}
+
+.orbit-bubble-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 6px;
+}
+
+.orbit-bubble-name-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--orbit-gold);
+  text-transform: uppercase;
+}
+
+.orbit-bubble-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--orbit-green);
+  box-shadow: 0 0 10px var(--orbit-green);
+}
+
+.orbit-bubble-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.orbit-bubble-btn-icon {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.orbit-bubble-btn-icon:hover {
+  background: rgba(255, 209, 102, 0.25);
+  border-color: var(--orbit-gold);
+  transform: translateY(-1px);
+}
+
+/* Bubble Text with Typewriter Feel */
+.orbit-bubble-text {
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: #F8FAFC;
+  font-weight: 700;
+  min-height: 2.2rem;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.orbit-bubble-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.orbit-bubble-next-btn {
+  background: linear-gradient(135deg, #D95736 0%, #F47752 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(217, 87, 54, 0.4);
+  transition: transform 0.18s ease, filter 0.18s ease;
+  font-family: inherit;
+}
+
+.orbit-bubble-next-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+  filter: brightness(1.1);
+}
+
+/* --- INTERACTIVE TEST HARNESS DOCK --- */
+.orbit-test-dock {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10002;
+  background: rgba(16, 44, 73, 0.95);
+  border: 2px solid var(--orbit-gold);
+  border-radius: 18px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(255, 209, 102, 0.35);
+  backdrop-filter: blur(16px);
+  max-width: 95vw;
+  pointer-events: auto;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.orbit-test-dock.collapsed {
+  transform: translateX(-50%) translateY(calc(100% - 36px));
+}
+
+.orbit-dock-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.orbit-dock-title {
+  font-size: 0.84rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--orbit-gold);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.orbit-dock-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-orbit-test {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.btn-orbit-test:hover {
+  background: linear-gradient(135deg, rgba(217, 87, 54, 0.4), rgba(244, 119, 82, 0.4));
+  border-color: var(--orbit-orange);
+  transform: translateY(-1px);
+}
+
+.btn-orbit-test:active {
+  transform: translateY(1px);
+}
+
+/* --- KEYFRAME ANIMATIONS --- */
+
+@keyframes creatureHover {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1.8deg);
+  }
+}
+
+@keyframes creatureTalkBob {
+  0% {
+    transform: translateY(0) scale(1, 1);
+  }
+  100% {
+    transform: translateY(-5px) scale(1.02, 0.98);
+  }
+}
+
+@keyframes creatureHappyBounce {
+  0% {
+    transform: translateY(0) scale(1, 1);
+  }
+  50% {
+    transform: translateY(-16px) scale(1.06, 0.95);
+  }
+  100% {
+    transform: translateY(0) scale(0.96, 1.04);
+  }
+}
+
+@keyframes creatureExcitedJump {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-22px) rotate(-6deg) scale(1.1);
+  }
+  65% {
+    transform: translateY(-14px) rotate(6deg) scale(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes creatureWorriedShake {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-4px, -2px) rotate(-3deg);
+  }
+  75% {
+    transform: translate(4px, 2px) rotate(3deg);
+  }
+}
+
+@keyframes creatureSadDroop {
+  0%, 100% {
+    transform: translateY(5px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(12px) rotate(-3deg);
+  }
+}
+
+@keyframes creatureThinkingTilt {
+  0% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  100% {
+    transform: translateY(-6px) rotate(6deg);
+  }
+}
+
+@keyframes antennaSpring {
+  0% {
+    transform: rotate(-5deg);
+  }
+  100% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes antennaExcitedWiggle {
+  0% {
+    transform: rotate(-16deg);
+  }
+  100% {
+    transform: rotate(16deg);
+  }
+}
+
+@keyframes creatureBlink {
+  0%, 93%, 97%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes mouthTalkPop {
+  0% {
+    transform: scale(0.85);
+  }
+  100% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes blushPulse {
+  0%, 100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes thrusterStarPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+@keyframes pawWave {
+  0% {
+    transform: rotate(-8deg) translate(0, 0);
+  }
+  100% {
+    transform: rotate(-60deg) translate(8px, -22px);
+  }
+}
+
+@keyframes creatureNod {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(10px) rotate(4deg);
+  }
+}
+
+/* Confetti Burst */
+.orbit-confetti-particle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 10003;
+  animation: confettiFall 1.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(0.3) rotate(var(--trot));
+  }
+}
+
+@media (max-width: 768px) {
+  .orbit-robot-wrap {
+    width: 115px;
+    height: 135px;
+  }
+  .orbit-speech-bubble-wrap {
+    max-width: 250px;
+    padding: 10px 14px;
+  }
+  .orbit-bubble-text {
+    font-size: 0.88rem;
+  }
+}

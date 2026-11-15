@@ -173,11 +173,11 @@ export class Orbit {
 
             <!-- DYNAMIC EXPRESSIVE CARTOON MOUTH -->
             <g id="orbit-mouth-slot">
-              <g id="orbit-creature-mouth">
+              <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
                 <!-- Happy Open Grin with Pink Tongue -->
-                <path d="M 60 76 Q 70 88 80 76 Z" fill="#D95736" stroke="#102C49" stroke-width="1.5"/>
+                <path d="M 61 74 Q 70 85 79 74 Z" fill="#D95736" stroke="#102C49" stroke-width="1.6"/>
                 <!-- Tongue -->
-                <path d="M 64 80 Q 70 78 76 80 Q 70 86 64 80 Z" fill="#FF6584"/>
+                <path d="M 64 78 Q 70 75 76 78 Q 70 83 64 78 Z" fill="#FF6584"/>
               </g>
             </g>
 
@@ -326,9 +326,9 @@ export class Orbit {
 
     // Callback on word boundary
     const handleBoundary = () => {
-      robotMesh.style.transform = 'scale(1.06)';
+      robotMesh.classList.add('word-pop');
       setTimeout(() => {
-        robotMesh.style.transform = 'scale(1)';
+        robotMesh.classList.remove('word-pop');
       }, 75);
     };
 
@@ -392,15 +392,15 @@ export class Orbit {
           </g>
         `;
         mouthSlot.innerHTML = `
-          <g id="orbit-creature-mouth">
-            <path d="M 58 75 Q 70 90 82 75 Z" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
-            <path d="M 63 80 Q 70 77 77 80 Q 70 87 63 80 Z" fill="#FF6584"/>
+          <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
+            <path d="M 61 74 Q 70 85 79 74 Z" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
+            <path d="M 64 78 Q 70 75 76 78 Q 70 84 64 78 Z" fill="#FF6584"/>
           </g>
         `;
         break;
 
       case 'excited':
-        // Giant Starburst Eyes ⭐ ⭐ + huge laughing mouth + confetti!
+        // Giant Starburst Eyes ⭐ ⭐ + laughing oval mouth + confetti!
         eyesSlot.innerHTML = `
           <g filter="url(#orbitGoldGlow)">
             <g transform="translate(53, 61)">
@@ -414,9 +414,9 @@ export class Orbit {
           </g>
         `;
         mouthSlot.innerHTML = `
-          <g id="orbit-creature-mouth">
-            <ellipse cx="70" cy="80" rx="13" ry="11" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
-            <ellipse cx="70" cy="85" rx="8" ry="5.5" fill="#FF6584"/>
+          <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
+            <ellipse cx="70" cy="79" rx="8" ry="6.5" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
+            <ellipse cx="70" cy="81.5" rx="5.5" ry="3.5" fill="#FF6584"/>
           </g>
         `;
         this.spawnConfetti();
@@ -433,8 +433,8 @@ export class Orbit {
           </g>
         `;
         mouthSlot.innerHTML = `
-          <g id="orbit-creature-mouth">
-            <path d="M 58 80 Q 64 76 70 80 Q 76 84 82 80" fill="none" stroke="#FF3B30" stroke-width="3.5" stroke-linecap="round"/>
+          <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
+            <path d="M 62 79 Q 66 76 70 79 Q 74 82 78 79" fill="none" stroke="#FF3B30" stroke-width="3" stroke-linecap="round"/>
           </g>
         `;
         break;
@@ -453,9 +453,9 @@ export class Orbit {
           </g>
         `;
         mouthSlot.innerHTML = `
-          <g id="orbit-creature-mouth">
-            <!-- Cute cat-like smirk :3 -->
-            <path d="M 62 78 Q 67 82 70 78 Q 73 82 78 78" fill="none" stroke="#102C49" stroke-width="3" stroke-linecap="round"/>
+          <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
+            <!-- Cute cat-like smirk :3 right under nose -->
+            <path d="M 63 78 Q 66.5 82 70 78 Q 73.5 82 77 78" fill="none" stroke="#102C49" stroke-width="2.5" stroke-linecap="round"/>
           </g>
         `;
         break;
@@ -476,8 +476,8 @@ export class Orbit {
           </g>
         `;
         mouthSlot.innerHTML = `
-          <g id="orbit-creature-mouth">
-            <path d="M 63 83 Q 70 76 77 83" fill="none" stroke="#102C49" stroke-width="3" stroke-linecap="round"/>
+          <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
+            <path d="M 63 82 Q 70 76 77 82" fill="none" stroke="#102C49" stroke-width="2.5" stroke-linecap="round"/>
           </g>
         `;
         break;
@@ -502,9 +502,9 @@ export class Orbit {
           </g>
         `;
         mouthSlot.innerHTML = `
-          <g id="orbit-creature-mouth">
-            <path d="M 60 76 Q 70 88 80 76 Z" fill="#D95736" stroke="#102C49" stroke-width="1.5"/>
-            <path d="M 64 80 Q 70 78 76 80 Q 70 86 64 80 Z" fill="#FF6584"/>
+          <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
+            <path d="M 61 74 Q 70 84 79 74 Z" fill="#D95736" stroke="#102C49" stroke-width="1.6"/>
+            <path d="M 64 78 Q 70 76 76 78 Q 70 83 64 78 Z" fill="#FF6584"/>
           </g>
         `;
         break;

@@ -51,6 +51,10 @@
   transform: scale(0.95);
 }
 
+.orbit-robot-wrap.word-pop {
+  transform: scale(1.04);
+}
+
 /* --- ANIMATION STATES --- */
 
 /* Idle Floating */
@@ -115,9 +119,26 @@
   animation: creatureBlink 4.2s infinite;
 }
 
-/* Mouth Talking Animation */
+/* Mouth Talking Animation - Locked firmly to exact face center (70px, 79px) */
+#orbit-creature-mouth,
+#orbit-mouth-slot {
+  transform-origin: 70px 79px;
+  transform-box: view-box;
+}
+
 .orbit-robot-wrap.state-talking #orbit-creature-mouth {
-  animation: mouthTalkPop 0.22s ease-in-out infinite alternate;
+  transform-origin: 70px 79px;
+  transform-box: view-box;
+  animation: mouthTalkPop 0.2s ease-in-out infinite alternate;
+}
+
+@keyframes mouthTalkPop {
+  0% {
+    transform: scale(0.96, 0.88);
+  }
+  100% {
+    transform: scale(1.04, 1.12);
+  }
 }
 
 /* Cute Cheeks Pulse */
@@ -517,15 +538,6 @@
   }
   95% {
     transform: scaleY(0.08);
-  }
-}
-
-@keyframes mouthTalkPop {
-  0% {
-    transform: scale(0.85);
-  }
-  100% {
-    transform: scale(1.2);
   }
 }
 

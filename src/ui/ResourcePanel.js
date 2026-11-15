@@ -52,18 +52,18 @@ export class ResourcePanel {
                   />
                 </svg>
 
-                <!-- Center Content: Icon, Smooth Number, Resource Name -->
+                <!-- Center Content: Icon & Smooth Number ONLY (Spacious & Clean) -->
                 <div class="mc-gauge-center">
                   <span class="mc-gauge-icon">${res.icon}</span>
                   <span class="mc-gauge-val" id="gauge-val-${res.id}">100%</span>
-                  <span class="mc-gauge-name">${res.name}</span>
                 </div>
               </div>
 
-              <!-- State Tag & 1-Line Info -->
+              <!-- Title, State Tag & 1-Line Info Below the Ring -->
               <div class="mc-gauge-footer">
+                <h3 class="mc-gauge-title">${res.name}</h3>
                 <span class="mc-gauge-badge ${statusInfo.class}" id="gauge-badge-${res.id}">${statusInfo.label}</span>
-                <span class="mc-gauge-subtext" id="gauge-sub-${res.id}">Nominal consumption rate</span>
+                <span class="mc-gauge-subtext" id="gauge-sub-${res.id}">Full capacity reserves</span>
               </div>
             </div>
           `;

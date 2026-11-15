@@ -66,60 +66,7 @@ export class Navigation {
         </div>
       </section>
 
-      <!-- SCREEN 2: MISSION BRIEFING (MEET YOUR CREW & BASE) -->
-      <section id="screen-briefing" class="game-screen">
-        <div class="briefing-container">
-          <div class="briefing-header">
-            <div class="badge-pill">
-              <span class="pulse-indicator"></span>
-              <span>EXPEDITION BRIEFING 📋</span>
-            </div>
-            <h2 class="briefing-title">MEET YOUR CREW & BASE!</h2>
-            <p class="briefing-objective">
-              <strong>YOUR MISSION:</strong> Keep your 4 space friends safe, warm, and happy while exploring Outpost LUNA-01!
-            </p>
-          </div>
-
-          <!-- Crew Cards -->
-          <div class="briefing-crew-section">
-            <h3 class="section-heading">YOUR 4 ASTRONAUT FRIENDS</h3>
-            <div class="crew-cards-row">
-              ${MISSION_DATA.crew.map(c => `
-                <div class="crew-card">
-                  <div class="crew-avatar" style="border-color: ${c.avatarColor}">
-                    <span>${c.name.split(' ')[1] ? c.name.split(' ')[1][0] : 'A'}</span>
-                  </div>
-                  <div class="crew-details">
-                    <span class="crew-name">${c.name}</span>
-                    <span class="crew-role">${c.role}</span>
-                    <div class="crew-status-row">
-                      <span class="crew-status-dot"></span>
-                      <span>100% Healthy • O₂ 99%</span>
-                    </div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-
-          <!-- Base Facilities Highlight -->
-          <div class="briefing-base-preview">
-            <div class="spec-highlight-card">
-              <span class="spec-title">BASE TELEMETRY</span>
-              <span class="spec-detail">🏠 Habitat • 🌱 Greenhouses • ⚡ Solar Array • 🔬 Lab • 📡 Deep Space Dish • 🚜 Rover</span>
-            </div>
-          </div>
-
-          <div class="briefing-footer">
-            <button id="btn-back-to-welcome" class="btn btn-secondary">← Back to Menu</button>
-            <button id="btn-to-how-to-play" class="btn btn-primary btn-large btn-glow-large">
-              <span>MEET ORBIT & HOW TO PLAY ⭐ →</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- SCREEN 2.5: HOW TO PLAY WITH ORBIT -->
+      <!-- SCREEN 2: HOW TO PLAY WITH ORBIT (KID-FRIENDLY VISUAL TUTORIAL) -->
       <section id="screen-how-to-play" class="game-screen">
         <div class="how-to-play-container">
           <!-- ORBIT Buddy Banner -->
@@ -146,7 +93,7 @@ export class Navigation {
                 <span>YOUR SPACE COMPANION</span>
               </div>
               <h2 class="htp-title">"Hi! I'm ORBIT! Here's how to explore!"</h2>
-              <p class="htp-subtitle">Exploring your Moon base is super fun and easy. Here are the 4 simple controls:</p>
+              <p class="htp-subtitle">Commander, welcome to Outpost LUNA-01! Look after your 4 astronaut friends and explore your Moon base with these simple controls:</p>
             </div>
           </div>
 
@@ -178,7 +125,7 @@ export class Navigation {
           </div>
 
           <div class="htp-footer">
-            <button id="btn-back-to-briefing" class="btn btn-secondary">← Back to Crew</button>
+            <button id="btn-back-to-welcome" class="btn btn-secondary">← Back to Menu</button>
             <button id="btn-enter-colony" class="btn-glow-large pulse-glow">
               <span>LET'S GO TO THE MOON BASE! 🚀</span>
             </button>
@@ -246,37 +193,24 @@ export class Navigation {
   }
 
   bindEvents() {
-    // Welcome Screen -> Go to Briefing
+    // Welcome Screen -> Go directly to How to Play
     const btnStart = this.navLayer.querySelector('#btn-start-mission');
     btnStart.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
     btnStart.addEventListener('click', () => {
       orbitVoice.playChirp('click');
-      this.switchScreen('briefing');
+      this.switchScreen('how-to-play');
       if (this.options.onStartMission) this.options.onStartMission();
     });
 
-    // Briefing Screen -> Go to How to Play or Back
+    // How to Play Screen -> Back to Menu or Enter Colony
     const btnBackWel = this.navLayer.querySelector('#btn-back-to-welcome');
-    btnBackWel.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-    btnBackWel.addEventListener('click', () => {
-      orbitVoice.playChirp('click');
-      this.switchScreen('welcome');
-    });
-
-    const btnToHtp = this.navLayer.querySelector('#btn-to-how-to-play');
-    btnToHtp.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-    btnToHtp.addEventListener('click', () => {
-      orbitVoice.playChirp('click');
-      this.switchScreen('how-to-play');
-    });
-
-    // How to Play Screen -> Go to Colony or Back
-    const btnBackBrief = this.navLayer.querySelector('#btn-back-to-briefing');
-    btnBackBrief.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
-    btnBackBrief.addEventListener('click', () => {
-      orbitVoice.playChirp('click');
-      this.switchScreen('briefing');
-    });
+    if (btnBackWel) {
+      btnBackWel.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));
+      btnBackWel.addEventListener('click', () => {
+        orbitVoice.playChirp('click');
+        this.switchScreen('welcome');
+      });
+    }
 
     const btnEnter = this.navLayer.querySelector('#btn-enter-colony');
     btnEnter.addEventListener('mouseenter', () => orbitVoice.playChirp('hover'));

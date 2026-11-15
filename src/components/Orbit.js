@@ -12,7 +12,6 @@ export class Orbit {
     this.options = {
       defaultPosition: options.defaultPosition || { x: window.innerWidth - 185, y: window.innerHeight - 245 },
       autoMount: options.autoMount !== false,
-      enableTestDock: options.enableTestDock !== false,
       ...options
     };
 
@@ -26,10 +25,6 @@ export class Orbit {
 
     if (this.options.autoMount) {
       this.mount(document.body);
-    }
-
-    if (this.options.enableTestDock) {
-      this.createTestHarness();
     }
   }
 
@@ -713,114 +708,6 @@ export class Orbit {
     }
   }
 
-  /**
-   * Interactive Test Harness Dock: lets you click & test EVERY emotion, gesture, voice, and move
-   */
-  createTestHarness() {
-    if (document.getElementById('orbit-test-dock')) return;
-
-    const dock = document.createElement('div');
-    dock.id = 'orbit-test-dock';
-    dock.className = 'orbit-test-dock';
-
-    dock.innerHTML = `
-      <div class="orbit-dock-title-bar" id="orbit-dock-toggle">
-        <span class="orbit-dock-title">⭐ ORBIT Moon Buddy Test Studio (Click to Toggle)</span>
-        <span style="font-size:0.75rem; color:#94A3B8;">▼</span>
-      </div>
-
-      <div class="orbit-dock-btn-group" id="orbit-dock-controls">
-        <!-- Emotions -->
-        <span style="font-size:0.75rem; font-weight:800; color:#00E5FF;">Emotions:</span>
-        <button class="btn-orbit-test" data-test="happy">😊 Happy</button>
-        <button class="btn-orbit-test" data-test="excited">🎉 Excited</button>
-        <button class="btn-orbit-test" data-test="worried">🌀 Worried (Dizzy!)</button>
-        <button class="btn-orbit-test" data-test="thinking">🤔 Thinking</button>
-        <button class="btn-orbit-test" data-test="sad">🥺 Pouting</button>
-        <button class="btn-orbit-test" data-test="idle">😄 Cute Idle</button>
-
-        <!-- Gestures -->
-        <span style="font-size:0.75rem; font-weight:800; color:#FFD166; margin-left:8px;">Gestures:</span>
-        <button class="btn-orbit-test" data-test="wave">👋 Wave Paw</button>
-        <button class="btn-orbit-test" data-test="celebrate">🏆 Celebrate</button>
-        <button class="btn-orbit-test" data-test="nod">🙂 Nod Head</button>
-        <button class="btn-orbit-test" data-test="point">👉 Point</button>
-
-        <!-- Voice & Movement -->
-        <span style="font-size:0.75rem; font-weight:800; color:#06D6A0; margin-left:8px;">Actions:</span>
-        <button class="btn-orbit-test" data-test="speak">🗣️ Test Voice</button>
-        <button class="btn-orbit-test" data-test="fly-center">🚀 Fly Center</button>
-        <button class="btn-orbit-test" data-test="fly-corner">📍 Fly Corner</button>
-      </div>
-    `;
-
-    document.body.appendChild(dock);
-
-    // Toggle Dock Collapse
-    dock.querySelector('#orbit-dock-toggle').addEventListener('click', () => {
-      dock.classList.toggle('collapsed');
-    });
-
-    // Test Button Actions
-    dock.querySelectorAll('.btn-orbit-test').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const action = e.currentTarget.getAttribute('data-test');
-        this.runTestAction(action);
-      });
-    });
-  }
-
-  runTestAction(action) {
-    switch (action) {
-      case 'happy':
-        this.say("YAY! I am super happy to explore the Moon with you!", { emotion: 'happy', gesture: 'wave' });
-        break;
-      case 'excited':
-        this.celebrate();
-        this.say("WOOHOO! Look at my star eyes! We are Moon champions!", { emotion: 'excited', gesture: 'celebrate' });
-        break;
-      case 'worried':
-        this.warn("YIKES! My antennas are spinning dizzy! Watch out for that crater!");
-        break;
-      case 'thinking':
-        this.say("Hmm... let me scratch my floppy ear and think...", { emotion: 'thinking', gesture: 'none' });
-        break;
-      case 'sad':
-        this.say("Aww, don't worry Commander! We can try again together!", { emotion: 'sad', gesture: 'none' });
-        break;
-      case 'idle':
-        this.setEmotion('idle');
-        this.setGesture('none');
-        this.say("All systems nominal, Commander! Ready whenever you are!", { emotion: 'idle', gesture: 'nod' });
-        break;
-      case 'wave':
-        this.setGesture('wave');
-        this.say("Hiya! Waving my fluffy space paw at you!", { emotion: 'happy', gesture: 'wave' });
-        break;
-      case 'celebrate':
-        this.celebrate();
-        break;
-      case 'nod':
-        this.setGesture('nod');
-        this.say("Yes, Commander! You are totally awesome!", { emotion: 'happy', gesture: 'nod' });
-        break;
-      case 'point':
-        this.pointAt('#orbit-test-dock');
-        this.say("Look right here at our test studio controls!", { emotion: 'happy', gesture: 'point' });
-        break;
-      case 'speak':
-        this.say("BEEP-BOOP! I'm ORBIT! Your funny, fluffy Moon buddy! Let's explore!", { emotion: 'happy', gesture: 'wave' });
-        break;
-      case 'fly-center':
-        this.flyTo(window.innerWidth / 2 - 70, window.innerHeight / 2 - 100);
-        this.say("Wheeeee! Zooming right to the center of your screen!", { emotion: 'excited', gesture: 'celebrate' });
-        break;
-      case 'fly-corner':
-        this.flyTo(window.innerWidth - 185, window.innerHeight - 245);
-        this.say("Docked safely in the corner!", { emotion: 'happy', gesture: 'nod' });
-        break;
-    }
-  }
 }
 
 // Global Singleton Instance for easy importing across screens

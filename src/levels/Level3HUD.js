@@ -1,4 +1,5 @@
 import { level3Audio } from '../audio/Level3Audio.js';
+import { orbit } from '../components/Orbit.js';
 import '../styles/level3-hud.css';
 import nasaData from '../data/nasa_sep_events.json';
 
@@ -418,16 +419,19 @@ export class Level3HUD {
     `;
 
     backdrop.classList.add('open');
+    orbit?.dockForModal();
 
     windowEl.querySelector('#btn-pause-resume').addEventListener('click', () => {
       level3Audio.playClick();
       backdrop.classList.remove('open');
+      orbit?.undockFromModal();
       if (onResume) onResume();
     });
 
     windowEl.querySelector('#btn-pause-restart').addEventListener('click', () => {
       level3Audio.playClick();
       backdrop.classList.remove('open');
+      orbit?.undockFromModal();
       if (onRestart) onRestart();
     });
 
@@ -441,11 +445,13 @@ export class Level3HUD {
     windowEl.querySelector('#btn-pause-exit').addEventListener('click', () => {
       level3Audio.playClick();
       backdrop.classList.remove('open');
+      orbit?.undockFromModal();
       if (onExit) onExit();
     });
   }
 
   showWinModal(data = {}) {
+    orbit?.dockForModal();
     const backdrop = this.element.querySelector('#l3-modal-backdrop');
     const windowEl = this.element.querySelector('#l3-modal-window');
 
@@ -488,11 +494,13 @@ export class Level3HUD {
     windowEl.querySelector('#btn-win-continue').addEventListener('click', () => {
       level3Audio.playClick();
       backdrop.classList.remove('open');
+      orbit?.undockFromModal();
       if (data.onContinue) data.onContinue();
     });
   }
 
   showFailModal(onRetry, onExit) {
+    orbit?.dockForModal();
     const backdrop = this.element.querySelector('#l3-modal-backdrop');
     const windowEl = this.element.querySelector('#l3-modal-window');
 
@@ -518,12 +526,14 @@ export class Level3HUD {
     windowEl.querySelector('#btn-fail-retry').addEventListener('click', () => {
       level3Audio.playClick();
       backdrop.classList.remove('open');
+      orbit?.undockFromModal();
       if (onRetry) onRetry();
     });
 
     windowEl.querySelector('#btn-fail-exit').addEventListener('click', () => {
       level3Audio.playClick();
       backdrop.classList.remove('open');
+      orbit?.undockFromModal();
       if (onExit) onExit();
     });
   }

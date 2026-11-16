@@ -250,7 +250,7 @@
   inset: 0;
   background: rgba(6, 16, 30, 0.85);
   backdrop-filter: blur(12px);
-  z-index: 3000;
+  z-index: 50000 !important;
   display: flex;
   align-items: center;
   justify-content: center;

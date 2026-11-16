@@ -312,7 +312,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: auto;
-  z-index: 150;
+  z-index: 50000 !important;
 }
 
 .l7-challenge-modal-backdrop.open {
@@ -391,7 +391,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: auto;
-  z-index: 200;
+  z-index: 50000 !important;
 }
 
 .l7-pause-modal-backdrop.open {

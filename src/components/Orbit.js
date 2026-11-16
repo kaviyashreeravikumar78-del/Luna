@@ -166,9 +166,9 @@ export class Orbit {
             <!-- Fluffy Round Creature Head -->
             <circle cx="70" cy="64" r="38" fill="url(#orbitFaceGrad)"/>
 
-            <!-- ROSY BLUSHING CHEEKS -->
-            <ellipse cx="45" cy="74" rx="7.5" ry="4.5" fill="#FF6584" class="orbit-blush-cheek" opacity="0.75"/>
-            <ellipse cx="95" cy="74" rx="7.5" ry="4.5" fill="#FF6584" class="orbit-blush-cheek" opacity="0.75"/>
+            <!-- ROSY BLUSHING CHEEKS (Soft & gentle pastel blush) -->
+            <ellipse cx="45" cy="74" rx="7.5" ry="4.5" fill="#FF6584" class="orbit-blush-cheek" opacity="0.32"/>
+            <ellipse cx="95" cy="74" rx="7.5" ry="4.5" fill="#FF6584" class="orbit-blush-cheek" opacity="0.32"/>
 
             <!-- CUTE BUTTON NOSE -->
             <ellipse cx="70" cy="69" rx="3.5" ry="2.5" fill="#D95736"/>
@@ -290,6 +290,28 @@ export class Orbit {
       this.hideBubble();
       this.stopSpeaking();
     });
+
+    // Automatic modal detection: whenever any modal opens, park ORBIT safely away from center dialogs
+    const checkActiveModals = () => {
+      const activeBackdrop = document.querySelector(
+        '.l1-modal-backdrop.active, .l2-modal-backdrop.active, .l3-modal-backdrop.open, .l5-modal-backdrop.open, .l6-modal-backdrop.open, .l7-challenge-modal-backdrop.open, .l7-pause-modal-backdrop.open'
+      );
+      if (activeBackdrop && activeBackdrop.offsetParent !== null) {
+        if (!this.isDockedForModal) this.dockForModal();
+      } else {
+        if (this.isDockedForModal) this.undockFromModal();
+      }
+    };
+
+    this.modalObserver = new MutationObserver(() => {
+      checkActiveModals();
+    });
+    this.modalObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class', 'style'],
+      subtree: true,
+      childList: true
+    });
   }
 
   playTapReaction() {
@@ -360,9 +382,11 @@ export class Orbit {
     const handleEnd = () => {
       this.isSpeaking = false;
       robotMesh.classList.remove('state-talking');
-      if (this.currentEmotion === 'idle' || this.currentEmotion === 'talking') {
+      if (this.resetEmotionTimer) clearTimeout(this.resetEmotionTimer);
+      this.resetEmotionTimer = setTimeout(() => {
         this.setEmotion('idle');
-      }
+        this.setGesture('none');
+      }, 1000);
       if (onComplete) onComplete();
     };
 
@@ -442,41 +466,60 @@ export class Orbit {
         break;
 
       case 'excited':
-        // Giant Starburst Eyes ⭐ ⭐ + laughing oval mouth + confetti!
+      case 'celebrate':
+        // Big joyful laughing eyes with sparkles + broad cheerful beaming smile with pink tongue!
         eyesSlot.innerHTML = `
-          <g filter="url(#orbitGoldGlow)">
-            <g transform="translate(53, 61)">
-              <polygon points="0,-10 3,-3 10,0 3,3 0,10 -3,3 -10,0 -3,-3" fill="#FFD166"/>
-              <circle cx="0" cy="0" r="3.5" fill="#FFFFFF"/>
-            </g>
-            <g transform="translate(87, 61)">
-              <polygon points="0,-10 3,-3 10,0 3,3 0,10 -3,3 -10,0 -3,-3" fill="#FFD166"/>
-              <circle cx="0" cy="0" r="3.5" fill="#FFFFFF"/>
-            </g>
+          <g>
+            <path d="M 43 65 Q 53 50 63 65" fill="none" stroke="#102C49" stroke-width="4.5" stroke-linecap="round"/>
+            <path d="M 77 65 Q 87 50 97 65" fill="none" stroke="#102C49" stroke-width="4.5" stroke-linecap="round"/>
+            <polygon points="38,55 40,58 43,60 40,62 38,65 36,62 33,60 36,58" fill="#FFD166"/>
+            <polygon points="102,55 104,58 107,60 104,62 102,65 100,62 97,60 100,58" fill="#FFD166"/>
           </g>
         `;
         mouthSlot.innerHTML = `
           <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
-            <ellipse cx="70" cy="79" rx="8" ry="6.5" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
-            <ellipse cx="70" cy="81.5" rx="5.5" ry="3.5" fill="#FF6584"/>
+            <path d="M 59 74 Q 70 88 81 74 Z" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
+            <path d="M 62 79 Q 70 76 78 79 Q 70 86 62 79 Z" fill="#FF6584"/>
           </g>
         `;
         this.spawnConfetti();
         break;
 
-      case 'worried':
-        // Hilarious cartoon dizzy swirl eyes @ @ + funny wavy mouth + sweat drop!
+      case 'shock':
+        // Startled round eyes + small circular gasp (only used when sentence is an actual shock/emergency!)
         eyesSlot.innerHTML = `
           <g>
-            <!-- Left Swirl -->
-            <path d="M 53 61 m -6,0 a 6,6 0 1,0 12,0 a 6,6 0 1,0 -12,0 m 2.5,0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0" fill="none" stroke="#FF3B30" stroke-width="2.5" stroke-linecap="round"/>
-            <!-- Right Swirl -->
-            <path d="M 87 61 m -6,0 a 6,6 0 1,0 12,0 a 6,6 0 1,0 -12,0 m 2.5,0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0" fill="none" stroke="#FF3B30" stroke-width="2.5" stroke-linecap="round"/>
+            <ellipse cx="53" cy="61" rx="9.5" ry="11" fill="#FFFFFF" stroke="#102C49" stroke-width="2"/>
+            <circle cx="53" cy="61" r="3.2" fill="#102C49"/>
+            <circle cx="55" cy="58" r="1.5" fill="#FFFFFF"/>
+            <ellipse cx="87" cy="61" rx="9.5" ry="11" fill="#FFFFFF" stroke="#102C49" stroke-width="2"/>
+            <circle cx="87" cy="61" r="3.2" fill="#102C49"/>
+            <circle cx="89" cy="58" r="1.5" fill="#FFFFFF"/>
           </g>
         `;
         mouthSlot.innerHTML = `
           <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
-            <path d="M 62 79 Q 66 76 70 79 Q 74 82 78 79" fill="none" stroke="#FF3B30" stroke-width="3" stroke-linecap="round"/>
+            <ellipse cx="70" cy="79" rx="5" ry="5" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
+            <circle cx="70" cy="80" r="3" fill="#FF6584"/>
+          </g>
+        `;
+        break;
+
+      case 'worried':
+        // Mildly concerned cartoon eyes + gentle wavy mouth + sweat drop
+        eyesSlot.innerHTML = `
+          <g>
+            <ellipse cx="53" cy="61" rx="8.5" ry="10" fill="#FFFFFF" stroke="#102C49" stroke-width="2"/>
+            <circle cx="54" cy="61" r="4.5" fill="#102C49"/>
+            <circle cx="56" cy="59" r="1.8" fill="#FFFFFF"/>
+            <ellipse cx="87" cy="61" rx="8.5" ry="10" fill="#FFFFFF" stroke="#102C49" stroke-width="2"/>
+            <circle cx="86" cy="61" r="4.5" fill="#102C49"/>
+            <circle cx="88" cy="59" r="1.8" fill="#FFFFFF"/>
+          </g>
+        `;
+        mouthSlot.innerHTML = `
+          <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
+            <path d="M 63 79 Q 66.5 76 70 79 Q 73.5 82 77 79" fill="none" stroke="#D95736" stroke-width="2.5" stroke-linecap="round"/>
           </g>
         `;
         break;
@@ -578,9 +621,9 @@ export class Orbit {
     orbitVoice.playChirp('activate');
     this.spawnConfetti();
     setTimeout(() => {
-      this.setEmotion('happy');
+      this.setEmotion('idle');
       this.setGesture('none');
-    }, 2400);
+    }, 2500);
   }
 
   /**
@@ -748,11 +791,44 @@ export class Orbit {
     if (bubble) bubble.classList.remove('visible');
     if (this.typewriterTimer) clearInterval(this.typewriterTimer);
 
+    if (this.resetEmotionTimer) clearTimeout(this.resetEmotionTimer);
+    this.resetEmotionTimer = setTimeout(() => {
+      this.setEmotion('idle');
+      this.setGesture('none');
+    }, 400);
+
     const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight) || (window.innerWidth <= 950 && window.innerHeight <= 450);
     if (isMobileLandscape) {
       const safe = this.getDefaultPosition();
       this.flyTo(safe.x, safe.y, 350);
     }
+  }
+
+  dockForModal() {
+    this.isDockedForModal = true;
+    this.hideBubble();
+    this.setEmotion('happy');
+    this.setGesture('wave');
+
+    // Park safely in top-right corner far away from center modal dialogs and buttons
+    const safeX = Math.max(10, window.innerWidth - 110);
+    const safeY = 25;
+    this.flyTo(safeX, safeY, 350);
+
+    // Disable pointer events so ORBIT never blocks buttons
+    this.container.style.pointerEvents = 'none';
+    const mesh = this.container.querySelector('#orbit-robot-mesh');
+    if (mesh) mesh.style.pointerEvents = 'none';
+  }
+
+  undockFromModal() {
+    this.isDockedForModal = false;
+    this.container.style.pointerEvents = 'none';
+    const mesh = this.container.querySelector('#orbit-robot-mesh');
+    if (mesh) mesh.style.pointerEvents = 'auto';
+
+    const safe = this.getDefaultPosition();
+    this.flyTo(safe.x, safe.y, 400);
   }
 
   show() {

@@ -10,10 +10,10 @@ import '../styles/orbit.css';
 export class Orbit {
   constructor(options = {}) {
     this.options = {
-      defaultPosition: options.defaultPosition || { x: window.innerWidth - 185, y: window.innerHeight - 245 },
       autoMount: options.autoMount !== false,
       ...options
     };
+    this.options.defaultPosition = options.defaultPosition || this.getDefaultPosition();
 
     this.currentEmotion = 'idle';
     this.currentGesture = 'none';
@@ -25,6 +25,37 @@ export class Orbit {
 
     if (this.options.autoMount) {
       this.mount(document.body);
+    }
+
+    // Responsive orientation & screen resize handler
+    window.addEventListener('resize', () => this.handleScreenResize());
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => this.handleScreenResize(), 150);
+      setTimeout(() => this.handleScreenResize(), 350);
+    });
+  }
+
+  getDefaultPosition() {
+    const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight) || (window.innerWidth <= 950 && window.innerHeight <= 450);
+    if (isMobileLandscape) {
+      // In mobile landscape, keep ORBIT comfortably in the top-right safe zone
+      // below the top HUD bar and completely away from bottom-right touch action buttons!
+      return { x: Math.max(10, window.innerWidth - 105), y: 55 };
+    }
+    return { x: Math.max(10, window.innerWidth - 185), y: Math.max(10, window.innerHeight - 245) };
+  }
+
+  handleScreenResize() {
+    const safe = this.getDefaultPosition();
+    const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight) || (window.innerWidth <= 950 && window.innerHeight <= 450);
+
+    if (!this.isSpeaking) {
+      this.flyTo(safe.x, safe.y, 350);
+    } else if (isMobileLandscape) {
+      // Reposition to safe upper zone if currently hovering low
+      if (this.currentPosition && this.currentPosition.y > 80) {
+        this.flyTo(safe.x, safe.y, 350);
+      }
     }
   }
 
@@ -593,8 +624,22 @@ export class Orbit {
    * Smoothly flies ORBIT to target pixel coordinates
    */
   flyTo(x, y, duration = 650) {
+    const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight) || (window.innerWidth <= 950 && window.innerHeight <= 450);
+    let finalX = x;
+    let finalY = y;
+
+    if (isMobileLandscape) {
+      // In mobile landscape, protect the bottom and right touch action areas!
+      // If position is lower than 80px or near the right edge, safely pin it to upper safe zone:
+      if (finalY > 80 || finalX > window.innerWidth - 160) {
+        finalY = 55;
+        finalX = Math.max(10, window.innerWidth - 105);
+      }
+    }
+
+    this.currentPosition = { x: finalX, y: finalY };
     this.container.style.transition = `transform ${duration}ms cubic-bezier(0.2, 0.9, 0.3, 1.2)`;
-    this.container.style.transform = `translate(${x}px, ${y}px)`;
+    this.container.style.transform = `translate(${finalX}px, ${finalY}px)`;
   }
 
   /**
@@ -663,6 +708,12 @@ export class Orbit {
     const bubble = this.container.querySelector('#orbit-speech-bubble');
     if (bubble) bubble.classList.remove('visible');
     if (this.typewriterTimer) clearInterval(this.typewriterTimer);
+
+    const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight) || (window.innerWidth <= 950 && window.innerHeight <= 450);
+    if (isMobileLandscape) {
+      const safe = this.getDefaultPosition();
+      this.flyTo(safe.x, safe.y, 350);
+    }
   }
 
   show() {

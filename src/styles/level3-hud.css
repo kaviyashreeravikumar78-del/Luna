@@ -385,13 +385,14 @@
    -------------------------------------------------------------------------- */
 .l3-touch-controls {
   position: absolute;
-  bottom: 24px;
-  left: 24px;
-  right: 24px;
+  bottom: 18px;
+  left: 20px;
+  right: 20px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  pointer-events: none;
+  pointer-events: none !important;
+  z-index: 10005 !important;
 }
 
 .l3-joystick-zone {

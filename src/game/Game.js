@@ -69,6 +69,10 @@ export class Game {
     requestAnimationFrame(this.animate);
 
     window.addEventListener('resize', () => this.onWindowResize());
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => this.onWindowResize(), 150);
+      setTimeout(() => this.onWindowResize(), 350);
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         this.clock.stop();

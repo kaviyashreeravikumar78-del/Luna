@@ -184,19 +184,23 @@ export class Level1HUD {
     // Mobile Touch Joystick
     this.setupTouchJoystick();
 
-    // Touch Action Button
+    // Touch Action Button (Supports both pointer & touch events for all mobile phones)
     const actBtn = this.element.querySelector('#l1-touch-action-btn');
-    actBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
+    const startAction = (e) => {
+      if (e && e.cancelable) e.preventDefault();
       if (this.options.onActionPress) this.options.onActionPress();
-    });
-    actBtn.addEventListener('pointerup', (e) => {
-      e.preventDefault();
+    };
+    const endAction = (e) => {
+      if (e && e.cancelable) e.preventDefault();
       if (this.options.onActionRelease) this.options.onActionRelease();
-    });
-    actBtn.addEventListener('pointerleave', () => {
-      if (this.options.onActionRelease) this.options.onActionRelease();
-    });
+    };
+
+    actBtn.addEventListener('pointerdown', startAction);
+    actBtn.addEventListener('pointerup', endAction);
+    actBtn.addEventListener('pointerleave', endAction);
+    actBtn.addEventListener('touchstart', startAction, { passive: false });
+    actBtn.addEventListener('touchend', endAction, { passive: false });
+    actBtn.addEventListener('touchcancel', endAction, { passive: false });
   }
 
   setupTouchJoystick() {

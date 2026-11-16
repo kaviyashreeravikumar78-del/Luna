@@ -23,6 +23,31 @@
   pointer-events: auto;
 }
 
+@media (max-height: 520px), (max-width: 768px) {
+  .l1-top-bar {
+    padding: 0.5rem 0.9rem;
+  }
+  .l1-sol-pill, .l1-stars-pill {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.74rem;
+  }
+  .l1-objective-chip {
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+  }
+  .l1-battery-card {
+    padding: 0.25rem 0.6rem;
+  }
+  .l1-battery-track {
+    width: 60px;
+  }
+  .btn-l1-pause {
+    width: 34px;
+    height: 34px;
+    font-size: 0.95rem;
+  }
+}
+
 /* Top-Left: Sol & Stars */
 .l1-badge-group {
   display: flex;
@@ -329,56 +354,65 @@
 /* MOBILE TOUCH CONTROLS */
 .l1-touch-dock {
   display: none;
-  pointer-events: auto;
-  padding: 1.5rem;
+  pointer-events: none !important;
+  padding: 1rem 1.4rem;
   justify-content: space-between;
   align-items: flex-end;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10005 !important;
 }
 
-@media (pointer: coarse), (max-width: 900px) {
+@media (pointer: coarse), (max-width: 900px), (max-height: 520px) {
   .l1-touch-dock {
     display: flex;
   }
 }
 
 .l1-virtual-stick {
-  width: 110px;
-  height: 110px;
+  width: 95px;
+  height: 95px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 2px solid rgba(0, 229, 255, 0.5);
+  background: rgba(14, 34, 58, 0.75);
+  border: 2px solid rgba(0, 229, 255, 0.6);
   position: relative;
   touch-action: none;
+  pointer-events: auto !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
 .l1-stick-knob {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: #00E5FF;
   position: absolute;
-  top: 32px;
-  left: 32px;
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.8);
+  top: 26px;
+  left: 26px;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.85);
+  pointer-events: none;
 }
 
 .l1-touch-btn-action {
-  width: 78px;
-  height: 78px;
+  width: 74px;
+  height: 74px;
   border-radius: 50%;
   background: linear-gradient(135deg, #D95736, #FF9E00);
   border: 3px solid #FFFFFF;
   color: #FFFFFF;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 900;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 20px rgba(217, 87, 54, 0.6);
+  box-shadow: 0 6px 20px rgba(217, 87, 54, 0.65), 0 0 16px rgba(255, 158, 0, 0.4);
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
+  pointer-events: auto !important;
 }
 
 .l1-touch-btn-action:active {

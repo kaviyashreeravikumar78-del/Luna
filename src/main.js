@@ -1,8 +1,11 @@
 import { Game } from './game/Game.js';
 import { orbit } from './components/Orbit.js';
+import { OrientationManager } from './ui/OrientationManager.js';
 import './styles/style.css';
 
 window.addEventListener('DOMContentLoaded', () => {
+  OrientationManager.init();
+
   const container = document.getElementById('canvas-container');
   if (!container) {
     console.error('Canvas mount container #canvas-container not found!');

@@ -524,35 +524,42 @@
 /* MOBILE TOUCH DOCK */
 .l2-touch-dock {
   display: none;
-  pointer-events: auto;
-  padding: 1.5rem;
+  pointer-events: none !important;
+  padding: 1rem 1.4rem;
   justify-content: space-between;
   align-items: flex-end;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10005 !important;
 }
 
-@media (pointer: coarse), (max-width: 900px) {
+@media (pointer: coarse), (max-width: 900px), (max-height: 520px) {
   .l2-touch-dock {
     display: flex;
   }
 }
 
 .l2-virtual-stick {
-  width: 110px;
-  height: 110px;
+  width: 95px;
+  height: 95px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 2px solid rgba(0, 229, 255, 0.5);
+  background: rgba(14, 34, 58, 0.75);
+  border: 2px solid rgba(0, 229, 255, 0.6);
   position: relative;
   touch-action: none;
+  pointer-events: auto !important;
 }
 
 .l2-stick-knob {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: #00E5FF;
   position: absolute;
-  top: 32px;
-  left: 32px;
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.8);
+  top: 26px;
+  left: 26px;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.85);
+  pointer-events: none;
 }

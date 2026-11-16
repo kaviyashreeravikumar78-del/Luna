@@ -541,3 +541,47 @@
     font-size: 0.88rem;
   }
 }
+
+/* Mobile Landscape Optimization (Phone sideways) */
+@media (max-height: 520px) and (orientation: landscape), (pointer: coarse) and (max-height: 520px) {
+  .orbit-companion-container {
+    pointer-events: none !important;
+  }
+
+  /* Compact cute size that does not cover the 3D Moon landscape */
+  .orbit-robot-wrap {
+    width: 65px !important;
+    height: 75px !important;
+    pointer-events: none !important; /* Can NEVER block thumb taps to action button or canvas! */
+  }
+
+  /* Compact speech bubble positioned comfortably above the touch dock */
+  .orbit-speech-bubble-wrap {
+    max-width: 220px !important;
+    min-width: 150px !important;
+    padding: 8px 12px !important;
+    border-radius: 14px !important;
+    right: 75px !important;
+    top: 0px !important;
+    pointer-events: none !important;
+  }
+
+  .orbit-bubble-controls,
+  .orbit-bubble-footer,
+  .orbit-bubble-btn-icon,
+  .orbit-bubble-next-btn {
+    pointer-events: auto !important; /* Only interactive buttons can be clicked */
+  }
+
+  .orbit-bubble-text {
+    font-size: 0.76rem !important;
+    line-height: 1.3 !important;
+    min-height: auto !important;
+  }
+
+  .orbit-speech-bubble-wrap.tail-right::after {
+    top: 14px !important;
+    right: -9px !important;
+    border-width: 6px !important;
+  }
+}

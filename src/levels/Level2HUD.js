@@ -118,89 +118,21 @@ export class Level2HUD {
         <span id="l2-radar-meter-text">RADAR: SEARCHING...</span>
       </div>
 
-      <!-- RADAR PING & DRILL BUTTON DOCK -->
-      <div class="l2-radar-dock">
-        <!-- Drill / Puzzle Button (Active when over deposit) -->
-        <button class="btn-l2-drill" id="btn-l2-drill" title="Tap to Extract Diamond Water!">
-          <span style="font-size:1.8rem;">💎⛏️</span>
-          <span style="font-size:0.7rem; font-weight:900;">EXTRACT ICE</span>
-        </button>
-
-        <!-- Radar Ping Button (Space key shortcut) -->
-        <button class="btn-l2-radar" id="btn-l2-radar" title="Press Space to Ping Radar!">
-          <span class="btn-l2-radar-icon">📡</span>
-          <span class="btn-l2-radar-text">PING [SPACE]</span>
+      <!-- FLOATING ACTION DOCK: BREAK DIAMOND ICE (Bottom Center, Unblocked by ORBIT) -->
+      <div class="l2-action-dock" id="l2-action-dock" style="display: none;">
+        <button class="btn-l2-break-action" id="btn-l2-break-action" aria-label="Break Diamond Ice">
+          <span class="l2-break-icon">⛏️💎</span>
+          <span class="l2-break-text">BREAK DIAMOND ICE</span>
+          <span class="l2-break-key">[SPACE]</span>
         </button>
       </div>
 
-      <!-- WATER EXTRACTION PIPELINE PUZZLE MODAL -->
-      <div class="l2-modal-backdrop" id="l2-puzzle-modal">
-        <div class="l2-modal-card l2-puzzle-card">
-          <div class="l2-puzzle-header">
-            <span style="font-size:2.4rem;">💎❄️💧</span>
-            <h3 class="l2-modal-title" id="l2-puzzle-title">LUNAR WATER EXTRACTOR</h3>
-            <p class="l2-puzzle-desc">
-              Tap each pipe tile to rotate it and connect the pure water flow into the rover tank!
-            </p>
-          </div>
-
-          <!-- PIPELINE GRID -->
-          <div class="l2-pipeline-grid" id="l2-pipeline-grid">
-            <div class="l2-pipe-node l2-pipe-source">
-              <span class="l2-node-icon">💎</span>
-              <span class="l2-node-name">ICE CORE</span>
-            </div>
-
-            <!-- Pipe 1: Melter -->
-            <div class="l2-pipe-tile" data-index="0" id="l2-pipe-0" title="Tap to rotate Melter pipe">
-              <div class="l2-pipe-body" id="l2-pipe-body-0">
-                <div class="l2-pipe-segment l2-seg-h"></div>
-                <div class="l2-pipe-segment l2-seg-v"></div>
-                <div class="l2-pipe-core">🔥</div>
-              </div>
-              <span class="l2-pipe-label">Melter</span>
-            </div>
-
-            <!-- Pipe 2: Filter -->
-            <div class="l2-pipe-tile" data-index="1" id="l2-pipe-1" title="Tap to rotate Filter pipe">
-              <div class="l2-pipe-body" id="l2-pipe-body-1">
-                <div class="l2-pipe-segment l2-seg-h"></div>
-                <div class="l2-pipe-segment l2-seg-v"></div>
-                <div class="l2-pipe-core">🧪</div>
-              </div>
-              <span class="l2-pipe-label">Filter</span>
-            </div>
-
-            <!-- Pipe 3: Pump -->
-            <div class="l2-pipe-tile" data-index="2" id="l2-pipe-2" title="Tap to rotate Pump valve">
-              <div class="l2-pipe-body" id="l2-pipe-body-2">
-                <div class="l2-pipe-segment l2-seg-h"></div>
-                <div class="l2-pipe-segment l2-seg-v"></div>
-                <div class="l2-pipe-core">⚙️</div>
-              </div>
-              <span class="l2-pipe-label">Pump</span>
-            </div>
-
-            <div class="l2-pipe-node l2-pipe-dest">
-              <span class="l2-node-icon">💧</span>
-              <span class="l2-node-name">ROVER TANK</span>
-            </div>
-          </div>
-
-          <div class="l2-pipeline-status" id="l2-pipeline-status">
-            Align all 3 pipes horizontally to connect the flow!
-          </div>
-
-          <!-- ACTIONS -->
-          <div class="l2-puzzle-actions">
-            <button class="btn-l2-puzzle-instant" id="btn-l2-puzzle-instant">
-              ⚡ Instant Extract (Skip)
-            </button>
-            <button class="btn-l2-puzzle-close" id="btn-l2-puzzle-close">
-              ✖ Close
-            </button>
-          </div>
-        </div>
+      <!-- RADAR PING BUTTON DOCK -->
+      <div class="l2-radar-dock">
+        <button class="btn-l2-radar" id="btn-l2-radar" title="Press Space to Ping Radar!">
+          <span class="btn-l2-radar-icon">📡</span>
+          <span class="btn-l2-radar-text">PING</span>
+        </button>
       </div>
 
       <!-- BIG "GO!" INTRO BANNER -->
@@ -334,16 +266,24 @@ export class Level2HUD {
       this.triggerRadarPing();
     });
 
-    // Drill / Puzzle trigger button
-    const drillBtn = this.element.querySelector('#btn-l2-drill');
-    drillBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (this.options.onOpenPuzzle) {
-        this.options.onOpenPuzzle();
-      } else if (this.options.onDrillStart) {
-        this.options.onDrillStart();
-      }
-    });
+    // Break diamond action button (Bottom Center, Unblocked)
+    const breakBtn = this.element.querySelector('#btn-l2-break-action');
+    if (breakBtn) {
+      const triggerBreak = (e) => {
+        if (e && e.cancelable) e.preventDefault();
+        breakBtn.classList.add('active');
+        if (this.options.onBreakDiamond) {
+          this.options.onBreakDiamond();
+        }
+      };
+      const releaseBreak = () => {
+        breakBtn.classList.remove('active');
+      };
+      breakBtn.addEventListener('pointerdown', triggerBreak);
+      breakBtn.addEventListener('pointerup', releaseBreak);
+      breakBtn.addEventListener('touchstart', triggerBreak, { passive: false });
+      breakBtn.addEventListener('touchend', releaseBreak, { passive: false });
+    }
 
     // Win continue button
     this.element.querySelector('#btn-l2-win-continue').addEventListener('click', () => {
@@ -365,9 +305,6 @@ export class Level2HUD {
     // Touch controls: Joystick + D-Pad
     this.setupTouchJoystick();
     this.setupDPadControls();
-
-    // Puzzle Modal Setup
-    this.setupPuzzleModal();
 
     // Diamond Pills Click
     [1, 2, 3].forEach(id => {
@@ -485,119 +422,19 @@ export class Level2HUD {
     );
   }
 
-  setupPuzzleModal() {
-    this.puzzleModal = this.element.querySelector('#l2-puzzle-modal');
-    this.puzzleTiles = [
-      { id: 0, angle: 90, element: this.element.querySelector('#l2-pipe-0'), body: this.element.querySelector('#l2-pipe-body-0') },
-      { id: 1, angle: 180, element: this.element.querySelector('#l2-pipe-1'), body: this.element.querySelector('#l2-pipe-body-1') },
-      { id: 2, angle: 270, element: this.element.querySelector('#l2-pipe-2'), body: this.element.querySelector('#l2-pipe-body-2') }
-    ];
-    this.puzzleStatus = this.element.querySelector('#l2-pipeline-status');
-    this.puzzleResolved = false;
-
-    // Attach click events to tiles
-    this.puzzleTiles.forEach(tile => {
-      if (!tile.element) return;
-      tile.element.addEventListener('click', () => {
-        if (this.puzzleResolved) return;
-        tile.angle = (tile.angle + 90) % 360;
-        if (tile.body) {
-          tile.body.style.transform = `rotate(${tile.angle}deg)`;
-        }
-        level2Audio.playPipeClick();
-        this.checkPuzzleSolved();
-      });
-    });
-
-    // Instant Extract button
-    const instantBtn = this.element.querySelector('#btn-l2-puzzle-instant');
-    if (instantBtn) {
-      instantBtn.addEventListener('click', () => {
-        this.resolvePuzzle(true);
-      });
+  showBreakButton(visible, label = "BREAK DIAMOND ICE") {
+    const dock = this.element.querySelector('#l2-action-dock');
+    const text = this.element.querySelector('#btn-l2-break-action .l2-break-text');
+    if (dock) {
+      dock.style.display = visible ? 'flex' : 'none';
     }
-
-    // Close button
-    const closeBtn = this.element.querySelector('#btn-l2-puzzle-close');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        if (this.puzzleModal) this.puzzleModal.classList.remove('active');
-        if (this.options.onResume) this.options.onResume();
-      });
+    if (text && label) {
+      text.textContent = label;
     }
   }
 
-  openPuzzleModal(deposit, onComplete) {
-    this.currentPuzzleDeposit = deposit;
-    this.currentPuzzleCallback = onComplete;
-    this.puzzleResolved = false;
-
-    const title = this.element.querySelector('#l2-puzzle-title');
-    if (title && deposit) {
-      title.textContent = `💎 EXTRACT ICE: ${deposit.label.toUpperCase()}`;
-    }
-
-    // Scramble tiles with non-aligned angles
-    const startAngles = [90, 270, 90];
-    this.puzzleTiles.forEach((t, i) => {
-      t.angle = startAngles[i % startAngles.length];
-      if (t.body) t.body.style.transform = `rotate(${t.angle}deg)`;
-      if (t.element) t.element.classList.remove('aligned');
-    });
-
-    if (this.puzzleStatus) {
-      this.puzzleStatus.textContent = "Tap each pipe tile to connect horizontal water flow!";
-      this.puzzleStatus.classList.remove('success');
-    }
-
-    if (this.puzzleModal) {
-      this.puzzleModal.classList.add('active');
-    }
-    if (this.options.onPause) this.options.onPause();
-  }
-
-  checkPuzzleSolved() {
-    // Flow is connected horizontally when each tile is at 0° or 180°
-    const allConnected = this.puzzleTiles.every(t => t.angle % 180 === 0);
-
-    this.puzzleTiles.forEach(t => {
-      if (t.angle % 180 === 0) {
-        t.element.classList.add('aligned');
-      } else {
-        t.element.classList.remove('aligned');
-      }
-    });
-
-    if (allConnected) {
-      this.resolvePuzzle(false);
-    }
-  }
-
-  resolvePuzzle(instant = false) {
-    if (this.puzzleResolved) return;
-    this.puzzleResolved = true;
-
-    this.puzzleTiles.forEach(t => {
-      t.angle = 0;
-      if (t.body) t.body.style.transform = 'rotate(0deg)';
-      if (t.element) t.element.classList.add('aligned');
-    });
-
-    if (this.puzzleStatus) {
-      this.puzzleStatus.textContent = "💧 FLOW CONNECTED! EXTRACTING PURE WATER... 🎉";
-      this.puzzleStatus.classList.add('success');
-    }
-
-    level2Audio.playSplash();
-    level2Audio.playIceCollect();
-
-    setTimeout(() => {
-      if (this.puzzleModal) this.puzzleModal.classList.remove('active');
-      if (this.options.onResume) this.options.onResume();
-      if (this.currentPuzzleCallback) {
-        this.currentPuzzleCallback(this.currentPuzzleDeposit);
-      }
-    }, instant ? 300 : 1000);
+  showDrillButton(visible) {
+    this.showBreakButton(visible);
   }
 
   updateDiamondTracker(sites = [], roverPos, roverHeading = 0) {

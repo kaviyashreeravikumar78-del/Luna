@@ -651,9 +651,9 @@ export class Level2Water {
       onRadarPing: () => {
         this.triggerRadarPing();
       },
-      onOpenPuzzle: () => {
+      onBreakDiamond: () => {
         if (this.nearDeposit && !this.nearDeposit.collected) {
-          this.openExtractionPuzzle(this.nearDeposit);
+          this.breakDiamondDeposit(this.nearDeposit);
         }
       },
       onSelectTargetDiamond: (siteId) => {
@@ -663,7 +663,6 @@ export class Level2Water {
           if (this.beacon) {
             this.beacon.showAt(dep.pos.x, dep.pos.y + 0.1, dep.pos.z, 0x00E5FF);
           }
-          orbit.say(`Navigating to ${dep.label}!`, { emotion: 'happy', gesture: 'point' });
         }
       },
       onThrottleChange: (val) => {
@@ -671,16 +670,6 @@ export class Level2Water {
       },
       onSteerChange: (val) => {
         this.dpadSteer = val;
-      },
-      onDrillStart: () => {
-        if (this.nearDeposit && !this.nearDeposit.collected) {
-          this.openExtractionPuzzle(this.nearDeposit);
-        } else {
-          this.isDrilling = true;
-        }
-      },
-      onDrillEnd: () => {
-        this.isDrilling = false;
       },
       onJoystickMove: (dx, dz) => {
         this.touchSteerX = dx;
@@ -701,7 +690,7 @@ export class Level2Water {
         case 'KeyD': case 'ArrowRight': this.keys.right = true; break;
         case 'Space':
           if (this.nearDeposit && !this.nearDeposit.collected) {
-            this.openExtractionPuzzle(this.nearDeposit);
+            this.breakDiamondDeposit(this.nearDeposit);
           } else {
             this.triggerRadarPing();
           }
@@ -764,23 +753,28 @@ export class Level2Water {
 
   playEntryCinematic() {
     this.phase = 0; // Cutscene lock
-    level2Audio.startEngine();
 
-    // Camera zooms smoothly behind the rover
-    orbit.flyTo(window.innerWidth - 180, 100);
-    orbit.say("Our colony water is low! Let's drive to the dark crater and find ice!", {
-      emotion: 'worried',
-      gesture: 'point'
-    });
-
+    // Wait until the circular iris transition completes (1.8s) before starting engine and speaking
     this.safeTimeout(() => {
       if (!this.isActive || !this.hud) return;
-      this.hud.showGoBanner(() => {
-        if (!this.isActive || !this.hud) return;
-        this.phase = 1;
-        this.hud.setObjective("Drive north to the crater!", "🚜");
+      level2Audio.startEngine();
+
+      // Camera positioned behind rover, ORBIT flies in and speaks ONCE
+      orbit.flyTo(window.innerWidth - 180, 100);
+      orbit.say("Our colony water is low! Follow the 3 sky beacons to find and break the diamond ice!", {
+        emotion: 'worried',
+        gesture: 'point'
       });
-    }, 1200);
+
+      this.safeTimeout(() => {
+        if (!this.isActive || !this.hud) return;
+        this.hud.showGoBanner(() => {
+          if (!this.isActive || !this.hud) return;
+          this.phase = 1;
+          this.hud.setObjective("Break the 3 diamonds (0/3)!", "💎");
+        });
+      }, 1400);
+    }, 1800);
   }
 
   /**
@@ -899,18 +893,6 @@ export class Level2Water {
           this.beacon.showAt(closestDep.pos.x, closestDep.pos.y + 0.1, closestDep.pos.z, 0x00E5FF);
         }
         orbit.flyTo3D(new THREE.Vector3(closestDep.pos.x, closestDep.pos.y + 2.0, closestDep.pos.z), this.camera);
-        orbit.say(`Head towards ${closestDep.label}! Beacons and diamond icons are lighting the way!`, {
-          emotion: 'happy',
-          gesture: 'point'
-        });
-      }
-
-      if (closestDist < 4.2 && !this.hasPromptedAction) {
-        this.hasPromptedAction = true;
-        orbit.say("Diamond Ice Site reached! Tap EXTRACT ICE or solve the water puzzle!", {
-          emotion: 'excited',
-          gesture: 'point'
-        });
       }
     }
   }
@@ -1157,8 +1139,13 @@ export class Level2Water {
     for (const dep of this.iceDeposits) {
       if (!dep.collected) {
         const d = Math.hypot(this.roverPos.x - dep.pos.x, this.roverPos.z - dep.pos.z);
-        if (d < 4.0) {
+        if (d < 5.0) {
           nearSite = dep;
+          // Drive straight into the diamond ice to break it!
+          if (d < 2.4) {
+            this.breakDiamondDeposit(dep);
+            return;
+          }
           break;
         }
       }
@@ -1166,7 +1153,7 @@ export class Level2Water {
 
     this.nearDeposit = nearSite;
     this.activeDrillSite = nearSite;
-    this.hud.showDrillButton(!!nearSite);
+    this.hud.showBreakButton(!!nearSite);
 
     // Check return to base water station pad
     if (this.tankCount >= this.maxTank) {
@@ -1177,21 +1164,11 @@ export class Level2Water {
     }
   }
 
-  openExtractionPuzzle(deposit) {
-    if (!deposit || deposit.collected) return;
-    this.speed = 0;
-    this.targetDestination = null;
-
-    if (this.hud) {
-      this.hud.openPuzzleModal(deposit, (dep) => {
-        this.completeDepositExtraction(dep || deposit);
-      });
-    }
-  }
-
-  completeDepositExtraction(dep) {
+  breakDiamondDeposit(deposit) {
+    const dep = deposit || this.nearDeposit || this.activeDrillSite;
     if (!dep || dep.collected) return;
     dep.collected = true;
+
     if (dep.crystal) dep.crystal.visible = false;
     if (dep.cage) dep.cage.visible = false;
     if (dep.beam) dep.beam.visible = false;
@@ -1207,20 +1184,22 @@ export class Level2Water {
       this.iceBlocksInTank[this.tankCount - 1].visible = true;
     }
 
+    level2Audio.playBump();
     level2Audio.playIceCollect();
     level2Audio.playSplash();
-    this.hud.showPopup(window.innerWidth / 2, window.innerHeight * 0.45, `+1 Ice Block! (${this.tankCount}/3) 🧊`);
+    this.hud.showPopup(window.innerWidth / 2, window.innerHeight * 0.45, `+1 Diamond Ice! (${this.tankCount}/3) 💎🧊`);
 
     this.nearDeposit = null;
     this.activeDrillSite = null;
     this.isDrilling = false;
-    this.hud.showDrillButton(false);
+    this.hud.showBreakButton(false);
 
     if (this.tankCount < this.maxTank) {
       this.hud.setObjective(`Find diamonds (${this.tankCount}/3)`, "💎");
-      orbit.say(`Great puzzle work! Diamond collected (${this.tankCount}/3)! Follow the beacons for the next one!`, {
+      orbit.say(`Ice collected (${this.tankCount}/3)! Follow the sky beacons for the next one!`, {
         emotion: 'excited',
-        gesture: 'nod'
+        gesture: 'nod',
+        autoCloseDelay: 2500
       });
     } else {
       // All 3 collected!
@@ -1230,19 +1209,25 @@ export class Level2Water {
         this.beacon.showAt(this.basePos.x, this.basePos.y + 0.25, this.basePos.z, 0x06D6A0);
       }
       orbit.flyTo3D(new THREE.Vector3(this.basePos.x, this.basePos.y + 2.5, this.basePos.z), this.camera);
-      orbit.say("Tank is full! Drive back to base and unload the ice!", {
+      orbit.say("Tank is full! Drive back to base camp to unload the ice!", {
         emotion: 'excited',
-        gesture: 'wave'
+        gesture: 'wave',
+        autoCloseDelay: 3200
       });
     }
   }
 
-  /**
-   * Phase 3: Drilling Ice Deposits (Quick alternative / fallback)
-   */
+  completeDepositExtraction(dep) {
+    this.breakDiamondDeposit(dep);
+  }
+
+  openExtractionPuzzle(deposit) {
+    this.breakDiamondDeposit(deposit);
+  }
+
   updateDrilling(delta) {
     if (!this.activeDrillSite) return;
-    this.openExtractionPuzzle(this.activeDrillSite);
+    this.breakDiamondDeposit(this.activeDrillSite);
     this.isDrilling = false;
   }
 

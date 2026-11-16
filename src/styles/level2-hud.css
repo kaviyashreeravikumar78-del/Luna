@@ -267,11 +267,82 @@
   text-transform: uppercase;
 }
 
+/* FLOATING ACTION DOCK: BREAK DIAMOND ICE (Bottom Center, Unblocked) */
+.l2-action-dock {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010 !important;
+  pointer-events: auto !important;
+  animation: l2BreakPulse 0.4s ease-out;
+}
+
+@keyframes l2BreakPulse {
+  from { opacity: 0; transform: translate(-50%, 20px) scale(0.85); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.btn-l2-break-action {
+  background: linear-gradient(135deg, #FF9E00 0%, #D95736 100%);
+  border: 3px solid #FFD166;
+  border-radius: 999px;
+  color: #FFFFFF;
+  padding: 0.85rem 2.2rem;
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  pointer-events: auto !important;
+  box-shadow: 0 8px 32px rgba(217, 87, 54, 0.75), 0 0 20px rgba(255, 209, 102, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: l2BreakGlow 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes l2BreakGlow {
+  from {
+    transform: scale(1);
+    box-shadow: 0 8px 28px rgba(217, 87, 54, 0.7), 0 0 15px rgba(255, 209, 102, 0.4);
+  }
+  to {
+    transform: scale(1.05);
+    box-shadow: 0 12px 38px rgba(255, 158, 0, 0.9), 0 0 30px rgba(255, 209, 102, 0.8);
+  }
+}
+
+.btn-l2-break-action:active {
+  transform: scale(0.92) !important;
+  background: #FFD166;
+  color: #06101E;
+}
+
+.btn-l2-break-action .l2-break-icon {
+  font-size: 1.6rem;
+}
+
+.btn-l2-break-action .l2-break-key {
+  font-size: 0.75rem;
+  color: #06101E;
+  background: #FFD166;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 900;
+}
+
 /* RADAR PING ACTION BUTTON (Desktop & Touch) */
 .l2-radar-dock {
   position: absolute;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 8rem;
+  right: 1.8rem;
   display: flex;
   flex-direction: column;
   align-items: center;

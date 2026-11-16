@@ -314,7 +314,9 @@ export class Orbit {
       pointAt = null,
       onComplete = null,
       showNextBtn = false,
-      nextBtnText = "Next ➔"
+      nextBtnText = "Next ➔",
+      autoClose = true,
+      autoCloseDelay = 4200
     } = options;
 
     // 1. Set Emotion & Gesture
@@ -331,8 +333,22 @@ export class Orbit {
     // 3. Show Speech Bubble
     this.showBubble(text, { showNextBtn, nextBtnText, onNext: onComplete });
 
+    // Auto-close bubble so instructions don't stay on screen forever
+    if (autoClose && !showNextBtn) {
+      if (this.bubbleAutoCloseTimer) clearTimeout(this.bubbleAutoCloseTimer);
+      const estDuration = Math.max(autoCloseDelay, text.split(' ').length * 320 + 1200);
+      this.bubbleAutoCloseTimer = setTimeout(() => {
+        this.hideBubble();
+      }, estDuration);
+    }
+
     // 4. Trigger Voice & Animated Speech
-    this.startSpeaking(text, onComplete);
+    this.startSpeaking(text, () => {
+      if (autoClose && !showNextBtn) {
+        setTimeout(() => this.hideBubble(), 1000);
+      }
+      if (onComplete) onComplete();
+    });
   }
 
   startSpeaking(text, onComplete) {

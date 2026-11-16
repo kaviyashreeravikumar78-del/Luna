@@ -179,6 +179,18 @@ export class Game {
     if (this.playerAstronaut) this.playerAstronaut.visible = visible;
     if (this.astronautData && this.astronautData.group) this.astronautData.group.visible = visible;
     if (this.orbitRobot) this.orbitRobot.visible = visible;
+
+    // Optimize lighting: disable colony sun shadows and auxiliary lights in dedicated levels
+    if (this.lighting) {
+      if (this.lighting.sunLight) this.lighting.sunLight.castShadow = visible;
+      if (this.lighting.antennaBeacon) this.lighting.antennaBeacon.visible = visible;
+      if (this.lighting.habitatLight) this.lighting.habitatLight.visible = visible;
+      if (this.lighting.ghLight1) this.lighting.ghLight1.visible = visible;
+      if (this.lighting.ghLight2) this.lighting.ghLight2.visible = visible;
+    }
+    if (this.environment && this.environment.dust) {
+      this.environment.dust.visible = visible;
+    }
   }
 
   initFacilityAlertRings() {
@@ -955,7 +967,8 @@ export class Game {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const pr = this.qualityManager ? this.qualityManager.currentPreset.pixelRatio : Math.min(window.devicePixelRatio || 1, 1.5);
+    this.renderer.setPixelRatio(pr);
   }
 
   animate() {
@@ -1020,137 +1033,136 @@ export class Game {
       }
     }
 
-    // 6. Floating Dust Particles (Expanded 38x38 boundaries)
-    if (this.environment.dust) {
-      const posAttr = this.environment.dust.geometry.attributes.position;
-      const vels = this.environment.dustVelocities;
-      for (let i = 0; i < vels.length; i++) {
-        let x = posAttr.getX(i) + vels[i].x;
-        let y = posAttr.getY(i) + vels[i].y;
-        let z = posAttr.getZ(i) + vels[i].z;
+    // 6-14. Colony-specific background animations (SKIPPED inside dedicated levels to maximize FPS)
+    if (!this.currentLevel) {
+      // 6. Floating Dust Particles (Expanded 38x38 boundaries)
+      if (this.environment.dust) {
+        const posAttr = this.environment.dust.geometry.attributes.position;
+        const vels = this.environment.dustVelocities;
+        for (let i = 0; i < vels.length; i++) {
+          let x = posAttr.getX(i) + vels[i].x;
+          let y = posAttr.getY(i) + vels[i].y;
+          let z = posAttr.getZ(i) + vels[i].z;
 
-        // Reset boundaries for expanded terrain
-        if (Math.abs(x) > 23) x = -x;
-        if (y < 0.2 || y > 10) y = 5.0;
-        if (Math.abs(z) > 23) z = -z;
+          // Reset boundaries for expanded terrain
+          if (Math.abs(x) > 23) x = -x;
+          if (y < 0.2 || y > 10) y = 5.0;
+          if (Math.abs(z) > 23) z = -z;
 
-        posAttr.setXYZ(i, x, y, z);
+          posAttr.setXYZ(i, x, y, z);
+        }
+        posAttr.needsUpdate = true;
       }
-      posAttr.needsUpdate = true;
-    }
 
-    // 7. Antenna Rotation & Blinking Beacon
-    if (this.antenna.userData.rotatingHead) {
-      this.antenna.userData.rotatingHead.rotation.y = Math.sin(elapsedTime * 0.4) * 0.6;
-    }
-    if (this.antenna.userData.beaconMesh) {
-      const blink = (Math.floor(elapsedTime * 2.5) % 2 === 0);
-      this.antenna.userData.beaconMesh.visible = blink;
-      if (this.lighting.antennaBeacon) {
-        this.lighting.antennaBeacon.intensity = blink ? 2.5 : 0;
+      // 7. Antenna Rotation & Blinking Beacon
+      if (this.antenna.userData.rotatingHead) {
+        this.antenna.userData.rotatingHead.rotation.y = Math.sin(elapsedTime * 0.4) * 0.6;
       }
-    }
-
-    // 8. Solar Panels gentle tracking
-    if (this.solarArray.userData.animatedPanels) {
-      this.solarArray.userData.animatedPanels.forEach((p, idx) => {
-        p.rotation.y = (Math.PI * 0.12) + Math.sin(elapsedTime * 0.15 + idx * 0.2) * 0.04;
-      });
-    }
-
-    // 9. Rover Gentle Idle (when not actively driven)
-    if (this.rover && !this.roverController?.active) {
-      this.rover.position.y = 0.45 + Math.sin(elapsedTime * 1.5) * 0.02;
-    }
-
-    // 10. Astronauts Animations (Idle bob, arm sway; skips player when moving or driving)
-    if (this.astronautData.astronauts) {
-      this.astronautData.astronauts.forEach((astro, idx) => {
-        if (idx === 0 && (this.playerController?.isMoving || this.roverController?.active)) {
-          return;
+      if (this.antenna.userData.beaconMesh) {
+        const blink = (Math.floor(elapsedTime * 2.5) % 2 === 0);
+        this.antenna.userData.beaconMesh.visible = blink;
+        if (this.lighting.antennaBeacon) {
+          this.lighting.antennaBeacon.intensity = blink ? 2.5 : 0;
         }
+      }
 
-        const u = astro.userData;
-        const speed = 2.0;
-        const t = elapsedTime * speed + idx * 1.2;
-
-        astro.position.y = u.initialPos.y + Math.sin(t) * 0.03;
-
-        if (u.leftArm && u.rightArm) {
-          u.leftArm.rotation.x = Math.sin(t) * 0.2;
-          u.rightArm.rotation.x = -Math.sin(t) * 0.2;
-        }
-
-        if (u.leftLeg && u.rightLeg) {
-          u.leftLeg.rotation.x = -Math.sin(t * 0.5) * 0.08;
-          u.rightLeg.rotation.x = Math.sin(t * 0.5) * 0.08;
-        }
-      });
-    }
-
-    // 11. 3D ORBIT Robot Smooth Flight to Current Building
-    if (this.orbitRobot) {
-      this.orbitRobot.position.x += (this.targetOrbitPos.x - this.orbitRobot.position.x) * delta * 2.5;
-      this.orbitRobot.position.z += (this.targetOrbitPos.z - this.orbitRobot.position.z) * delta * 2.5;
-      const hoverY = this.targetOrbitPos.y + Math.sin(elapsedTime * 2.5) * 0.22;
-      this.orbitRobot.position.y += (hoverY - this.orbitRobot.position.y) * delta * 3.0;
-      this.orbitRobot.rotation.y = Math.sin(elapsedTime * 0.8) * 0.4;
-    }
-
-    // 12. Surface Decorations Animations (Runway lights, sensor spindle, beacons, flag)
-    if (this.decorations) {
-      if (this.decorations.animatedLights) {
-        this.decorations.animatedLights.forEach((light) => {
-          const pulse = Math.sin(elapsedTime * 4.0 + light.phase);
-          light.mesh.visible = pulse > -0.2;
+      // 8. Solar Panels gentle tracking
+      if (this.solarArray.userData.animatedPanels) {
+        this.solarArray.userData.animatedPanels.forEach((p, idx) => {
+          p.rotation.y = (Math.PI * 0.12) + Math.sin(elapsedTime * 0.15 + idx * 0.2) * 0.04;
         });
       }
 
-      if (this.decorations.animatedBeacons) {
-        const beaconOn = (Math.floor(elapsedTime * 2.0) % 2 === 0);
-        this.decorations.animatedBeacons.forEach((b) => {
-          b.visible = beaconOn;
+      // 9. Rover Gentle Idle (when not actively driven)
+      if (this.rover && !this.roverController?.active) {
+        this.rover.position.y = 0.45 + Math.sin(elapsedTime * 1.5) * 0.02;
+      }
+
+      // 10. Astronauts Animations (Idle bob, arm sway; skips player when moving or driving)
+      if (this.astronautData.astronauts) {
+        this.astronautData.astronauts.forEach((astro, idx) => {
+          if (idx === 0 && (this.playerController?.isMoving || this.roverController?.active)) {
+            return;
+          }
+
+          const u = astro.userData;
+          const speed = 2.0;
+          const t = elapsedTime * speed + idx * 1.2;
+
+          astro.position.y = u.initialPos.y + Math.sin(t) * 0.03;
+
+          if (u.leftArm && u.rightArm) {
+            u.leftArm.rotation.x = Math.sin(t) * 0.2;
+            u.rightArm.rotation.x = -Math.sin(t) * 0.2;
+          }
+
+          if (u.leftLeg && u.rightLeg) {
+            u.leftLeg.rotation.x = -Math.sin(t * 0.5) * 0.08;
+            u.rightLeg.rotation.x = Math.sin(t * 0.5) * 0.08;
+          }
         });
       }
 
-      if (this.decorations.sensorSpindle) {
-        this.decorations.sensorSpindle.rotation.y = elapsedTime * 3.2;
+      // 11. 3D ORBIT Robot Smooth Flight to Current Building
+      if (this.orbitRobot) {
+        this.orbitRobot.position.x += (this.targetOrbitPos.x - this.orbitRobot.position.x) * delta * 2.5;
+        this.orbitRobot.position.z += (this.targetOrbitPos.z - this.orbitRobot.position.z) * delta * 2.5;
+        const hoverY = this.targetOrbitPos.y + Math.sin(elapsedTime * 2.5) * 0.22;
+        this.orbitRobot.position.y += (hoverY - this.orbitRobot.position.y) * delta * 3.0;
+        this.orbitRobot.rotation.y = Math.sin(elapsedTime * 0.8) * 0.4;
       }
 
-      if (this.decorations.flagMesh) {
-        this.decorations.flagMesh.rotation.y = Math.sin(elapsedTime * 1.8) * 0.08;
+      // 12. Surface Decorations Animations (Runway lights, sensor spindle, beacons, flag)
+      if (this.decorations) {
+        if (this.decorations.animatedLights) {
+          this.decorations.animatedLights.forEach((light) => {
+            const pulse = Math.sin(elapsedTime * 4.0 + light.phase);
+            light.mesh.visible = pulse > -0.2;
+          });
+        }
+
+        if (this.decorations.animatedBeacons) {
+          const beaconOn = (Math.floor(elapsedTime * 2.0) % 2 === 0);
+          this.decorations.animatedBeacons.forEach((b) => {
+            b.visible = beaconOn;
+          });
+        }
+
+        if (this.decorations.sensorSpindle) {
+          this.decorations.sensorSpindle.rotation.y = elapsedTime * 3.2;
+        }
+
+        if (this.decorations.flagMesh) {
+          this.decorations.flagMesh.rotation.y = Math.sin(elapsedTime * 1.8) * 0.08;
+        }
       }
-    }
 
-    // 13. 3D Facility Warning Indicators (Module 3 Survival Engine)
-    if (this.facilityAlerts) {
-      const activeEv = gameState.currentDayEvent;
-      const isPending = (activeEv && !gameState.currentDayDecided);
+      // 13. 3D Facility Warning Indicators (Module 3 Survival Engine)
+      if (this.facilityAlerts) {
+        const activeEv = gameState.currentDayEvent;
+        const isPending = (activeEv && !gameState.currentDayDecided);
 
-      this.facilityAlerts.forEach((ring, fId) => {
-        if (this.currentLevel) {
-          ring.visible = false;
-          return;
-        }
-        const fac = gameState.facilities[fId];
-        const isEventTarget = (isPending && activeEv.facilityId === fId);
-        const isDegraded = (fac && fac.condition < 70);
+        this.facilityAlerts.forEach((ring, fId) => {
+          const fac = gameState.facilities[fId];
+          const isEventTarget = (isPending && activeEv.facilityId === fId);
+          const isDegraded = (fac && fac.condition < 70);
 
-        if (isEventTarget || isDegraded) {
-          ring.visible = true;
-          ring.rotation.z = elapsedTime * 1.8;
-          const pulse = (Math.sin(elapsedTime * 4.5) + 1.2) * 0.4;
-          ring.scale.set(1 + pulse * 0.15, 1 + pulse * 0.15, 1);
-          ring.material.color.setHex(isEventTarget ? 0xFFAA00 : 0xFF3B30);
-        } else {
-          ring.visible = false;
-        }
-      });
-    }
+          if (isEventTarget || isDegraded) {
+            ring.visible = true;
+            ring.rotation.z = elapsedTime * 1.8;
+            const pulse = (Math.sin(elapsedTime * 4.5) + 1.2) * 0.4;
+            ring.scale.set(1 + pulse * 0.15, 1 + pulse * 0.15, 1);
+            ring.material.color.setHex(isEventTarget ? 0xFFAA00 : 0xFF3B30);
+          } else {
+            ring.visible = false;
+          }
+        });
+      }
 
-    // 14. 3D Visual Adventure Engine Update (Continuous water mist, sparks, fireworks, confetti)
-    if (this.adventure3D) {
-      this.adventure3D.update(delta, elapsedTime);
+      // 14. 3D Visual Adventure Engine Update (Continuous water mist, sparks, fireworks, confetti)
+      if (this.adventure3D) {
+        this.adventure3D.update(delta, elapsedTime);
+      }
     }
 
     // 15. Update Dedicated Level Scene (e.g. Level 1 Power Up)

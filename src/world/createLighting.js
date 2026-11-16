@@ -20,8 +20,8 @@ export function createLighting(scene) {
   const sunLight = new THREE.DirectionalLight(0xFFF6E5, 2.8);
   sunLight.position.set(24, 32, 18);
   sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width = 2048;
-  sunLight.shadow.mapSize.height = 2048;
+  sunLight.shadow.mapSize.width = 1024;
+  sunLight.shadow.mapSize.height = 1024;
   sunLight.shadow.camera.near = 0.5;
   sunLight.shadow.camera.far = 100;
   

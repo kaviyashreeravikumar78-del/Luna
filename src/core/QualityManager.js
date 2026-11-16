@@ -12,7 +12,7 @@ export class QualityManager {
       high: {
         id: 'high',
         label: 'High (Crisp 🚀)',
-        pixelRatio: Math.min(window.devicePixelRatio || 1, 2.0),
+        pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
         shadows: true,
         shadowMapSize: 1024,
         particleScale: 1.0
@@ -35,9 +35,12 @@ export class QualityManager {
       }
     };
 
+    // Auto-detect mobile devices for butter-smooth 60 FPS
+    const isMobile = (typeof window !== 'undefined') && (window.innerWidth <= 900 || ('ontouchstart' in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0));
+
     // User preference: 'auto' | 'high' | 'medium' | 'low'
     this.mode = localStorage.getItem(this.storageKey) || 'auto';
-    this.activePresetId = this.mode === 'auto' ? 'high' : this.mode;
+    this.activePresetId = this.mode === 'auto' ? (isMobile ? 'medium' : 'high') : this.mode;
 
     // Performance monitor (Auto downgrade if < 40 FPS for 3s)
     this.lowFpsDuration = 0;

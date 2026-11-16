@@ -867,9 +867,6 @@ export class Level5Habitat {
     this.updateObjectiveGuidance(delta, elapsedTime);
     if (this.beacon) this.beacon.update(delta, elapsedTime);
     if (this.ripples) this.ripples.update(delta);
-
-    // 11. Render
-    this.game.renderer.render(this.scene, this.camera);
   }
 
   updateObjectiveGuidance(delta, elapsedTime) {

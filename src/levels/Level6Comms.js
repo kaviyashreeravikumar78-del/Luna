@@ -90,6 +90,11 @@ export class Level6Comms {
     this.targetElevation = null;
     this.currentGuideTarget = null;
     this.hasPromptedAction = false;
+
+    // Reusable Vector3 instances to eliminate per-frame GC allocations
+    this._vDishPos = new THREE.Vector3();
+    this._vBeamDir = new THREE.Vector3();
+    this._vTargetDir = new THREE.Vector3();
   }
 
   safeTimeout(fn, ms) {
@@ -714,9 +719,6 @@ export class Level6Comms {
 
     // 7. Update Objective Guidance
     this.updateObjectiveGuidance(delta, elapsedTime);
-
-    // 8. Render
-    this.game.renderer.render(this.scene, this.camera);
   }
 
   updateObjectiveGuidance(delta, elapsedTime) {
@@ -829,17 +831,16 @@ export class Level6Comms {
    */
   updateSignalAndLock(delta) {
     // 1. Calculate Dish World Position
-    const dishWorldPos = new THREE.Vector3();
-    this.headGroup.getWorldPosition(dishWorldPos);
+    this.headGroup.getWorldPosition(this._vDishPos);
 
     // 2. Calculate Dish Beam Direction in World Space (pointing along local -Z)
-    const beamDir = new THREE.Vector3(0, 0, -1).transformDirection(this.headGroup.matrixWorld).normalize();
+    this._vBeamDir.set(0, 0, -1).transformDirection(this.headGroup.matrixWorld).normalize();
 
     // 3. Vector from Dish to Satellite
-    const targetDir = new THREE.Vector3().subVectors(this.satellitePos, dishWorldPos).normalize();
+    this._vTargetDir.subVectors(this.satellitePos, this._vDishPos).normalize();
 
     // 4. Angular Distance between Beam and Satellite
-    const angleDiff = beamDir.angleTo(targetDir); // radians
+    const angleDiff = this._vBeamDir.angleTo(this._vTargetDir); // radians
 
     // Detection cone: ~0.45 rad (~26 degrees) for responsive, satisfying alignment
     const maxAngle = 0.45;

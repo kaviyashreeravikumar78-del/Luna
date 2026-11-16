@@ -68,7 +68,7 @@ export class Level4Greenhouse {
     return id;
   }
 
-  init(skipIntro = false) {
+  init(skipIntro = false, autoStartCinematic = true) {
     this.isActive = true;
     this.scene.add(this.levelGroup);
 
@@ -95,7 +95,7 @@ export class Level4Greenhouse {
     if (skipIntro) {
       this.phase = 1;
       this.updateObjectiveGuidance();
-    } else {
+    } else if (autoStartCinematic) {
       this.playEntryCinematic();
     }
   }
@@ -451,6 +451,27 @@ export class Level4Greenhouse {
       this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
       this.raycaster.setFromCamera(this.mouse, this.camera);
+
+      // Check click on planter beds or heater console first
+      const interactables = [];
+      this.beds.forEach(b => {
+        if (b.group) interactables.push(b.group);
+      });
+      if (this.heaterConsole) interactables.push(this.heaterConsole);
+
+      if (interactables.length > 0) {
+        const objHits = this.raycaster.intersectObjects(interactables, true);
+        if (objHits.length > 0) {
+          const pt = objHits[0].point;
+          this.targetDestination = { x: pt.x, z: pt.z };
+          if (this.ripples) {
+            this.ripples.spawn(pt.x, 0.05, pt.z);
+          }
+          return;
+        }
+      }
+
+      // Ground plane click-to-move
       if (this.groundMesh) {
         const hits = this.raycaster.intersectObject(this.groundMesh);
         if (hits.length > 0) {
@@ -468,23 +489,20 @@ export class Level4Greenhouse {
   }
 
   playEntryCinematic() {
-    this.phase = 0; // Cutscene lock
+    this.phase = 1; // Enable player controls immediately
     this.camera.position.set(0, 10.5, 12.0);
     this.camera.lookAt(0, 1.2, 0);
 
+    this.updateObjectiveGuidance();
+
     this.safeTimeout(() => {
       orbit.flyTo(window.innerWidth - 180, 75);
-      orbit.say("Commander! The crater shadow is chilling our greenhouse! Let's plant the seeds and turn on the heat!", {
-        emotion: 'excited',
+      orbit.say("Commander! The crater shadow is chilling our greenhouse! Plant the seeds and turn on the heat!", {
+        emotion: 'happy',
         gesture: 'wave',
-        autoCloseDelay: 3200
+        autoCloseDelay: 3500
       });
-
-      this.safeTimeout(() => {
-        this.phase = 1;
-        this.updateObjectiveGuidance();
-      }, 1600);
-    }, 1200);
+    }, 450);
   }
 
   updateObjectiveGuidance() {
@@ -527,25 +545,59 @@ export class Level4Greenhouse {
   }
 
   handleActionTrigger() {
+    const cPos = this.commander.group.position;
     if (this.phase === 1) {
-      // Plant nearest bed
-      const cPos = this.commander.group.position;
-      const targetBed = this.beds.find(b => !b.planted && cPos.distanceTo(b.pos) < 3.2);
-      if (targetBed) {
-        this.plantBed(targetBed);
+      // Find nearest unplanted bed
+      const unplanted = this.beds.filter(b => !b.planted);
+      if (unplanted.length === 0) return;
+
+      let nearestBed = unplanted[0];
+      let minDist = cPos.distanceTo(nearestBed.pos);
+      for (let i = 1; i < unplanted.length; i++) {
+        const d = cPos.distanceTo(unplanted[i].pos);
+        if (d < minDist) {
+          minDist = d;
+          nearestBed = unplanted[i];
+        }
+      }
+
+      if (minDist <= 3.4) {
+        this.plantBed(nearestBed);
+      } else {
+        // Auto-navigate to bed so player never feels stuck!
+        this.targetDestination = { x: nearestBed.pos.x, z: nearestBed.pos.z + 1.2 };
+        if (this.ripples) this.ripples.spawn(nearestBed.pos.x, 0.05, nearestBed.pos.z + 1.2);
       }
     } else if (this.phase === 2) {
       // Turn on heat lamps
-      const cPos = this.commander.group.position;
-      if (cPos.distanceTo(new THREE.Vector3(0, 0, 4.2)) < 3.4) {
+      const consolePos = new THREE.Vector3(0, 0, 4.2);
+      if (cPos.distanceTo(consolePos) <= 3.5) {
         this.activateThermalHeaters();
+      } else {
+        // Auto-navigate to console
+        this.targetDestination = { x: consolePos.x, z: consolePos.z + 0.8 };
+        if (this.ripples) this.ripples.spawn(consolePos.x, 0.05, consolePos.z + 0.8);
       }
     } else if (this.phase === 3) {
-      // Harvest nearest bed
-      const cPos = this.commander.group.position;
-      const targetBed = this.beds.find(b => b.planted && !b.harvested && cPos.distanceTo(b.pos) < 3.2);
-      if (targetBed) {
-        this.harvestBed(targetBed);
+      // Harvest nearest ripe bed
+      const harvestable = this.beds.filter(b => b.planted && !b.harvested);
+      if (harvestable.length === 0) return;
+
+      let nearestBed = harvestable[0];
+      let minDist = cPos.distanceTo(nearestBed.pos);
+      for (let i = 1; i < harvestable.length; i++) {
+        const d = cPos.distanceTo(harvestable[i].pos);
+        if (d < minDist) {
+          minDist = d;
+          nearestBed = harvestable[i];
+        }
+      }
+
+      if (minDist <= 3.4) {
+        this.harvestBed(nearestBed);
+      } else {
+        this.targetDestination = { x: nearestBed.pos.x, z: nearestBed.pos.z + 1.2 };
+        if (this.ripples) this.ripples.spawn(nearestBed.pos.x, 0.05, nearestBed.pos.z + 1.2);
       }
     }
   }
@@ -617,6 +669,7 @@ export class Level4Greenhouse {
         this.updateObjectiveGuidance();
       }
     }, 45);
+    this.activeTimers.push(bloomInt);
   }
 
   harvestBed(bed) {

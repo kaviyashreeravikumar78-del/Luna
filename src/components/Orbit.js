@@ -467,22 +467,19 @@ export class Orbit {
 
       case 'excited':
       case 'celebrate':
-        // Big joyful laughing eyes with sparkles + broad cheerful beaming smile with pink tongue!
+        // Big joyful laughing eyes ^ ^ + cheerful beaming smile
         eyesSlot.innerHTML = `
           <g>
             <path d="M 43 65 Q 53 50 63 65" fill="none" stroke="#102C49" stroke-width="4.5" stroke-linecap="round"/>
             <path d="M 77 65 Q 87 50 97 65" fill="none" stroke="#102C49" stroke-width="4.5" stroke-linecap="round"/>
-            <polygon points="38,55 40,58 43,60 40,62 38,65 36,62 33,60 36,58" fill="#FFD166"/>
-            <polygon points="102,55 104,58 107,60 104,62 102,65 100,62 97,60 100,58" fill="#FFD166"/>
           </g>
         `;
         mouthSlot.innerHTML = `
           <g id="orbit-creature-mouth" style="transform-origin: 70px 79px;">
-            <path d="M 59 74 Q 70 88 81 74 Z" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
-            <path d="M 62 79 Q 70 76 78 79 Q 70 86 62 79 Z" fill="#FF6584"/>
+            <path d="M 59 74 Q 70 86 81 74 Z" fill="#D95736" stroke="#102C49" stroke-width="1.8"/>
+            <path d="M 62 78 Q 70 75 78 78 Q 70 84 62 78 Z" fill="#FF6584"/>
           </g>
         `;
-        this.spawnConfetti();
         break;
 
       case 'shock':

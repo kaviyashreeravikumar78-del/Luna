@@ -43,6 +43,8 @@ export class Level7Final {
     this.isDrivingRover = false;
     this.playerPos = new THREE.Vector3(0, 0.3, 2.5);
     this.playerHeading = 0;
+    this.touchSteerX = 0;
+    this.touchSteerY = 0;
     this.speed = 0;
     this.keys = { forward: false, backward: false, left: false, right: false, action: false };
     this.walkCycle = 0;
@@ -163,7 +165,7 @@ export class Level7Final {
   /**
    * Initializes the dedicated Level 7 stage
    */
-  init(skipIntro = false) {
+  init(skipIntro = false, autoStartCinematic = true) {
     this.isActive = true;
     this.scene.add(this.levelGroup);
 
@@ -195,7 +197,7 @@ export class Level7Final {
     // 7. Start Entry Flow
     if (skipIntro) {
       this.startGameplay();
-    } else {
+    } else if (autoStartCinematic) {
       this.playEntryCinematic();
     }
   }
@@ -496,6 +498,10 @@ export class Level7Final {
       onPause: () => this.togglePause(),
       onToggleRover: () => this.toggleRoverVehicle(),
       onActionTrigger: () => this.handleActionTrigger(),
+      onTouchMove: (x, y) => {
+        this.touchSteerX = x;
+        this.touchSteerY = y;
+      }
     });
   }
 
@@ -808,18 +814,20 @@ export class Level7Final {
         if (this.beacon) {
           this.beacon.showAt(nextFac.pos.x, 0.1, nextFac.pos.z, 0x00E5FF);
         }
-        orbit.flyTo3D(new THREE.Vector3(nextFac.pos.x, 2.2, nextFac.pos.z), this.camera);
+        orbit.flyTo(window.innerWidth - 130, 80);
         orbit.say(`Head over to the ${nextFac.name}! Walk onto the glowing ring and tap INSPECT!`, {
           emotion: 'happy',
-          gesture: 'point'
+          gesture: 'point',
+          autoCloseDelay: 3800
         });
       }
 
       if (minDist < 3.2 && !this.hasPromptedAction) {
         this.hasPromptedAction = true;
         orbit.say(`You're at the ${nextFac.name}! Tap INSPECT or Space to check it!`, {
-          emotion: 'excited',
-          gesture: 'point'
+          emotion: 'happy',
+          gesture: 'point',
+          autoCloseDelay: 3000
         });
       }
     } else {
@@ -837,6 +845,12 @@ export class Level7Final {
     if (this.keys.backward) moveZ += 1;
     if (this.keys.left) moveX -= 1;
     if (this.keys.right) moveX += 1;
+
+    // Mobile touch joystick
+    if (Math.abs(this.touchSteerX) > 0.05 || Math.abs(this.touchSteerY) > 0.05) {
+      moveX += this.touchSteerX;
+      moveZ += this.touchSteerY;
+    }
 
     if (moveX !== 0 || moveZ !== 0) {
       this.targetDestination = null;

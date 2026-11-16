@@ -10,6 +10,9 @@ export class OrbitVoiceManager {
     this.synth = typeof window !== 'undefined' && window.speechSynthesis ? window.speechSynthesis : null;
     this.audioCtx = null;
     this.voice = null;
+    this.isSpeaking = false;
+    this.speechQueue = [];
+    this.currentUtterance = null;
 
     if (this.synth) {
       this.initVoices();
@@ -138,8 +141,9 @@ export class OrbitVoiceManager {
       return;
     }
 
-    // Cancel any previous speaking line immediately
+    // Cancel previous speaking line cleanly
     this.synth.cancel();
+    this.isSpeaking = true;
 
     // Play initial robot chirp
     this.playChirp('activate');
@@ -152,26 +156,37 @@ export class OrbitVoiceManager {
       .trim();
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
+    this.currentUtterance = utterance;
 
     if (this.voice) {
       utterance.voice = this.voice;
     }
 
-    // Friendly robotic voice parameters
-    utterance.pitch = 1.25; // Slightly higher pitch for cute robot persona
-    utterance.rate = 1.05;  // Brisk and cheerful cadence
+    // Friendly robotic voice parameters - calm, clear, and stable pacing
+    utterance.pitch = 1.18; // Friendly, clear persona
+    utterance.rate = 0.92;  // Calm, steady, articulate cadence (no rushing)
     utterance.volume = 1.0;
 
+    let finished = false;
+    const finishHandler = () => {
+      if (finished) return;
+      finished = true;
+      this.isSpeaking = false;
+      this.currentUtterance = null;
+      if (onEnd) onEnd();
+    };
+
     if (onStart) {
-      utterance.onstart = onStart;
+      utterance.onstart = () => {
+        this.isSpeaking = true;
+        onStart();
+      };
     }
     if (onBoundary) {
       utterance.onboundary = onBoundary;
     }
-    if (onEnd) {
-      utterance.onend = onEnd;
-      utterance.onerror = onEnd;
-    }
+    utterance.onend = finishHandler;
+    utterance.onerror = finishHandler;
 
     // Small delay so chirp plays first
     setTimeout(() => {
@@ -179,7 +194,7 @@ export class OrbitVoiceManager {
         this.synth.speak(utterance);
       } catch (err) {
         console.warn('Speech synthesis error:', err);
-        if (onEnd) onEnd();
+        finishHandler();
       }
     }, 90);
   }
@@ -188,6 +203,8 @@ export class OrbitVoiceManager {
    * Stops current speech immediately
    */
   stop() {
+    this.isSpeaking = false;
+    this.currentUtterance = null;
     if (this.synth) {
       this.synth.cancel();
     }

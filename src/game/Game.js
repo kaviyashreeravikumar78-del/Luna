@@ -503,9 +503,12 @@ export class Game {
         this.setColonyVisible(false);
         // Instantiate and init dedicated Level 1 scene
         this.currentLevel = new Level1Power(this);
-        this.currentLevel.init(skipIntro);
+        this.currentLevel.init(skipIntro, false);
       },
       onComplete: () => {
+        if (this.currentLevel && !skipIntro && this.currentLevel.playEntryCinematic) {
+          this.currentLevel.playEntryCinematic();
+        }
         console.log("Level 1 (Power Up) stage active and camera framed!");
       }
     });
@@ -533,9 +536,12 @@ export class Game {
         }
         this.setColonyVisible(false);
         this.currentLevel = new Level2Water(this);
-        this.currentLevel.init(skipIntro);
+        this.currentLevel.init(skipIntro, false);
       },
       onComplete: () => {
+        if (this.currentLevel && !skipIntro && this.currentLevel.playEntryCinematic) {
+          this.currentLevel.playEntryCinematic();
+        }
         console.log("Level 2 (Water Hunt) driving stage active!");
       }
     });
@@ -563,9 +569,12 @@ export class Game {
         }
         this.setColonyVisible(false);
         this.currentLevel = new Level3Storm(this);
-        this.currentLevel.init(skipIntro);
+        this.currentLevel.init(skipIntro, false);
       },
       onComplete: () => {
+        if (this.currentLevel && !skipIntro && this.currentLevel.playEntryCinematic) {
+          this.currentLevel.playEntryCinematic();
+        }
         console.log("Level 3 (Solar Storm) rescue stage active!");
       }
     });
@@ -593,9 +602,12 @@ export class Game {
         }
         this.setColonyVisible(false);
         this.currentLevel = new Level4Greenhouse(this);
-        this.currentLevel.init(skipIntro);
+        this.currentLevel.init(skipIntro, false);
       },
       onComplete: () => {
+        if (this.currentLevel && !skipIntro && this.currentLevel.playEntryCinematic) {
+          this.currentLevel.playEntryCinematic();
+        }
         console.log("Level 4 (Hydroponics & Food) stage active!");
       }
     });
@@ -623,9 +635,12 @@ export class Game {
         }
         this.setColonyVisible(false);
         this.currentLevel = new Level5Habitat(this);
-        this.currentLevel.init(skipIntro);
+        this.currentLevel.init(skipIntro, false);
       },
       onComplete: () => {
+        if (this.currentLevel && !skipIntro && this.currentLevel.playEntryCinematic) {
+          this.currentLevel.playEntryCinematic();
+        }
         console.log("Level 5 (Habitat Repair) interior stage active!");
       }
     });
@@ -653,9 +668,12 @@ export class Game {
         }
         this.setColonyVisible(false);
         this.currentLevel = new Level6Comms(this);
-        this.currentLevel.init(skipIntro);
+        this.currentLevel.init(skipIntro, false);
       },
       onComplete: () => {
+        if (this.currentLevel && !skipIntro && this.currentLevel.playEntryCinematic) {
+          this.currentLevel.playEntryCinematic();
+        }
         console.log("Level 6 (Communication) hilltop stage active!");
       }
     });
@@ -682,9 +700,12 @@ export class Game {
         }
         this.setColonyVisible(false);
         this.currentLevel = new Level7Final(this);
-        this.currentLevel.init(skipIntro);
+        this.currentLevel.init(skipIntro, false);
       },
       onComplete: () => {
+        if (this.currentLevel && !skipIntro && this.currentLevel.playEntryCinematic) {
+          this.currentLevel.playEntryCinematic();
+        }
         console.log("Level 7 (Final Colony Check) grand finale stage active!");
       }
     });
@@ -842,20 +863,22 @@ export class Game {
   }
 
   handleMiniGameSuccess(sol, decisionId) {
-    if (gameState.currentDay === sol && !gameState.currentDayDecided) {
-      const result = gameState.applyDecision(decisionId);
-      // Auto-advance to next Sol so the child never gets stuck!
-      const adv = gameState.advanceDay();
-      if (adv.completed) {
-        this.missionControl.reportModal.show(adv.report);
+    this.showScienceDebrief(sol, () => {
+      if (gameState.currentDay === sol && !gameState.currentDayDecided) {
+        const result = gameState.applyDecision(decisionId);
+        // Auto-advance to next Sol so the player never gets stuck!
+        const adv = gameState.advanceDay();
+        if (adv.completed) {
+          this.missionControl.reportModal.show(adv.report);
+        } else {
+          orbitVoice.speak(`Outstanding Commander! Sol ${sol} completed! Advancing to Sol ${gameState.currentDay}!`);
+          if (this.gameHUD) this.gameHUD.update(gameState);
+        }
       } else {
-        orbitVoice.speak(`Super job Commander! Sol ${sol} mission completed! Advancing to Sol ${gameState.currentDay}!`);
-        if (this.gameHUD) this.gameHUD.update(gameState);
+        orbitVoice.speak("Awesome work Commander! Lunar outpost systems nominal!");
       }
-    } else {
-      orbitVoice.speak("Awesome maintenance work Commander! Systems running smoothly!");
-    }
-    if (this.gameHUD) this.gameHUD.update(gameState);
+      if (this.gameHUD) this.gameHUD.update(gameState);
+    });
   }
 
   startRoverMode() {
@@ -953,14 +976,16 @@ export class Game {
   }
 
   handleFinalInspectionSuccess() {
-    if (gameState.currentDay === 7 && !gameState.currentDayDecided) {
-      gameState.applyDecision('choice_7_a');
-      const adv = gameState.advanceDay();
-      if (adv.completed) {
-        this.missionControl.reportModal.show(adv.report);
+    this.showScienceDebrief(7, () => {
+      if (gameState.currentDay === 7 && !gameState.currentDayDecided) {
+        gameState.applyDecision('choice_7_a');
+        const adv = gameState.advanceDay();
+        if (adv.completed) {
+          this.missionControl.reportModal.show(adv.report);
+        }
       }
-    }
-    if (this.gameHUD) this.gameHUD.update(gameState);
+      if (this.gameHUD) this.gameHUD.update(gameState);
+    });
   }
 
   onWindowResize() {

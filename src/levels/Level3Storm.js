@@ -99,7 +99,7 @@ export class Level3Storm {
   /**
    * Initializes the dedicated Level 3 stage
    */
-  init(skipIntro = false) {
+  init(skipIntro = false, autoStartCinematic = true) {
     this.isActive = true;
     this.scene.add(this.levelGroup);
 
@@ -136,7 +136,7 @@ export class Level3Storm {
     // 8. Start Entry Cinematic
     if (skipIntro) {
       this.startGameplay();
-    } else {
+    } else if (autoStartCinematic) {
       this.playEntryCinematic();
     }
   }
@@ -1022,11 +1022,13 @@ export class Level3Storm {
         if (this.beacon) {
           this.beacon.showAt(towerPos.x, towerPos.y, towerPos.z, 0x00E5FF);
         }
-        orbit.flyTo3D(new THREE.Vector3(towerPos.x, 3.2, towerPos.z), this.camera);
+        // Park ORBIT in top-right safe zone so it NEVER hovers over the shield tower or buttons!
+        const isMobile = window.innerWidth <= 768 || window.innerHeight <= 520;
+        orbit.flyTo(window.innerWidth - (isMobile ? 95 : 135), isMobile ? 55 : 85);
         orbit.say("All astronauts are sheltered! Walk south to the glowing blue tower and hold SPACE or tap CHARGE!", {
-          emotion: 'excited',
+          emotion: 'happy',
           gesture: 'point',
-          autoCloseDelay: 3500
+          autoCloseDelay: 4200
         });
       }
       return;
@@ -1041,10 +1043,12 @@ export class Level3Storm {
         if (this.beacon) {
           this.beacon.showAt(doorPos.x, doorPos.y, doorPos.z, 0x06D6A0);
         }
-        orbit.flyTo3D(new THREE.Vector3(doorPos.x, 2.2, doorPos.z), this.camera);
+        const isMobile = window.innerWidth <= 768 || window.innerHeight <= 520;
+        orbit.flyTo(window.innerWidth - (isMobile ? 95 : 135), isMobile ? 55 : 85);
         orbit.say("Astronauts are following you! Lead them inside the glowing shelter door!", {
           emotion: 'happy',
-          gesture: 'point'
+          gesture: 'point',
+          autoCloseDelay: 3800
         });
       }
       return;
@@ -1069,18 +1073,21 @@ export class Level3Storm {
         if (this.beacon) {
           this.beacon.showAt(targetAstro.group.position.x, 0.1, targetAstro.group.position.z, 0xFFD166);
         }
-        orbit.flyTo3D(new THREE.Vector3(targetAstro.group.position.x, 2.0, targetAstro.group.position.z), this.camera);
+        const isMobile = window.innerWidth <= 768 || window.innerHeight <= 520;
+        orbit.flyTo(window.innerWidth - (isMobile ? 95 : 135), isMobile ? 55 : 85);
         orbit.say(`Run over to ${targetAstro.name}! Press Space or tap ACTION to alert them!`, {
-          emotion: 'worried',
-          gesture: 'point'
+          emotion: 'happy',
+          gesture: 'point',
+          autoCloseDelay: 3800
         });
       }
 
       if (minDist < 3.2 && !this.hasPromptedAction) {
         this.hasPromptedAction = true;
         orbit.say(`You reached ${targetAstro.name}! Tap ACTION or Space to call them!`, {
-          emotion: 'excited',
-          gesture: 'wave'
+          emotion: 'happy',
+          gesture: 'wave',
+          autoCloseDelay: 3000
         });
       }
     }

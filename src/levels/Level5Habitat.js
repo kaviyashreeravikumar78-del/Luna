@@ -89,7 +89,7 @@ export class Level5Habitat {
   /**
    * Initializes the dedicated Level 5 stage
    */
-  init(skipIntro = false) {
+  init(skipIntro = false, autoStartCinematic = true) {
     this.isActive = true;
     this.scene.add(this.levelGroup);
 
@@ -124,7 +124,7 @@ export class Level5Habitat {
     // 8. Start Entry Flow
     if (skipIntro) {
       this.startGameplay();
-    } else {
+    } else if (autoStartCinematic) {
       this.playEntryCinematic();
     }
   }
@@ -885,10 +885,11 @@ export class Level5Habitat {
         if (this.beacon) {
           this.beacon.showAt(this.valvePosition.x, 0.1, this.valvePosition.z, 0x06D6A0);
         }
-        orbit.flyTo3D(new THREE.Vector3(this.valvePosition.x, 1.8, this.valvePosition.z), this.camera);
+        orbit.flyTo(window.innerWidth - 130, 80);
         orbit.say("Both leaks sealed! Walk over to the pressure valve to restore oxygen!", {
           emotion: 'happy',
-          gesture: 'point'
+          gesture: 'point',
+          autoCloseDelay: 3800
         });
       }
 
@@ -896,8 +897,9 @@ export class Level5Habitat {
       if (dist < 2.8 && !this.hasPromptedAction) {
         this.hasPromptedAction = true;
         orbit.say("Hold SPACE or tap TURN to restore oxygen to the habitat!", {
-          emotion: 'excited',
-          gesture: 'cheer'
+          emotion: 'happy',
+          gesture: 'point',
+          autoCloseDelay: 3000
         });
       }
       return;
@@ -922,18 +924,20 @@ export class Level5Habitat {
         if (this.beacon) {
           this.beacon.showAt(targetLeak.pos.x, 0.1, targetLeak.pos.z, 0xFF5E57);
         }
-        orbit.flyTo3D(new THREE.Vector3(targetLeak.pos.x, 1.8, targetLeak.pos.z), this.camera);
+        orbit.flyTo(window.innerWidth - 130, 80);
         orbit.say(`Air leak detected at ${targetLeak.name}! Walk over and hold SPACE or tap SEAL to spray foam!`, {
-          emotion: 'worried',
-          gesture: 'point'
+          emotion: 'happy',
+          gesture: 'point',
+          autoCloseDelay: 4200
         });
       }
 
       if (minDist < 2.5 && !this.hasPromptedAction) {
         this.hasPromptedAction = true;
         orbit.say(`Hold SPACE or tap SEAL to spray airtight foam on this leak!`, {
-          emotion: 'excited',
-          gesture: 'point'
+          emotion: 'happy',
+          gesture: 'point',
+          autoCloseDelay: 3000
         });
       }
     }

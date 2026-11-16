@@ -109,7 +109,7 @@ export class Level6Comms {
   /**
    * Initializes the dedicated Level 6 stage
    */
-  init(skipIntro = false) {
+  init(skipIntro = false, autoStartCinematic = true) {
     this.isActive = true;
     this.scene.add(this.levelGroup);
 
@@ -139,7 +139,7 @@ export class Level6Comms {
     // 7. Start Entry Flow
     if (skipIntro) {
       this.startGameplay();
-    } else {
+    } else if (autoStartCinematic) {
       this.playEntryCinematic();
     }
   }
@@ -584,21 +584,45 @@ export class Level6Comms {
       this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
       this.raycaster.setFromCamera(this.mouse, this.camera);
-      const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 28);
-      const targetPt = new THREE.Vector3();
-      this.raycaster.ray.intersectPlane(plane, targetPt);
-      if (targetPt) {
+
+      // Check direct tap on Satellite or Earth first
+      let aimTarget = null;
+      if (this.satelliteGroup) {
+        const satHits = this.raycaster.intersectObjects(this.satelliteGroup.children, true);
+        if (satHits.length > 0) aimTarget = this.satellitePos.clone();
+      }
+      if (!aimTarget && this.earthGroup) {
+        const earthHits = this.raycaster.intersectObjects(this.earthGroup.children, true);
+        if (earthHits.length > 0) aimTarget = new THREE.Vector3(16, 14, -36);
+      }
+
+      // Sky plane intersection fallback
+      if (!aimTarget) {
+        const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 28);
+        const targetPt = new THREE.Vector3();
+        const hit = this.raycaster.ray.intersectPlane(plane, targetPt);
+        if (hit && Number.isFinite(targetPt.x) && Number.isFinite(targetPt.y) && Number.isFinite(targetPt.z)) {
+          aimTarget = targetPt;
+        }
+      }
+
+      if (aimTarget) {
         const dishWorldPos = new THREE.Vector3();
         this.headGroup.getWorldPosition(dishWorldPos);
-        const dx = targetPt.x - dishWorldPos.x;
-        const dy = targetPt.y - dishWorldPos.y;
-        const dz = targetPt.z - dishWorldPos.z;
-        const targetAzimuth = Math.atan2(dx, -dz);
+        const dx = aimTarget.x - dishWorldPos.x;
+        const dy = aimTarget.y - dishWorldPos.y;
+        const dz = aimTarget.z - dishWorldPos.z;
         const horizDist = Math.hypot(dx, dz);
-        const targetElevation = Math.atan2(dy, horizDist);
 
-        this.targetAzimuth = Math.max(-0.95, Math.min(0.95, targetAzimuth));
-        this.targetElevation = Math.max(0.25, Math.min(1.22, targetElevation));
+        if (Number.isFinite(dx) && Number.isFinite(dy) && Number.isFinite(dz) && horizDist > 0.05) {
+          const targetAzimuth = Math.atan2(dx, -dz);
+          const targetElevation = Math.atan2(dy, horizDist);
+
+          if (Number.isFinite(targetAzimuth) && Number.isFinite(targetElevation)) {
+            this.targetAzimuth = Math.max(-0.95, Math.min(0.95, targetAzimuth));
+            this.targetElevation = Math.max(0.25, Math.min(1.22, targetElevation));
+          }
+        }
       }
     };
 
@@ -644,7 +668,7 @@ export class Level6Comms {
 
     if (this.hud) {
       this.hud.showGoPopup();
-      this.hud.setObjective('📡', 'Aim dish at satellite!');
+      this.hud.setObjective('📡', 'Aim dish at Earth or Satellite!');
     }
   }
 
@@ -653,14 +677,32 @@ export class Level6Comms {
    */
   handleActionTrigger() {
     if (this.phase === 1 || this.phase === 2) {
-      // Auto-align dish directly toward satellite!
+      // Auto-align dish directly toward closest target (Earth or NASA Satellite)
       const dishWorldPos = new THREE.Vector3();
       this.headGroup.getWorldPosition(dishWorldPos);
-      const dx = this.satellitePos.x - dishWorldPos.x;
-      const dy = this.satellitePos.y - dishWorldPos.y;
-      const dz = this.satellitePos.z - dishWorldPos.z;
-      this.targetAzimuth = Math.atan2(dx, -dz);
-      this.targetElevation = Math.atan2(dy, Math.hypot(dx, dz));
+
+      const earthPos = new THREE.Vector3(16, 14, -36);
+      const beamDir = new THREE.Vector3(0, 0, -1).transformDirection(this.headGroup.matrixWorld).normalize();
+
+      const dirSat = new THREE.Vector3().subVectors(this.satellitePos, dishWorldPos).normalize();
+      const dirEarth = new THREE.Vector3().subVectors(earthPos, dishWorldPos).normalize();
+
+      const targetPos = beamDir.angleTo(dirEarth) < beamDir.angleTo(dirSat) ? earthPos : this.satellitePos;
+
+      const dx = targetPos.x - dishWorldPos.x;
+      const dy = targetPos.y - dishWorldPos.y;
+      const dz = targetPos.z - dishWorldPos.z;
+      const horizDist = Math.hypot(dx, dz);
+
+      if (horizDist > 0.05) {
+        const targetAzimuth = Math.atan2(dx, -dz);
+        const targetElevation = Math.atan2(dy, horizDist);
+        if (Number.isFinite(targetAzimuth) && Number.isFinite(targetElevation)) {
+          this.targetAzimuth = Math.max(-0.95, Math.min(0.95, targetAzimuth));
+          this.targetElevation = Math.max(0.25, Math.min(1.22, targetElevation));
+        }
+      }
+
       level6Audio.playCarrierTone();
       orbitVoice.playChirp('click');
       return;
@@ -729,7 +771,7 @@ export class Level6Comms {
         // Park ORBIT safely in top-right area so it NEVER blocks the satellite in the sky
         const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight) || (window.innerWidth <= 950 && window.innerHeight <= 450);
         orbit.flyTo(window.innerWidth - 130, isMobileLandscape ? 60 : 100);
-        orbit.say("Aim the dish at the orbiting NASA satellite! Use joystick, tap satellite, or tap AIM!", {
+        orbit.say("Aim the dish at Earth or the NASA satellite! Use joystick, tap sky, or tap AIM!", {
           emotion: 'happy',
           gesture: 'point',
           autoCloseDelay: 4500
@@ -752,8 +794,8 @@ export class Level6Comms {
         this.hasPromptedAction = false;
         orbit.flyTo(window.innerWidth - 130, 100);
         orbit.say("Now beam the message to Earth! Tap TRANSMIT or Space as each data ring hits the center!", {
-          emotion: 'excited',
-          gesture: 'cheer',
+          emotion: 'happy',
+          gesture: 'celebrate',
           autoCloseDelay: 3500
         });
       }
@@ -827,7 +869,7 @@ export class Level6Comms {
   }
 
   /**
-   * Computes angular alignment between dish beam and satellite
+   * Computes angular alignment between dish beam and target (Satellite or Earth)
    */
   updateSignalAndLock(delta) {
     // 1. Calculate Dish World Position
@@ -836,14 +878,21 @@ export class Level6Comms {
     // 2. Calculate Dish Beam Direction in World Space (pointing along local -Z)
     this._vBeamDir.set(0, 0, -1).transformDirection(this.headGroup.matrixWorld).normalize();
 
-    // 3. Vector from Dish to Satellite
+    // 3. Vector and angular distance to Orbiting Satellite
     this._vTargetDir.subVectors(this.satellitePos, this._vDishPos).normalize();
+    const angleDiffSat = this._vBeamDir.angleTo(this._vTargetDir);
 
-    // 4. Angular Distance between Beam and Satellite
-    const angleDiff = this._vBeamDir.angleTo(this._vTargetDir); // radians
+    // 4. Vector and angular distance to Earth
+    const earthPos = new THREE.Vector3(16, 14, -36);
+    const vEarthDir = new THREE.Vector3().subVectors(earthPos, this._vDishPos).normalize();
+    const angleDiffEarth = this._vBeamDir.angleTo(vEarthDir);
 
-    // Detection cone: ~0.45 rad (~26 degrees) for responsive, satisfying alignment
-    const maxAngle = 0.45;
+    // 5. Best angular alignment (aiming at either Earth OR Satellite locks signal!)
+    const angleDiff = Math.min(angleDiffSat, angleDiffEarth);
+    const isTargetingEarth = angleDiffEarth <= angleDiffSat;
+
+    // Generous detection cone (~30 deg) for responsive, frustration-free alignment
+    const maxAngle = 0.52;
     const strength = Math.max(0, Math.min(1, 1 - (angleDiff / maxAngle)));
     this.signalStrength = strength;
 
@@ -854,7 +903,7 @@ export class Level6Comms {
       if (strength >= 0.85) {
         this.aimReticleMat.color.setHex(0x06D6A0); // Emerald Green
         this.aimReticleRing.scale.set(1.2, 1.2, 1);
-      } else if (strength >= 0.40) {
+      } else if (strength >= 0.35) {
         this.aimReticleMat.color.setHex(0xFFB703); // Solar Yellow
         this.aimReticleRing.scale.set(1.0, 1.0, 1);
       } else {
@@ -863,12 +912,23 @@ export class Level6Comms {
       }
     }
 
+    // Atmospheric Glow on Earth when aimed towards Earth
+    if (this.earthGlowMat) {
+      if (isTargetingEarth && strength > 0.3) {
+        this.earthGlowMat.color.setHex(strength >= 0.85 ? 0x06D6A0 : 0x00E5FF);
+        this.earthGlowMat.opacity = THREE.MathUtils.lerp(this.earthGlowMat.opacity, 0.35 + strength * 0.55, delta * 3);
+      } else {
+        this.earthGlowMat.color.setHex(0x00E5FF);
+        this.earthGlowMat.opacity = THREE.MathUtils.lerp(this.earthGlowMat.opacity, 0.35, delta * 2);
+      }
+    }
+
     // Phase 2: Lock Progression
     if (strength >= 0.85) {
       this.phase = 2;
-      this.lockProgress += delta / 2.5; // ~2.5 seconds to lock
+      this.lockProgress += delta / 2.2; // ~2.2 seconds to lock
       if (this.hud) {
-        this.hud.setObjective('🔒', 'Hold aim to lock on!');
+        this.hud.setObjective('🔒', isTargetingEarth ? 'Hold beam on Earth!' : 'Hold beam on satellite!');
       }
 
       if (this.lockProgress >= 1.0) {
@@ -1099,11 +1159,11 @@ export class Level6Comms {
 
   giveHint() {
     if (this.phase === 1) {
-      orbitVoice.speak("Use arrows or joystick to aim the dish!");
+      orbitVoice.speak("Use arrows, joystick, or tap Earth to aim!");
     } else if (this.phase === 2) {
-      orbitVoice.speak("Keep the beam on the satellite!");
+      orbitVoice.speak("Keep the beam steady on Earth or satellite!");
     } else if (this.phase === 3) {
-      orbitVoice.speak("Tap Space on time to send data!");
+      orbitVoice.speak("Tap Space or Transmit on time to send data!");
     }
   }
 

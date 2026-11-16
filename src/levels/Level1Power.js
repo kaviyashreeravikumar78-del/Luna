@@ -88,7 +88,7 @@ export class Level1Power {
   /**
    * Initializes the dedicated Level 1 stage
    */
-  init(skipIntro = false) {
+  init(skipIntro = false, autoStartCinematic = true) {
     this.isActive = true;
     this.scene.add(this.levelGroup);
 
@@ -127,7 +127,7 @@ export class Level1Power {
     // 9. Start Entry Cinematic (Commander walk-in, wave, ORBIT dialogue)
     if (skipIntro) {
       this.skipEntryCinematic();
-    } else {
+    } else if (autoStartCinematic) {
       this.playEntryCinematic();
     }
   }
@@ -1038,15 +1038,16 @@ export class Level1Power {
         if (this.beacon) {
           this.beacon.showAt(targetPanel.group.position.x, 0, targetPanel.group.position.z, 0x00E5FF);
         }
-        orbit.flyTo3D(new THREE.Vector3(targetPanel.group.position.x, 1.2, targetPanel.group.position.z), this.camera);
+        orbit.flyTo(window.innerWidth - 130, 80);
         
         // ONLY speak on the FIRST panel!
         const cleanedCount = this.panels.filter(p => p.isClean).length;
         if (cleanedCount === 0 && !this.hasGivenPhase1Intro) {
           this.hasGivenPhase1Intro = true;
-          orbit.say("Commander, walk over here to clean this dusty panel!", {
-            emotion: 'worried',
-            gesture: 'point'
+          orbit.say("Commander, walk over to the highlighted panel to clean off the dust!", {
+            emotion: 'happy',
+            gesture: 'point',
+            autoCloseDelay: 4200
           });
         }
       }
@@ -1156,7 +1157,7 @@ export class Level1Power {
         if (this.beacon) {
           this.beacon.showAt(targetPanel.group.position.x, 0, targetPanel.group.position.z, 0xFFD166);
         }
-        orbit.flyTo3D(new THREE.Vector3(targetPanel.group.position.x, 1.2, targetPanel.group.position.z), this.camera);
+        orbit.flyTo(window.innerWidth - 130, 80);
 
         // ONLY speak on the FIRST panel!
         const alignedCount = this.panels.filter(p => p.isAligned).length;
@@ -1409,14 +1410,11 @@ export class Level1Power {
    * and triggers reverse iris transition back to Mission Control!
    */
   onWin() {
-    // 1. Apply Sol 1 decision & advance to Sol 2 in GameState
-    if (gameState.currentDay === 1 && !gameState.currentDayDecided) {
-      gameState.applyDecision('choice_1_a');
-      gameState.advanceDay();
-    }
-
-    // 2. Play reverse iris transition back to Mission Control
+    // 1. Play reverse iris transition back to Mission Control
     this.game.exitLevelToMissionControl();
+
+    // 2. Apply Sol 1 success & open verified NASA Science Debrief
+    this.game.handleMiniGameSuccess(1, 'choice_1_a');
   }
 
   onFail() {

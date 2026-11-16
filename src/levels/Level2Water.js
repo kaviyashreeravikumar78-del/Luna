@@ -108,7 +108,7 @@ export class Level2Water {
   /**
    * Initializes the dedicated Level 2 3D scene
    */
-  init() {
+  init(skipIntro = false, autoStartCinematic = true) {
     this.isActive = true;
     this.scene.add(this.levelGroup);
 
@@ -155,8 +155,12 @@ export class Level2Water {
     this.ripples = new ClickRippleEffect(this.levelGroup);
     this.setupClickToMove();
 
-    // 14. Play Entry Cinematic
-    this.playEntryCinematic();
+    // 14. Entry Cinematic
+    if (skipIntro) {
+      this.startGameplay();
+    } else if (autoStartCinematic) {
+      this.playEntryCinematic();
+    }
   }
 
   setColonyVisibility(visible) {
@@ -854,10 +858,11 @@ export class Level2Water {
         if (this.beacon) {
           this.beacon.showAt(this.basePos.x, this.basePos.y + 0.25, this.basePos.z, 0x06D6A0);
         }
-        orbit.flyTo3D(new THREE.Vector3(this.basePos.x, this.basePos.y + 2.5, this.basePos.z), this.camera);
+        orbit.flyTo(window.innerWidth - 130, 80);
         orbit.say("Tank is full! Drive back to base and tap UNLOAD to melt the ice into clean water!", {
-          emotion: 'excited',
-          gesture: 'point'
+          emotion: 'happy',
+          gesture: 'point',
+          autoCloseDelay: 4000
         });
       }
 
@@ -866,7 +871,8 @@ export class Level2Water {
         this.hasPromptedAction = true;
         orbit.say("You reached base! Hold SPACE or tap UNLOAD to fill our colony water tanks!", {
           emotion: 'happy',
-          gesture: 'point'
+          gesture: 'point',
+          autoCloseDelay: 3500
         });
       }
       return;
@@ -892,7 +898,7 @@ export class Level2Water {
         if (this.beacon) {
           this.beacon.showAt(closestDep.pos.x, closestDep.pos.y + 0.1, closestDep.pos.z, 0x00E5FF);
         }
-        orbit.flyTo3D(new THREE.Vector3(closestDep.pos.x, closestDep.pos.y + 2.0, closestDep.pos.z), this.camera);
+        orbit.flyTo(window.innerWidth - 130, 80);
       }
     }
   }
@@ -1298,14 +1304,11 @@ export class Level2Water {
    * and triggers reverse iris transition back to Mission Control!
    */
   onWin() {
-    // Apply Sol 2 decision & advance to Sol 3
-    if (gameState.currentDay === 2 && !gameState.currentDayDecided) {
-      gameState.applyDecision('choice_2_a');
-      gameState.advanceDay();
-    }
-
-    // Play reverse iris wipe back to Mission Control
+    // 1. Play reverse iris wipe back to Mission Control
     this.game.exitLevelToMissionControl();
+
+    // 2. Apply Sol 2 success & open verified NASA Science Debrief
+    this.game.handleMiniGameSuccess(2, 'choice_2_a');
   }
 
   dispose() {

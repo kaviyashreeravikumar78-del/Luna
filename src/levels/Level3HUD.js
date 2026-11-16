@@ -484,7 +484,7 @@ export class Level3HUD {
 
       <div class="l3-modal-actions">
         <button class="btn-l3-modal-primary" id="btn-win-continue">
-          Continue to Day 4 ➔
+          🔬 Learn NASA DONKI Science ➔
         </button>
       </div>
     `;

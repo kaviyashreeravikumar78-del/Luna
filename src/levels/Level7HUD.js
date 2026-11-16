@@ -90,7 +90,10 @@ export class Level7HUD {
 
       <!-- TOUCH CONTROLS -->
       <div class="l7-touch-controls">
-        <button class="btn-l7-action" id="btn-l7-action">⭐</button>
+        <div class="l7-joystick-zone" id="l7-joystick" title="Move Commander or Steer Rover">
+          <div class="l7-joystick-knob" id="l7-joystick-knob"></div>
+        </div>
+        <button class="btn-l7-action" id="btn-l7-action" title="Inspect Facility">⭐</button>
       </div>
 
       <!-- GO! POPUP -->
@@ -142,6 +145,74 @@ export class Level7HUD {
       e.preventDefault();
       if (this.options.onActionTrigger) this.options.onActionTrigger();
     });
+
+    // Touch Virtual Joystick
+    this.setupTouchJoystick();
+  }
+
+  setupTouchJoystick() {
+    const joystick = this.element.querySelector('#l7-joystick');
+    const knob = this.element.querySelector('#l7-joystick-knob');
+    if (!joystick || !knob) return;
+
+    let touchId = null;
+    let startX = 0, startY = 0;
+
+    const handleMove = (clientX, clientY) => {
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+      const maxRadius = 38;
+      const dist = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+      const clampedDist = Math.min(dist, maxRadius);
+
+      const nx = Math.cos(angle) * clampedDist;
+      const ny = Math.sin(angle) * clampedDist;
+
+      knob.style.transform = `translate(${nx}px, ${ny}px)`;
+
+      const normX = nx / maxRadius;
+      const normY = ny / maxRadius;
+
+      if (this.options.onTouchMove) {
+        this.options.onTouchMove(normX, normY);
+      }
+    };
+
+    joystick.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.changedTouches[0];
+      touchId = touch.identifier;
+      const rect = joystick.getBoundingClientRect();
+      startX = rect.left + rect.width / 2;
+      startY = rect.top + rect.height / 2;
+      handleMove(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (touchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchId) {
+          handleMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+          break;
+        }
+      }
+    }, { passive: false });
+
+    const endJoystick = (e) => {
+      if (touchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchId) {
+          touchId = null;
+          knob.style.transform = 'translate(0px, 0px)';
+          if (this.options.onTouchMove) this.options.onTouchMove(0, 0);
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('touchend', endJoystick);
+    window.addEventListener('touchcancel', endJoystick);
   }
 
   setRoverButtonState(isDriving) {

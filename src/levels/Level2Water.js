@@ -39,24 +39,27 @@ export class Level2Water {
     this.roverPos = new THREE.Vector3(0, 0.45, 32); // Starting position near base
     this.roverHeading = Math.PI; // Facing North toward shadowed crater
     this.speed = 0;
-    this.maxSpeed = 12.0;
-    this.maxReverseSpeed = -5.0;
-    this.acceleration = 14.0;
-    this.deceleration = 10.0;
+    this.maxSpeed = 14.0;
+    this.maxReverseSpeed = -7.0;
+    this.acceleration = 24.0;
+    this.deceleration = 18.0;
     this.steerAngle = 0;
-    this.maxSteer = 0.55;
+    this.maxSteer = 0.65;
 
     // Keys & touch
     this.keys = { forward: false, backward: false, left: false, right: false, action: false };
     this.touchSteerX = 0;
     this.touchThrottleZ = 0;
+    this.dpadSteer = 0;
+    this.dpadThrottle = 0;
+    this.nearDeposit = null;
 
     // Level state
     this.isActive = false;
     this.isPaused = false;
     this.phase = 0; // 0: Intro, 1: Drive, 2: Radar Ping, 3: Drill/Return, 4: Win, 5: Fail
     this.battery = 100;
-    this.batteryDrainSpeed = 0.45; // ~140s total driving buffer
+    this.batteryDrainSpeed = 0.08; // Generous battery buffer (~800s driving)
     this.tankCount = 0;
     this.maxTank = 3;
 
@@ -405,11 +408,11 @@ export class Level2Water {
   }
 
   spawnIceDeposits() {
-    // 3 Hidden Ice Deposits inside the permanently shadowed crater
+    // 3 Highly Visible Lunar Diamond Deposits
     const sites = [
-      { id: 1, pos: new THREE.Vector3(-14, 0, -22), label: "Crater Rim Deposit" },
-      { id: 2, pos: new THREE.Vector3(  6, 0, -32), label: "Deep Shadow Pocket" },
-      { id: 3, pos: new THREE.Vector3(-6,  0, -42), label: "Sub-surface Glaze" },
+      { id: 1, pos: new THREE.Vector3(-14, 0, -22), label: "Crater Rim Diamond" },
+      { id: 2, pos: new THREE.Vector3(  6, 0, -32), label: "Deep Shadow Diamond" },
+      { id: 3, pos: new THREE.Vector3(-6,  0, -42), label: "Glaze Pocket Diamond" },
     ];
 
     this.iceDeposits = [];
@@ -420,37 +423,84 @@ export class Level2Water {
       const group = new THREE.Group();
       group.position.copy(s.pos);
 
-      // Sparkling Ice Patch on the ground
-      const patchGeo = new THREE.CircleGeometry(2.4, 16);
+      // 1. Sparkling Ice Patch on the ground (Always Visible!)
+      const patchGeo = new THREE.CircleGeometry(2.6, 24);
       const patchMat = new THREE.MeshStandardMaterial({
         color: 0x00E5FF,
         emissive: 0x0088CC,
-        emissiveIntensity: 0.8,
+        emissiveIntensity: 0.85,
         roughness: 0.15,
         transparent: true,
-        opacity: 0.0 // Hidden initially until revealed by Radar Ping
+        opacity: 0.85
       });
       const patch = new THREE.Mesh(patchGeo, patchMat);
       patch.rotation.x = -Math.PI / 2;
       group.add(patch);
 
-      // Floating Crystal Marker (Shown when revealed)
-      const crystalGeo = new THREE.OctahedronGeometry(0.5, 0);
-      const crystalMat = new THREE.MeshBasicMaterial({ color: 0x00E5FF });
+      // 2. Glowing Ground Ring
+      const ringGeo = new THREE.RingGeometry(2.2, 2.65, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00FFFF,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.9
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.04;
+      group.add(ring);
+
+      // 3. Sky-High Vertical Light Beam (Reaches 38m into lunar sky so player sees it from everywhere!)
+      const beamGeo = new THREE.CylinderGeometry(0.2, 0.45, 38, 16);
+      const beamMat = new THREE.MeshBasicMaterial({
+        color: 0x00E5FF,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide
+      });
+      const beam = new THREE.Mesh(beamGeo, beamMat);
+      beam.position.y = 19;
+      group.add(beam);
+
+      // 4. Large Sparkling 3D Diamond
+      const crystalGeo = new THREE.OctahedronGeometry(0.9, 0);
+      const crystalMat = new THREE.MeshStandardMaterial({
+        color: 0x00FFFF,
+        emissive: 0x0099FF,
+        emissiveIntensity: 0.9,
+        roughness: 0.1,
+        metalness: 0.85
+      });
       const crystal = new THREE.Mesh(crystalGeo, crystalMat);
-      crystal.position.y = 1.6;
-      crystal.visible = false;
+      crystal.position.y = 2.0;
+      crystal.visible = true; // Always visible!
       group.add(crystal);
+
+      // 5. Outer Holographic Diamond Cage
+      const cageGeo = new THREE.OctahedronGeometry(1.2, 0);
+      const cageMat = new THREE.MeshBasicMaterial({
+        color: 0xFFFFFF,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.6
+      });
+      const cage = new THREE.Mesh(cageGeo, cageMat);
+      cage.position.y = 2.0;
+      group.add(cage);
 
       this.levelGroup.add(group);
 
       this.iceDeposits.push({
         id: s.id,
+        label: s.label,
         pos: s.pos,
         group,
         patch,
+        ring,
+        beam,
         crystal,
-        revealed: false,
+        cage,
+        revealed: true, // Always revealed!
         collected: false
       });
     });
@@ -601,8 +651,33 @@ export class Level2Water {
       onRadarPing: () => {
         this.triggerRadarPing();
       },
+      onOpenPuzzle: () => {
+        if (this.nearDeposit && !this.nearDeposit.collected) {
+          this.openExtractionPuzzle(this.nearDeposit);
+        }
+      },
+      onSelectTargetDiamond: (siteId) => {
+        const dep = this.iceDeposits.find(d => d.id === siteId);
+        if (dep && !dep.collected) {
+          this.targetDestination = { x: dep.pos.x, z: dep.pos.z };
+          if (this.beacon) {
+            this.beacon.showAt(dep.pos.x, dep.pos.y + 0.1, dep.pos.z, 0x00E5FF);
+          }
+          orbit.say(`Navigating to ${dep.label}!`, { emotion: 'happy', gesture: 'point' });
+        }
+      },
+      onThrottleChange: (val) => {
+        this.dpadThrottle = val;
+      },
+      onSteerChange: (val) => {
+        this.dpadSteer = val;
+      },
       onDrillStart: () => {
-        this.isDrilling = true;
+        if (this.nearDeposit && !this.nearDeposit.collected) {
+          this.openExtractionPuzzle(this.nearDeposit);
+        } else {
+          this.isDrilling = true;
+        }
       },
       onDrillEnd: () => {
         this.isDrilling = false;
@@ -625,10 +700,10 @@ export class Level2Water {
         case 'KeyA': case 'ArrowLeft': this.keys.left = true; break;
         case 'KeyD': case 'ArrowRight': this.keys.right = true; break;
         case 'Space':
-          if (this.activeDrillSite) {
-            this.isDrilling = true;
+          if (this.nearDeposit && !this.nearDeposit.collected) {
+            this.openExtractionPuzzle(this.nearDeposit);
           } else {
-            this.hud.triggerRadarPing();
+            this.triggerRadarPing();
           }
           break;
       }
@@ -745,7 +820,27 @@ export class Level2Water {
       this.waterBeacon.rotation.z = elapsedTime * 2.0;
     }
 
-    // 7. Update Objective Guidance & Beacon
+    // 7. Animate 3D Diamond Crystals & Light Beacons
+    this.iceDeposits.forEach((dep, idx) => {
+      if (!dep.collected) {
+        if (dep.crystal) dep.crystal.rotation.y += delta * 1.5;
+        if (dep.cage) dep.cage.rotation.y -= delta * 1.2;
+        if (dep.ring) {
+          const s = 1 + Math.sin(elapsedTime * 3 + idx) * 0.12;
+          dep.ring.scale.set(s, s, 1);
+        }
+        if (dep.beam) {
+          dep.beam.material.opacity = 0.28 + Math.sin(elapsedTime * 2.5 + idx) * 0.12;
+        }
+      }
+    });
+
+    // 8. Update HUD Diamond Compass & Tracker
+    if (this.hud) {
+      this.hud.updateDiamondTracker(this.iceDeposits, this.roverPos, this.roverHeading);
+    }
+
+    // 9. Update Objective Guidance & Beacon
     this.updateObjectiveGuidance(delta, elapsedTime);
     if (this.beacon) this.beacon.update(delta, elapsedTime);
     if (this.ripples) this.ripples.update(delta);
@@ -804,7 +899,7 @@ export class Level2Water {
           this.beacon.showAt(closestDep.pos.x, closestDep.pos.y + 0.1, closestDep.pos.z, 0x00E5FF);
         }
         orbit.flyTo3D(new THREE.Vector3(closestDep.pos.x, closestDep.pos.y + 2.0, closestDep.pos.z), this.camera);
-        orbit.say("Follow me north to the shadowed crater! Tap PING to scan for ice!", {
+        orbit.say(`Head towards ${closestDep.label}! Beacons and diamond icons are lighting the way!`, {
           emotion: 'happy',
           gesture: 'point'
         });
@@ -812,7 +907,7 @@ export class Level2Water {
 
       if (closestDist < 4.2 && !this.hasPromptedAction) {
         this.hasPromptedAction = true;
-        orbit.say("Ice deposit detected! Hold SPACE or tap DRILL to extract it!", {
+        orbit.say("Diamond Ice Site reached! Tap EXTRACT ICE or solve the water puzzle!", {
           emotion: 'excited',
           gesture: 'point'
         });
@@ -821,37 +916,58 @@ export class Level2Water {
   }
 
   updateRoverDriving(delta) {
-    let clickSteer = 0;
     let clickThrottle = 0;
 
-    const manualActive = this.keys.forward || this.keys.backward || this.keys.left || this.keys.right ||
-      Math.abs(this.touchSteerX) > 0.05 || Math.abs(this.touchThrottleZ) > 0.1;
+    const manualActive = (this.keys.forward || this.keys.backward || this.keys.left || this.keys.right ||
+      Math.abs(this.touchSteerX) > 0.05 || Math.abs(this.touchThrottleZ) > 0.1 ||
+      this.dpadThrottle !== 0 || this.dpadSteer !== 0);
 
+    // Tap-to-drive on terrain (smooth navigation)
     if (manualActive) {
       this.targetDestination = null;
     } else if (this.targetDestination) {
       const dx = this.targetDestination.x - this.roverPos.x;
       const dz = this.targetDestination.z - this.roverPos.z;
       const dist = Math.hypot(dx, dz);
-      if (dist > 1.8) {
+      if (dist > 1.2) {
         const targetHeading = Math.atan2(-dx, -dz);
         let diff = targetHeading - this.roverHeading;
         while (diff > Math.PI) diff -= Math.PI * 2;
         while (diff < -Math.PI) diff += Math.PI * 2;
-
-        clickSteer = Math.max(-1, Math.min(1, diff * 2.2));
-        clickThrottle = Math.cos(diff) > 0.1 ? 1.0 : 0.45;
+        this.roverHeading += Math.sign(diff) * Math.min(Math.abs(diff), 3.8 * delta);
+        clickThrottle = Math.cos(diff) > 0.1 ? Math.min(1.0, dist * 0.4) : 0.35;
       } else {
         this.targetDestination = null;
       }
     }
 
+    // Steering input (Keyboard, D-Pad, or Touch Joystick)
+    let steerInput = 0;
+    if (this.keys.left) steerInput += 1;
+    if (this.keys.right) steerInput -= 1;
+    if (this.touchSteerX) steerInput -= this.touchSteerX;
+    if (this.dpadSteer) steerInput += this.dpadSteer;
+
+    // DIRECT RESPONSIVE STEERING: Allows 360° turning in-place at standstill or rolling!
+    if (Math.abs(steerInput) > 0.05) {
+      this.roverHeading += steerInput * 3.0 * delta;
+      this.steerAngle = THREE.MathUtils.lerp(this.steerAngle, steerInput * this.maxSteer, delta * 15);
+    } else {
+      this.steerAngle = THREE.MathUtils.lerp(this.steerAngle, 0, delta * 10);
+    }
+
+    // Turn front wheels visually
+    this.frontWheelPivots.forEach(p => {
+      p.rotation.y = this.steerAngle;
+    });
+
+    // Throttle input
     let throttle = 0;
     if (this.keys.forward) throttle += 1;
     if (this.keys.backward) throttle -= 1;
-
     if (this.touchThrottleZ < -0.2) throttle += 1;
     if (this.touchThrottleZ > 0.2) throttle -= 1;
+    if (this.dpadThrottle) throttle += this.dpadThrottle;
     if (clickThrottle) throttle += clickThrottle;
 
     // Acceleration & Braking
@@ -860,32 +976,12 @@ export class Level2Water {
     } else if (throttle < 0) {
       this.speed = Math.max(this.maxReverseSpeed, this.speed - this.deceleration * delta);
     } else {
-      // Natural deceleration / rolling resistance
+      // Smooth natural deceleration
       if (this.speed > 0) {
-        this.speed = Math.max(0, this.speed - this.deceleration * 0.8 * delta);
+        this.speed = Math.max(0, this.speed - this.deceleration * delta);
       } else if (this.speed < 0) {
-        this.speed = Math.min(0, this.speed + this.deceleration * 0.8 * delta);
+        this.speed = Math.min(0, this.speed + this.deceleration * delta);
       }
-    }
-
-    // Steering
-    let steerInput = 0;
-    if (this.keys.left) steerInput += 1;
-    if (this.keys.right) steerInput -= 1;
-    if (this.touchSteerX) steerInput -= this.touchSteerX;
-    if (clickSteer) steerInput += clickSteer;
-
-    this.steerAngle = Math.max(-this.maxSteer, Math.min(this.maxSteer, steerInput * this.maxSteer));
-
-    // Turn front wheels visually
-    this.frontWheelPivots.forEach(p => {
-      p.rotation.y = this.steerAngle;
-    });
-
-    // Update Rover Heading based on speed and steering
-    if (Math.abs(this.speed) > 0.1) {
-      const turnRate = 1.8 * (this.speed / this.maxSpeed);
-      this.roverHeading += this.steerAngle * turnRate * delta;
     }
 
     // Move Rover forward
@@ -894,6 +990,20 @@ export class Level2Water {
 
     this.roverPos.x += forwardX * this.speed * delta;
     this.roverPos.z += forwardZ * this.speed * delta;
+
+    // Soft Boulder Deflection: Gently pushes the rover outward so it NEVER gets stuck!
+    this.boulders.forEach(b => {
+      const dx = this.roverPos.x - b.pos.x;
+      const dz = this.roverPos.z - b.pos.z;
+      const dist = Math.hypot(dx, dz);
+      const minDist = b.radius + 1.25;
+      if (dist < minDist && dist > 0.001) {
+        const push = minDist - dist;
+        this.roverPos.x += (dx / dist) * push;
+        this.roverPos.z += (dz / dist) * push;
+        this.speed *= 0.88; // Smoothly slows down instead of halting
+      }
+    });
 
     // Boundary clamp (within 55m radius)
     const distFromOrigin = Math.hypot(this.roverPos.x, this.roverPos.z);
@@ -1045,80 +1155,95 @@ export class Level2Water {
     let nearSite = null;
 
     for (const dep of this.iceDeposits) {
-      if (dep.revealed && !dep.collected) {
+      if (!dep.collected) {
         const d = Math.hypot(this.roverPos.x - dep.pos.x, this.roverPos.z - dep.pos.z);
-        if (d < 3.2) {
+        if (d < 4.0) {
           nearSite = dep;
           break;
         }
       }
     }
 
+    this.nearDeposit = nearSite;
     this.activeDrillSite = nearSite;
     this.hud.showDrillButton(!!nearSite);
 
     // Check return to base water station pad
     if (this.tankCount >= this.maxTank) {
       const distToBase = Math.hypot(this.roverPos.x - this.basePos.x, this.roverPos.z - this.basePos.z);
-      if (distToBase < 4.2) {
+      if (distToBase < 4.5) {
         this.completeLevelVictory();
       }
     }
   }
 
+  openExtractionPuzzle(deposit) {
+    if (!deposit || deposit.collected) return;
+    this.speed = 0;
+    this.targetDestination = null;
+
+    if (this.hud) {
+      this.hud.openPuzzleModal(deposit, (dep) => {
+        this.completeDepositExtraction(dep || deposit);
+      });
+    }
+  }
+
+  completeDepositExtraction(dep) {
+    if (!dep || dep.collected) return;
+    dep.collected = true;
+    if (dep.crystal) dep.crystal.visible = false;
+    if (dep.cage) dep.cage.visible = false;
+    if (dep.beam) dep.beam.visible = false;
+    if (dep.ring) dep.ring.visible = false;
+    if (dep.patch) dep.patch.visible = false;
+
+    this.tankCount = Math.min(this.maxTank, this.tankCount + 1);
+    this.hud.setTank(this.tankCount, this.maxTank);
+    this.hud.setStars(this.tankCount);
+
+    // Make ice cube visible inside the rover's tank!
+    if (this.iceBlocksInTank[this.tankCount - 1]) {
+      this.iceBlocksInTank[this.tankCount - 1].visible = true;
+    }
+
+    level2Audio.playIceCollect();
+    level2Audio.playSplash();
+    this.hud.showPopup(window.innerWidth / 2, window.innerHeight * 0.45, `+1 Ice Block! (${this.tankCount}/3) 🧊`);
+
+    this.nearDeposit = null;
+    this.activeDrillSite = null;
+    this.isDrilling = false;
+    this.hud.showDrillButton(false);
+
+    if (this.tankCount < this.maxTank) {
+      this.hud.setObjective(`Find diamonds (${this.tankCount}/3)`, "💎");
+      orbit.say(`Great puzzle work! Diamond collected (${this.tankCount}/3)! Follow the beacons for the next one!`, {
+        emotion: 'excited',
+        gesture: 'nod'
+      });
+    } else {
+      // All 3 collected!
+      this.phase = 3;
+      this.hud.setObjective("Return ice to Base Camp! 🚀", "🏠");
+      if (this.beacon) {
+        this.beacon.showAt(this.basePos.x, this.basePos.y + 0.25, this.basePos.z, 0x06D6A0);
+      }
+      orbit.flyTo3D(new THREE.Vector3(this.basePos.x, this.basePos.y + 2.5, this.basePos.z), this.camera);
+      orbit.say("Tank is full! Drive back to base and unload the ice!", {
+        emotion: 'excited',
+        gesture: 'wave'
+      });
+    }
+  }
+
   /**
-   * Phase 3: Drilling Ice Deposits
+   * Phase 3: Drilling Ice Deposits (Quick alternative / fallback)
    */
   updateDrilling(delta) {
-    this.drillProgress += delta * 0.7; // ~1.5s drilling
-
-    // Lower drill arm
-    if (this.drillArm) {
-      this.drillArm.rotation.z = Math.sin(performance.now() * 0.05) * 0.15 - 0.4;
-    }
-
-    // Emit drill ice chips
-    if (Math.random() < 0.4) {
-      this.emitDrillChips(this.activeDrillSite.pos);
-    }
-
-    if (this.drillProgress >= 1.0) {
-      this.drillProgress = 0;
-      this.isDrilling = false;
-      this.activeDrillSite.collected = true;
-      this.activeDrillSite.patch.visible = false;
-      this.activeDrillSite.crystal.visible = false;
-      this.currentGuideTarget = null;
-      this.hasPromptedAction = false;
-
-      this.tankCount++;
-      this.hud.setTank(this.tankCount, this.maxTank);
-      this.hud.setStars(this.tankCount);
-
-      // Make ice cube visible inside the rover's tank!
-      if (this.iceBlocksInTank[this.tankCount - 1]) {
-        this.iceBlocksInTank[this.tankCount - 1].visible = true;
-      }
-
-      level2Audio.playIceCollect();
-      this.hud.showPopup(window.innerWidth / 2, window.innerHeight * 0.45, `+1 Ice Block! (${this.tankCount}/3) 🧊`);
-
-      if (this.tankCount < this.maxTank) {
-        this.hud.setObjective(`Ping for ice (${this.tankCount}/3)`, "📡");
-        orbit.say("Ice block stored! Press Space to ping for the next deposit!", {
-          emotion: 'excited',
-          gesture: 'nod'
-        });
-      } else {
-        // All 3 collected!
-        this.phase = 3;
-        this.hud.setObjective("Return ice to Base Camp! 🚀", "🏠");
-        orbit.say("Tank is full! Drive back to base and unload the ice!", {
-          emotion: 'excited',
-          gesture: 'wave'
-        });
-      }
-    }
+    if (!this.activeDrillSite) return;
+    this.openExtractionPuzzle(this.activeDrillSite);
+    this.isDrilling = false;
   }
 
   completeLevelVictory() {

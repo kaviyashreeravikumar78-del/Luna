@@ -81,6 +81,31 @@ export class Level2HUD {
         </div>
       </div>
 
+      <!-- DIAMOND WAYPOINT TRACKER & COMPASS (Always Visible Diamond Locations) -->
+      <div class="l2-diamond-tracker" id="l2-diamond-tracker">
+        <div class="l2-tracker-title">💎 LUNAR DIAMOND LOCATIONS (3 SITES):</div>
+        <div class="l2-diamond-pills" id="l2-diamond-pills">
+          <button class="l2-diamond-pill active" id="l2-pill-1" data-id="1" title="Click to drive to Site 1">
+            <span class="pill-gem">💎</span>
+            <span class="pill-name">Crater Rim</span>
+            <span class="pill-dist" id="l2-dist-1">--m</span>
+            <span class="pill-arrow" id="l2-arrow-1">➔</span>
+          </button>
+          <button class="l2-diamond-pill" id="l2-pill-2" data-id="2" title="Click to drive to Site 2">
+            <span class="pill-gem">💎</span>
+            <span class="pill-name">Deep Shadow</span>
+            <span class="pill-dist" id="l2-dist-2">--m</span>
+            <span class="pill-arrow" id="l2-arrow-2">➔</span>
+          </button>
+          <button class="l2-diamond-pill" id="l2-pill-3" data-id="3" title="Click to drive to Site 3">
+            <span class="pill-gem">💎</span>
+            <span class="pill-name">Glaze Pocket</span>
+            <span class="pill-dist" id="l2-dist-3">--m</span>
+            <span class="pill-arrow" id="l2-arrow-3">➔</span>
+          </button>
+        </div>
+      </div>
+
       <!-- CORNER MINI-MAP (Radar Sonar Scope) -->
       <div class="l2-minimap-wrap">
         <canvas class="l2-minimap-canvas" id="l2-minimap-canvas" width="110" height="110"></canvas>
@@ -95,10 +120,10 @@ export class Level2HUD {
 
       <!-- RADAR PING & DRILL BUTTON DOCK -->
       <div class="l2-radar-dock">
-        <!-- Drill Button (Active when over deposit) -->
-        <button class="btn-l2-drill" id="btn-l2-drill" title="Hold to Drill Ice!">
-          <span style="font-size:1.8rem;">⛏️</span>
-          <span style="font-size:0.7rem; font-weight:900;">DRILL ICE</span>
+        <!-- Drill / Puzzle Button (Active when over deposit) -->
+        <button class="btn-l2-drill" id="btn-l2-drill" title="Tap to Extract Diamond Water!">
+          <span style="font-size:1.8rem;">💎⛏️</span>
+          <span style="font-size:0.7rem; font-weight:900;">EXTRACT ICE</span>
         </button>
 
         <!-- Radar Ping Button (Space key shortcut) -->
@@ -106,6 +131,76 @@ export class Level2HUD {
           <span class="btn-l2-radar-icon">📡</span>
           <span class="btn-l2-radar-text">PING [SPACE]</span>
         </button>
+      </div>
+
+      <!-- WATER EXTRACTION PIPELINE PUZZLE MODAL -->
+      <div class="l2-modal-backdrop" id="l2-puzzle-modal">
+        <div class="l2-modal-card l2-puzzle-card">
+          <div class="l2-puzzle-header">
+            <span style="font-size:2.4rem;">💎❄️💧</span>
+            <h3 class="l2-modal-title" id="l2-puzzle-title">LUNAR WATER EXTRACTOR</h3>
+            <p class="l2-puzzle-desc">
+              Tap each pipe tile to rotate it and connect the pure water flow into the rover tank!
+            </p>
+          </div>
+
+          <!-- PIPELINE GRID -->
+          <div class="l2-pipeline-grid" id="l2-pipeline-grid">
+            <div class="l2-pipe-node l2-pipe-source">
+              <span class="l2-node-icon">💎</span>
+              <span class="l2-node-name">ICE CORE</span>
+            </div>
+
+            <!-- Pipe 1: Melter -->
+            <div class="l2-pipe-tile" data-index="0" id="l2-pipe-0" title="Tap to rotate Melter pipe">
+              <div class="l2-pipe-body" id="l2-pipe-body-0">
+                <div class="l2-pipe-segment l2-seg-h"></div>
+                <div class="l2-pipe-segment l2-seg-v"></div>
+                <div class="l2-pipe-core">🔥</div>
+              </div>
+              <span class="l2-pipe-label">Melter</span>
+            </div>
+
+            <!-- Pipe 2: Filter -->
+            <div class="l2-pipe-tile" data-index="1" id="l2-pipe-1" title="Tap to rotate Filter pipe">
+              <div class="l2-pipe-body" id="l2-pipe-body-1">
+                <div class="l2-pipe-segment l2-seg-h"></div>
+                <div class="l2-pipe-segment l2-seg-v"></div>
+                <div class="l2-pipe-core">🧪</div>
+              </div>
+              <span class="l2-pipe-label">Filter</span>
+            </div>
+
+            <!-- Pipe 3: Pump -->
+            <div class="l2-pipe-tile" data-index="2" id="l2-pipe-2" title="Tap to rotate Pump valve">
+              <div class="l2-pipe-body" id="l2-pipe-body-2">
+                <div class="l2-pipe-segment l2-seg-h"></div>
+                <div class="l2-pipe-segment l2-seg-v"></div>
+                <div class="l2-pipe-core">⚙️</div>
+              </div>
+              <span class="l2-pipe-label">Pump</span>
+            </div>
+
+            <div class="l2-pipe-node l2-pipe-dest">
+              <span class="l2-node-icon">💧</span>
+              <span class="l2-node-name">ROVER TANK</span>
+            </div>
+          </div>
+
+          <div class="l2-pipeline-status" id="l2-pipeline-status">
+            Align all 3 pipes horizontally to connect the flow!
+          </div>
+
+          <!-- ACTIONS -->
+          <div class="l2-puzzle-actions">
+            <button class="btn-l2-puzzle-instant" id="btn-l2-puzzle-instant">
+              ⚡ Instant Extract (Skip)
+            </button>
+            <button class="btn-l2-puzzle-close" id="btn-l2-puzzle-close">
+              ✖ Close
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- BIG "GO!" INTRO BANNER -->
@@ -173,6 +268,25 @@ export class Level2HUD {
 
       <!-- MOBILE TOUCH CONTROLS -->
       <div class="l2-touch-dock" id="l2-touch-dock">
+        <!-- D-PAD DRIVING BUTTONS -->
+        <div class="l2-dpad-controls" id="l2-dpad-controls">
+          <button class="btn-l2-dpad btn-dpad-up" id="btn-l2-up" title="Drive Forward">
+            ▲<span class="dpad-sub">DRIVE</span>
+          </button>
+          <div class="l2-dpad-row">
+            <button class="btn-l2-dpad btn-dpad-left" id="btn-l2-left" title="Steer Left">
+              ◀<span class="dpad-sub">LEFT</span>
+            </button>
+            <button class="btn-l2-dpad btn-dpad-down" id="btn-l2-down" title="Reverse">
+              ▼<span class="dpad-sub">BACK</span>
+            </button>
+            <button class="btn-l2-dpad btn-dpad-right" id="btn-l2-right" title="Steer Right">
+              ▶<span class="dpad-sub">RIGHT</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- VIRTUAL JOYSTICK -->
         <div class="l2-virtual-stick" id="l2-stick">
           <div class="l2-stick-knob" id="l2-stick-knob"></div>
         </div>
@@ -220,18 +334,15 @@ export class Level2HUD {
       this.triggerRadarPing();
     });
 
-    // Drill button
+    // Drill / Puzzle trigger button
     const drillBtn = this.element.querySelector('#btn-l2-drill');
-    drillBtn.addEventListener('pointerdown', (e) => {
+    drillBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      if (this.options.onDrillStart) this.options.onDrillStart();
-    });
-    drillBtn.addEventListener('pointerup', (e) => {
-      e.preventDefault();
-      if (this.options.onDrillEnd) this.options.onDrillEnd();
-    });
-    drillBtn.addEventListener('pointerleave', () => {
-      if (this.options.onDrillEnd) this.options.onDrillEnd();
+      if (this.options.onOpenPuzzle) {
+        this.options.onOpenPuzzle();
+      } else if (this.options.onDrillStart) {
+        this.options.onDrillStart();
+      }
     });
 
     // Win continue button
@@ -251,8 +362,24 @@ export class Level2HUD {
       if (this.options.onReturnToMissionControl) this.options.onReturnToMissionControl();
     });
 
-    // Touch joystick
+    // Touch controls: Joystick + D-Pad
     this.setupTouchJoystick();
+    this.setupDPadControls();
+
+    // Puzzle Modal Setup
+    this.setupPuzzleModal();
+
+    // Diamond Pills Click
+    [1, 2, 3].forEach(id => {
+      const pill = this.element.querySelector(`#l2-pill-${id}`);
+      if (pill) {
+        pill.addEventListener('click', () => {
+          if (this.options.onSelectTargetDiamond) {
+            this.options.onSelectTargetDiamond(id);
+          }
+        });
+      }
+    });
   }
 
   triggerRadarPing() {
@@ -316,6 +443,192 @@ export class Level2HUD {
 
     window.addEventListener('touchmove', onMove);
     window.addEventListener('touchend', onEnd);
+  }
+
+  setupDPadControls() {
+    const bindBtn = (id, onStart, onEnd) => {
+      const btn = this.element.querySelector(id);
+      if (!btn) return;
+      const start = (e) => {
+        if (e && e.cancelable) e.preventDefault();
+        btn.classList.add('active');
+        onStart();
+      };
+      const end = (e) => {
+        if (e && e.cancelable) e.preventDefault();
+        btn.classList.remove('active');
+        onEnd();
+      };
+      btn.addEventListener('pointerdown', start);
+      btn.addEventListener('pointerup', end);
+      btn.addEventListener('pointerleave', end);
+      btn.addEventListener('touchstart', start, { passive: false });
+      btn.addEventListener('touchend', end, { passive: false });
+      btn.addEventListener('touchcancel', end, { passive: false });
+    };
+
+    bindBtn('#btn-l2-up', 
+      () => { if (this.options.onThrottleChange) this.options.onThrottleChange(1); },
+      () => { if (this.options.onThrottleChange) this.options.onThrottleChange(0); }
+    );
+    bindBtn('#btn-l2-down', 
+      () => { if (this.options.onThrottleChange) this.options.onThrottleChange(-1); },
+      () => { if (this.options.onThrottleChange) this.options.onThrottleChange(0); }
+    );
+    bindBtn('#btn-l2-left', 
+      () => { if (this.options.onSteerChange) this.options.onSteerChange(1); },
+      () => { if (this.options.onSteerChange) this.options.onSteerChange(0); }
+    );
+    bindBtn('#btn-l2-right', 
+      () => { if (this.options.onSteerChange) this.options.onSteerChange(-1); },
+      () => { if (this.options.onSteerChange) this.options.onSteerChange(0); }
+    );
+  }
+
+  setupPuzzleModal() {
+    this.puzzleModal = this.element.querySelector('#l2-puzzle-modal');
+    this.puzzleTiles = [
+      { id: 0, angle: 90, element: this.element.querySelector('#l2-pipe-0'), body: this.element.querySelector('#l2-pipe-body-0') },
+      { id: 1, angle: 180, element: this.element.querySelector('#l2-pipe-1'), body: this.element.querySelector('#l2-pipe-body-1') },
+      { id: 2, angle: 270, element: this.element.querySelector('#l2-pipe-2'), body: this.element.querySelector('#l2-pipe-body-2') }
+    ];
+    this.puzzleStatus = this.element.querySelector('#l2-pipeline-status');
+    this.puzzleResolved = false;
+
+    // Attach click events to tiles
+    this.puzzleTiles.forEach(tile => {
+      if (!tile.element) return;
+      tile.element.addEventListener('click', () => {
+        if (this.puzzleResolved) return;
+        tile.angle = (tile.angle + 90) % 360;
+        if (tile.body) {
+          tile.body.style.transform = `rotate(${tile.angle}deg)`;
+        }
+        level2Audio.playPipeClick();
+        this.checkPuzzleSolved();
+      });
+    });
+
+    // Instant Extract button
+    const instantBtn = this.element.querySelector('#btn-l2-puzzle-instant');
+    if (instantBtn) {
+      instantBtn.addEventListener('click', () => {
+        this.resolvePuzzle(true);
+      });
+    }
+
+    // Close button
+    const closeBtn = this.element.querySelector('#btn-l2-puzzle-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        if (this.puzzleModal) this.puzzleModal.classList.remove('active');
+        if (this.options.onResume) this.options.onResume();
+      });
+    }
+  }
+
+  openPuzzleModal(deposit, onComplete) {
+    this.currentPuzzleDeposit = deposit;
+    this.currentPuzzleCallback = onComplete;
+    this.puzzleResolved = false;
+
+    const title = this.element.querySelector('#l2-puzzle-title');
+    if (title && deposit) {
+      title.textContent = `💎 EXTRACT ICE: ${deposit.label.toUpperCase()}`;
+    }
+
+    // Scramble tiles with non-aligned angles
+    const startAngles = [90, 270, 90];
+    this.puzzleTiles.forEach((t, i) => {
+      t.angle = startAngles[i % startAngles.length];
+      if (t.body) t.body.style.transform = `rotate(${t.angle}deg)`;
+      if (t.element) t.element.classList.remove('aligned');
+    });
+
+    if (this.puzzleStatus) {
+      this.puzzleStatus.textContent = "Tap each pipe tile to connect horizontal water flow!";
+      this.puzzleStatus.classList.remove('success');
+    }
+
+    if (this.puzzleModal) {
+      this.puzzleModal.classList.add('active');
+    }
+    if (this.options.onPause) this.options.onPause();
+  }
+
+  checkPuzzleSolved() {
+    // Flow is connected horizontally when each tile is at 0° or 180°
+    const allConnected = this.puzzleTiles.every(t => t.angle % 180 === 0);
+
+    this.puzzleTiles.forEach(t => {
+      if (t.angle % 180 === 0) {
+        t.element.classList.add('aligned');
+      } else {
+        t.element.classList.remove('aligned');
+      }
+    });
+
+    if (allConnected) {
+      this.resolvePuzzle(false);
+    }
+  }
+
+  resolvePuzzle(instant = false) {
+    if (this.puzzleResolved) return;
+    this.puzzleResolved = true;
+
+    this.puzzleTiles.forEach(t => {
+      t.angle = 0;
+      if (t.body) t.body.style.transform = 'rotate(0deg)';
+      if (t.element) t.element.classList.add('aligned');
+    });
+
+    if (this.puzzleStatus) {
+      this.puzzleStatus.textContent = "💧 FLOW CONNECTED! EXTRACTING PURE WATER... 🎉";
+      this.puzzleStatus.classList.add('success');
+    }
+
+    level2Audio.playSplash();
+    level2Audio.playIceCollect();
+
+    setTimeout(() => {
+      if (this.puzzleModal) this.puzzleModal.classList.remove('active');
+      if (this.options.onResume) this.options.onResume();
+      if (this.currentPuzzleCallback) {
+        this.currentPuzzleCallback(this.currentPuzzleDeposit);
+      }
+    }, instant ? 300 : 1000);
+  }
+
+  updateDiamondTracker(sites = [], roverPos, roverHeading = 0) {
+    sites.forEach(site => {
+      const pill = this.element.querySelector(`#l2-pill-${site.id}`);
+      const distEl = this.element.querySelector(`#l2-dist-${site.id}`);
+      const arrowEl = this.element.querySelector(`#l2-arrow-${site.id}`);
+      if (!pill || !distEl) return;
+
+      if (site.collected) {
+        pill.classList.add('collected');
+        pill.classList.remove('active');
+        distEl.textContent = "✔ EXTRACTED";
+        if (arrowEl) arrowEl.textContent = "✨";
+        return;
+      }
+
+      const dist = Math.round(roverPos.distanceTo(site.pos));
+      distEl.textContent = `${dist}m`;
+
+      if (arrowEl) {
+        const dx = site.pos.x - roverPos.x;
+        const dz = site.pos.z - roverPos.z;
+        const targetAngle = Math.atan2(-dx, -dz);
+        let diff = targetAngle - roverHeading;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        const deg = (diff * 180) / Math.PI;
+        arrowEl.style.transform = `rotate(${deg}deg)`;
+      }
+    });
   }
 
   setObjective(text, icon = '🚜') {
@@ -443,15 +756,49 @@ export class Level2HUD {
     ctx.arc(bx, by, 3.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Discovered Ice Deposits (Cyan)
+    // Diamond Ice Deposits (Always visible on Radar with glowing cyan diamond icon)
     discoveredSites.forEach(site => {
-      if (site.revealed && !site.collected) {
-        const sx = cx + (site.pos.x - roverPos.x) * scale;
-        const sy = cy + (site.pos.z - roverPos.z) * scale;
-        ctx.fillStyle = '#00E5FF';
-        ctx.beginPath();
-        ctx.arc(sx, sy, 3.5, 0, Math.PI * 2);
-        ctx.fill();
+      const sx = cx + (site.pos.x - roverPos.x) * scale;
+      const sy = cy + (site.pos.z - roverPos.z) * scale;
+
+      // Only draw if inside circular radar scope
+      const distFromCenter = Math.hypot(sx - cx, sy - cy);
+      if (distFromCenter < 50) {
+        if (!site.collected) {
+          // Draw glowing diamond
+          ctx.save();
+          ctx.translate(sx, sy);
+          ctx.fillStyle = '#00FFFF';
+          ctx.shadowColor = '#00E5FF';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.moveTo(0, -5);
+          ctx.lineTo(5, 0);
+          ctx.lineTo(0, 5);
+          ctx.lineTo(-5, 0);
+          ctx.closePath();
+          ctx.fill();
+
+          // White inner core
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Site number label
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#FFD166';
+          ctx.font = 'bold 9px Nunito, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${site.id}`, 0, -7);
+          ctx.restore();
+        } else {
+          // Extracted mark
+          ctx.fillStyle = '#06D6A0';
+          ctx.beginPath();
+          ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     });
 
@@ -464,10 +811,12 @@ export class Level2HUD {
       ctx.stroke();
     }
 
-    // Rover Center Dot (White & Blue arrowhead)
+    // Rover Center Dot
     ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = '#00E5FF';
+    ctx.shadowBlur = 6;
     ctx.beginPath();
-    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
     ctx.fill();
   }
 

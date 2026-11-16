@@ -563,3 +563,391 @@
   box-shadow: 0 0 14px rgba(0, 229, 255, 0.85);
   pointer-events: none;
 }
+
+/* ====================================================================
+   DIAMOND WAYPOINT TRACKER & COMPASS (Top Center)
+   ==================================================================== */
+.l2-diamond-tracker {
+  position: absolute;
+  top: 4.8rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(10, 24, 46, 0.92);
+  border: 1.5px solid #00E5FF;
+  border-radius: 20px;
+  padding: 0.4rem 1.1rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 229, 255, 0.3);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  z-index: 10002;
+  animation: l2TrackerIn 0.4s ease-out;
+}
+
+@keyframes l2TrackerIn {
+  from { opacity: 0; transform: translate(-50%, -12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.l2-tracker-title {
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #FFD166;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.l2-diamond-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.l2-diamond-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(0, 229, 255, 0.35);
+  border-radius: 999px;
+  padding: 0.28rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #E2E8F0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.l2-diamond-pill:hover {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: #00E5FF;
+  transform: translateY(-2px);
+}
+
+.l2-diamond-pill.active {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.35), rgba(58, 134, 255, 0.45));
+  border-color: #00E5FF;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+  color: #FFFFFF;
+}
+
+.l2-diamond-pill.collected {
+  background: rgba(6, 214, 160, 0.15);
+  border-color: #06D6A0;
+  color: #06D6A0;
+  text-decoration: line-through;
+  opacity: 0.65;
+  cursor: default;
+}
+
+.l2-diamond-pill .pill-gem {
+  font-size: 0.95rem;
+}
+
+.l2-diamond-pill .pill-name {
+  font-weight: 700;
+}
+
+.l2-diamond-pill .pill-dist {
+  color: #FFD166;
+  font-weight: 900;
+}
+
+.l2-diamond-pill .pill-arrow {
+  color: #00E5FF;
+  font-weight: 900;
+  display: inline-block;
+  transition: transform 0.2s linear;
+}
+
+/* ====================================================================
+   D-PAD ON-SCREEN TOUCH CONTROLS (Smooth Direct Driving)
+   ==================================================================== */
+.l2-dpad-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  pointer-events: auto !important;
+}
+
+.l2-dpad-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.btn-l2-dpad {
+  width: 58px;
+  height: 52px;
+  background: rgba(14, 34, 58, 0.88);
+  border: 2px solid #00E5FF;
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-size: 1.15rem;
+  font-weight: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.btn-l2-dpad:active, .btn-l2-dpad.active {
+  transform: scale(0.92);
+  background: #00E5FF;
+  color: #051329;
+}
+
+.btn-l2-dpad .dpad-sub {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+/* ====================================================================
+   LUNAR WATER EXTRACTOR PIPELINE PUZZLE MODAL
+   ==================================================================== */
+.l2-puzzle-card {
+  max-width: 560px !important;
+  background: linear-gradient(180deg, #0B1E38 0%, #061122 100%) !important;
+  border: 2.5px solid #00E5FF !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 229, 255, 0.45) !important;
+  gap: 1.2rem !important;
+}
+
+.l2-puzzle-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.l2-puzzle-desc {
+  color: #94A3B8;
+  font-size: 0.9rem;
+  margin: 0;
+  max-width: 420px;
+  line-height: 1.4;
+}
+
+/* Pipeline Grid */
+.l2-pipeline-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.8rem;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 18px;
+  border: 1.5px solid rgba(0, 229, 255, 0.25);
+  width: 100%;
+}
+
+.l2-pipe-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px dashed rgba(255, 255, 255, 0.2);
+  min-width: 60px;
+}
+
+.l2-pipe-source {
+  border-color: #00E5FF;
+  background: rgba(0, 229, 255, 0.12);
+}
+
+.l2-pipe-dest {
+  border-color: #06D6A0;
+  background: rgba(6, 214, 160, 0.12);
+}
+
+.l2-node-icon {
+  font-size: 1.6rem;
+}
+
+.l2-node-name {
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: #E2E8F0;
+  text-align: center;
+}
+
+/* Pipe Rotatable Tile */
+.l2-pipe-tile {
+  width: 78px;
+  height: 86px;
+  background: #112847;
+  border: 2px solid #3A86FF;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.l2-pipe-tile:hover {
+  border-color: #00E5FF;
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.5);
+}
+
+.l2-pipe-tile:active {
+  transform: scale(0.95);
+}
+
+.l2-pipe-tile.aligned {
+  border-color: #06D6A0;
+  box-shadow: 0 0 20px rgba(6, 214, 160, 0.6);
+  background: #0E3535;
+}
+
+.l2-pipe-body {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.l2-pipe-segment {
+  position: absolute;
+  background: #475569;
+  border-radius: 999px;
+  transition: background 0.3s ease;
+}
+
+.l2-pipe-tile.aligned .l2-pipe-segment {
+  background: linear-gradient(90deg, #00E5FF, #06D6A0);
+  box-shadow: 0 0 10px #06D6A0;
+}
+
+.l2-seg-h {
+  width: 100%;
+  height: 10px;
+}
+
+.l2-seg-v {
+  height: 100%;
+  width: 10px;
+}
+
+.l2-pipe-core {
+  font-size: 1.2rem;
+  z-index: 2;
+  position: relative;
+}
+
+.l2-pipe-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #A0B2C6;
+  text-transform: uppercase;
+}
+
+.l2-pipe-tile.aligned .l2-pipe-label {
+  color: #06D6A0;
+}
+
+/* Pipeline Status */
+.l2-pipeline-status {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #FFD166;
+  min-height: 24px;
+}
+
+.l2-pipeline-status.success {
+  color: #06D6A0;
+  font-size: 1.1rem;
+  animation: l2FlowPulse 0.5s infinite alternate;
+}
+
+@keyframes l2FlowPulse {
+  from { transform: scale(1); filter: drop-shadow(0 0 8px #06D6A0); }
+  to { transform: scale(1.04); filter: drop-shadow(0 0 16px #06D6A0); }
+}
+
+/* Puzzle Actions */
+.l2-puzzle-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+}
+
+.btn-l2-puzzle-instant {
+  flex: 2;
+  background: linear-gradient(135deg, #FFB703, #FF9E00);
+  color: #06101E;
+  font-weight: 900;
+  font-size: 0.95rem;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 183, 3, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-l2-puzzle-instant:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px rgba(255, 183, 3, 0.6);
+}
+
+.btn-l2-puzzle-close {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  color: #E2E8F0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 0.75rem 0.8rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn-l2-puzzle-close:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+@media (max-width: 600px) {
+  .l2-diamond-tracker {
+    top: 4.2rem;
+    padding: 0.3rem 0.6rem;
+  }
+  .l2-diamond-pill {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+  }
+  .l2-pipeline-grid {
+    gap: 0.3rem;
+    padding: 0.5rem;
+  }
+  .l2-pipe-tile {
+    width: 64px;
+    height: 72px;
+  }
+}

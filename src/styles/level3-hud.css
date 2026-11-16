@@ -635,6 +635,78 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* --------------------------------------------------------------------------
+   FLOATING SHIELD CHARGE ACTION DOCK (Bottom Center, Unblocked)
+   -------------------------------------------------------------------------- */
+.l3-action-dock {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010 !important;
+  pointer-events: auto !important;
+  animation: l3ShieldPulse 0.4s ease-out;
+}
+
+@keyframes l3ShieldPulse {
+  from { opacity: 0; transform: translate(-50%, 20px) scale(0.85); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.btn-l3-charge-action {
+  background: linear-gradient(135deg, #00E5FF 0%, #0077B6 100%);
+  border: 3px solid #E0FBFC;
+  border-radius: 999px;
+  color: #FFFFFF;
+  padding: 0.85rem 2.2rem;
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  pointer-events: auto !important;
+  box-shadow: 0 8px 32px rgba(0, 229, 255, 0.75), 0 0 20px rgba(0, 229, 255, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: l3ShieldGlow 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes l3ShieldGlow {
+  from {
+    transform: scale(1);
+    box-shadow: 0 8px 28px rgba(0, 229, 255, 0.6), 0 0 15px rgba(224, 251, 252, 0.4);
+  }
+  to {
+    transform: scale(1.05);
+    box-shadow: 0 12px 38px rgba(0, 229, 255, 0.95), 0 0 30px rgba(224, 251, 252, 0.8);
+  }
+}
+
+.btn-l3-charge-action:active {
+  transform: scale(0.92) !important;
+  background: #00B4D8;
+}
+
+.btn-l3-charge-action .l3-charge-icon {
+  font-size: 1.6rem;
+}
+
+.btn-l3-charge-action .l3-charge-key {
+  font-size: 0.75rem;
+  color: #06101E;
+  background: #E0FBFC;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 900;
+}
+
 @media (max-width: 600px) {
   .l3-top-bar {
     top: 10px;
@@ -654,5 +726,12 @@
   }
   .btn-nasa-data-pill {
     display: none;
+  }
+  .btn-l3-charge-action {
+    padding: 0.65rem 1.4rem;
+    font-size: 0.95rem;
+  }
+  .l3-action-dock {
+    bottom: 5.5rem;
   }
 }

@@ -286,6 +286,15 @@ export class Level3Storm {
     this.shieldEmitter.position.y = 5.4;
     towerGroup.add(this.shieldEmitter);
 
+    // Floating glowing pointer cone above emitter
+    const pointerGeo = new THREE.ConeGeometry(0.45, 0.9, 16);
+    const pointerMat = new THREE.MeshBasicMaterial({ color: 0xFFD166 });
+    this.shieldPointer = new THREE.Mesh(pointerGeo, pointerMat);
+    this.shieldPointer.rotation.x = Math.PI; // point down towards emitter
+    this.shieldPointer.position.y = 6.8;
+    this.shieldPointer.visible = false;
+    towerGroup.add(this.shieldPointer);
+
     // Control Console with Lever Switch
     const consoleGeo = new THREE.BoxGeometry(1.1, 1.0, 0.7);
     const consoleMesh = new THREE.Mesh(consoleGeo, darkMat);
@@ -1005,16 +1014,22 @@ export class Level3Storm {
     // Phase 3: Shield Generator activation
     if (this.phase === 3) {
       const towerPos = new THREE.Vector3(0, 0.2, 6.7);
+      if (this.shieldPointer) {
+        this.shieldPointer.visible = true;
+        this.shieldPointer.position.y = 6.8 + Math.sin(elapsedTime * 4.0) * 0.25;
+        this.shieldPointer.rotation.y = elapsedTime * 2.5;
+      }
       if (this.currentGuideTarget !== 'shield') {
         this.currentGuideTarget = 'shield';
         this.hasPromptedAction = false;
         if (this.beacon) {
           this.beacon.showAt(towerPos.x, towerPos.y, towerPos.z, 0x00E5FF);
         }
-        orbit.flyTo3D(new THREE.Vector3(towerPos.x, 2.2, towerPos.z), this.camera);
-        orbit.say("All astronauts are sheltered! Walk to the Shield Generator and hold SPACE or tap CHARGE!", {
+        orbit.flyTo3D(new THREE.Vector3(towerPos.x, 3.2, towerPos.z), this.camera);
+        orbit.say("All astronauts are sheltered! Walk south to the glowing blue tower and hold SPACE or tap CHARGE!", {
           emotion: 'excited',
-          gesture: 'point'
+          gesture: 'point',
+          autoCloseDelay: 3500
         });
       }
       return;
@@ -1229,9 +1244,10 @@ export class Level3Storm {
           // All 4 safe! Switch to Phase 3: Activate Shield!
           this.phase = 3;
           if (this.hud) {
-            this.hud.setObjective('⚡', 'Switch on shield!', true);
+            this.hud.setObjective('⚡', 'Walk south to glowing blue tower & hold SPACE/ACTION!', true);
+            this.hud.setActionIcon('⚡', 'CHARGE');
           }
-          orbitVoice.speak("Everyone is safe! Turn on the shield!");
+          orbitVoice.speak("Everyone is safe! Walk to the glowing blue tower and turn on the shield!");
         } else {
           orbitVoice.speak(`${astro.name} is safe in the bunker!`);
         }
@@ -1248,9 +1264,22 @@ export class Level3Storm {
     const towerPos = new THREE.Vector3(0, 0.3, 6.7);
     const distToTower = this.commander.group.position.distanceTo(towerPos);
 
-    if (distToTower < 3.2 && this.keys.action) {
+    // Show floating charge button when near the generator tower
+    if (this.hud) {
+      this.hud.showChargeButton(distToTower < 5.2);
+    }
+
+    if (distToTower < 4.5 && !this.hasPromptedShieldAction) {
+      this.hasPromptedShieldAction = true;
+      if (this.hud) {
+        this.hud.setObjective('⚡', 'HOLD SPACE or ACTION to activate shield!', true);
+      }
+    }
+
+    // Charge when holding action key/button OR walking directly into the console pad (< 1.6m)
+    if (distToTower < 3.8 && (this.keys.action || distToTower < 1.6)) {
       this.isChargingShield = true;
-      this.shieldProgress += delta / 2.2; // ~2.2 seconds to full charge
+      this.shieldProgress += delta / 2.0; // ~2.0 seconds to full charge
       level3Audio.playShieldCharge(this.shieldProgress);
 
       if (this.hud) {
@@ -1284,7 +1313,13 @@ export class Level3Storm {
   activateShieldAndWin() {
     this.phase = 4; // Victory sequence
     this.shieldActive = true;
-    if (this.hud) this.hud.hideChargeBar();
+    if (this.hud) {
+      this.hud.hideChargeBar();
+      this.hud.showChargeButton(false);
+    }
+    if (this.shieldPointer) {
+      this.shieldPointer.visible = false;
+    }
 
     level3Audio.playShieldActivate();
 

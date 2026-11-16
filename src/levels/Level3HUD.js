@@ -120,8 +120,17 @@ export class Level3HUD {
         </div>
         <div class="l3-action-btn-zone">
           <button class="btn-l3-action" id="btn-l3-action">✋</button>
-          <span class="l3-action-hint">ALERT / CHARGE</span>
+          <span class="l3-action-hint" id="l3-action-hint">ALERT / CHARGE</span>
         </div>
+      </div>
+
+      <!-- FLOATING SHIELD CHARGE ACTION DOCK (Bottom Center, Unblocked) -->
+      <div class="l3-action-dock" id="l3-action-dock" style="display: none;">
+        <button class="btn-l3-charge-action" id="btn-l3-charge-action" aria-label="Charge Shield">
+          <span class="l3-charge-icon">⚡🛡️</span>
+          <span class="l3-charge-text">HOLD TO ACTIVATE SHIELD</span>
+          <span class="l3-charge-key">[SPACE]</span>
+        </button>
       </div>
 
       <!-- MODAL BACKDROP -->
@@ -211,6 +220,25 @@ export class Level3HUD {
     actionBtn.addEventListener('pointerleave', (e) => {
       if (this.options.onActionUp) this.options.onActionUp();
     });
+
+    // Floating centered shield charge button
+    const chargeBtn = this.element.querySelector('#btn-l3-charge-action');
+    if (chargeBtn) {
+      const startCharge = (e) => {
+        if (e && e.cancelable) e.preventDefault();
+        chargeBtn.classList.add('active');
+        if (this.options.onActionDown) this.options.onActionDown();
+      };
+      const stopCharge = () => {
+        chargeBtn.classList.remove('active');
+        if (this.options.onActionUp) this.options.onActionUp();
+      };
+      chargeBtn.addEventListener('pointerdown', startCharge);
+      chargeBtn.addEventListener('pointerup', stopCharge);
+      chargeBtn.addEventListener('pointerleave', stopCharge);
+      chargeBtn.addEventListener('touchstart', startCharge, { passive: false });
+      chargeBtn.addEventListener('touchend', stopCharge, { passive: false });
+    }
   }
 
   handleJoystickMove(clientX, clientY, centerX, centerY, knob) {
@@ -304,6 +332,20 @@ export class Level3HUD {
   hideChargeBar() {
     const wrap = this.element.querySelector('#l3-charge-wrap');
     if (wrap) wrap.classList.remove('visible');
+  }
+
+  showChargeButton(visible) {
+    const dock = this.element.querySelector('#l3-action-dock');
+    if (dock) {
+      dock.style.display = visible ? 'flex' : 'none';
+    }
+  }
+
+  setActionIcon(icon = '✋', hint = 'ACTION') {
+    const btn = this.element.querySelector('#btn-l3-action');
+    const hintEl = this.element.querySelector('#l3-action-hint');
+    if (btn) btn.textContent = icon;
+    if (hintEl) hintEl.textContent = hint;
   }
 
   showGoPopup() {

@@ -1,0 +1,426 @@
+/* ==========================================================================
+   LEVEL 4 HUD: HYDROPONIC GREENHOUSE & FOOD PRODUCTION
+   Pure CSS3, Responsive (Desktop & Mobile Landscape)
+   ========================================================================== */
+
+.l4-hud-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  user-select: none;
+  z-index: 100;
+  overflow: hidden;
+}
+
+/* TOP STATUS BAR */
+.l4-top-bar {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: auto;
+  gap: 12px;
+}
+
+.l4-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.l4-sol-pill {
+  background: rgba(6, 16, 30, 0.85);
+  border: 2px solid #06D6A0;
+  color: #06D6A0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(6, 214, 160, 0.25);
+}
+
+.l4-stars-pill {
+  background: rgba(6, 16, 30, 0.85);
+  border: 2px solid #FFD166;
+  color: #FFD166;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(8px);
+}
+
+/* OBJECTIVE CHIP (Center, prominent) */
+.l4-objective-chip {
+  background: linear-gradient(135deg, rgba(6, 16, 30, 0.95), rgba(16, 36, 60, 0.95));
+  border: 2px solid #00E5FF;
+  border-radius: 999px;
+  padding: 8px 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 900;
+  box-shadow: 0 6px 24px rgba(0, 229, 255, 0.35);
+  backdrop-filter: blur(10px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.l4-objective-chip.urgent {
+  border-color: #FF5E57;
+  box-shadow: 0 6px 28px rgba(255, 94, 87, 0.55);
+  animation: l4PulseAlert 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes l4PulseAlert {
+  from { transform: scale(1); }
+  to { transform: scale(1.04); }
+}
+
+.l4-obj-icon {
+  font-size: 1.35rem;
+}
+
+/* RIGHT CLUSTER: TEMPERATURE & PAUSE */
+.l4-right-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.l4-temp-pill {
+  background: rgba(6, 16, 30, 0.85);
+  border: 2px solid #00E5FF;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #00E5FF;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.l4-temp-pill.cold {
+  border-color: #00E5FF;
+  color: #00E5FF;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+}
+
+.l4-temp-pill.warm {
+  border-color: #FF9E00;
+  color: #FF9E00;
+  box-shadow: 0 0 16px rgba(255, 158, 0, 0.4);
+}
+
+.btn-l4-pause {
+  background: rgba(6, 16, 30, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn-l4-pause:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.08);
+}
+
+/* FLOATING ACTION DOCK: BOTTOM CENTER (Unblocked by ORBIT) */
+.l4-action-dock {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010 !important;
+  pointer-events: auto !important;
+  animation: l4ActionPulse 0.4s ease-out;
+}
+
+@keyframes l4ActionPulse {
+  from { opacity: 0; transform: translate(-50%, 20px) scale(0.85); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.btn-l4-action {
+  background: linear-gradient(135deg, #06D6A0 0%, #0077B6 100%);
+  border: 3px solid #E0FBFC;
+  border-radius: 999px;
+  color: #FFFFFF;
+  padding: 0.85rem 2.2rem;
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  pointer-events: auto !important;
+  box-shadow: 0 8px 32px rgba(6, 214, 160, 0.65), 0 0 20px rgba(0, 229, 255, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: l4ActionGlow 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes l4ActionGlow {
+  from {
+    transform: scale(1);
+    box-shadow: 0 8px 26px rgba(6, 214, 160, 0.55), 0 0 15px rgba(0, 229, 255, 0.35);
+  }
+  to {
+    transform: scale(1.05);
+    box-shadow: 0 12px 38px rgba(6, 214, 160, 0.85), 0 0 30px rgba(0, 229, 255, 0.7);
+  }
+}
+
+.btn-l4-action:active {
+  transform: scale(0.92) !important;
+  background: #06D6A0;
+  color: #06101E;
+}
+
+.btn-l4-action .l4-action-key {
+  font-size: 0.75rem;
+  color: #06101E;
+  background: #E0FBFC;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 900;
+}
+
+/* MOBILE TOUCH CONTROLS */
+.l4-touch-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 24px;
+}
+
+.l4-joystick-zone {
+  width: 120px;
+  height: 120px;
+  background: rgba(6, 16, 30, 0.6);
+  border: 2px solid rgba(0, 229, 255, 0.4);
+  border-radius: 50%;
+  position: relative;
+  pointer-events: auto;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+}
+
+.l4-joystick-knob {
+  width: 50px;
+  height: 50px;
+  background: radial-gradient(circle, #00E5FF 0%, #0077B6 100%);
+  border-radius: 50%;
+  box-shadow: 0 4px 14px rgba(0, 229, 255, 0.5);
+  pointer-events: none;
+  transition: transform 0.05s ease-out;
+}
+
+.l4-action-btn-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.btn-l4-touch-action {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #06D6A0, #0077B6);
+  border: 3px solid #FFFFFF;
+  color: #06101E;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(6, 214, 160, 0.5);
+  transition: transform 0.15s ease;
+  user-select: none;
+  touch-action: none;
+}
+
+.btn-l4-touch-action:active {
+  transform: scale(0.92);
+}
+
+.l4-action-hint {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #FFFFFF;
+  background: rgba(6, 16, 30, 0.8);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+/* MODALS (WIN, FAIL, PAUSE) - z-index: 50000 !important */
+.l4-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(3, 8, 16, 0.85);
+  backdrop-filter: blur(12px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 50000 !important;
+}
+
+.l4-modal-backdrop.open {
+  display: flex;
+}
+
+.l4-modal-window {
+  background: linear-gradient(180deg, #0D1B2E 0%, #06101E 100%);
+  border: 2px solid #06D6A0;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 520px;
+  padding: 28px 24px;
+  box-shadow: 0 16px 48px rgba(6, 214, 160, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  text-align: center;
+  animation: l4PopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes l4PopIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.l4-modal-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.l4-modal-stars {
+  font-size: 2.2rem;
+  letter-spacing: 0.15em;
+  margin: 4px 0;
+}
+
+.l4-modal-text {
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: #CFD8DC;
+  margin: 0;
+}
+
+.l4-nasa-box {
+  background: rgba(6, 214, 160, 0.08);
+  border: 1px solid rgba(6, 214, 160, 0.3);
+  border-radius: 14px;
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 0.88rem;
+  color: #B0BEC5;
+  line-height: 1.45;
+}
+
+.l4-nasa-box strong {
+  color: #06D6A0;
+}
+
+.l4-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-l4-modal-primary {
+  background: linear-gradient(135deg, #06D6A0, #0077B6);
+  color: #06101E;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 900;
+  padding: 14px 24px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(6, 214, 160, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-l4-modal-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(6, 214, 160, 0.6);
+}
+
+.btn-l4-modal-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-l4-modal-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 600px) {
+  .l4-top-bar {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+  .l4-objective-chip {
+    padding: 6px 14px;
+  }
+  #l4-obj-text {
+    font-size: 0.82rem;
+  }
+  .btn-l4-action {
+    padding: 0.65rem 1.4rem;
+    font-size: 0.95rem;
+  }
+  .l4-action-dock {
+    bottom: 5.5rem;
+  }
+}

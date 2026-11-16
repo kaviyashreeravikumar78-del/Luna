@@ -352,6 +352,22 @@ export class Adventure3DEngine {
 
 
 
+  animateAstronautVictory() {
+    if (this.game?.playerAstronaut) {
+      let t = 0;
+      const jumpInt = setInterval(() => {
+        t += 0.1;
+        if (this.game.playerAstronaut.position) {
+          this.game.playerAstronaut.position.y = 0.3 + Math.abs(Math.sin(t * 3)) * 0.4;
+        }
+        if (t >= Math.PI) {
+          clearInterval(jumpInt);
+          if (this.game.playerAstronaut.position) this.game.playerAstronaut.position.y = 0.3;
+        }
+      }, 30);
+    }
+  }
+
   spawnSparks(pos, count = 30, color = 0x00E5FF) {
     const geo = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);

@@ -33,6 +33,7 @@ import { LevelTransition } from '../core/LevelTransition.js';
 import { Level1Power } from '../levels/Level1Power.js';
 import { Level2Water } from '../levels/Level2Water.js';
 import { Level3Storm } from '../levels/Level3Storm.js';
+import { Level4Greenhouse } from '../levels/Level4Greenhouse.js';
 import { Level5Habitat } from '../levels/Level5Habitat.js';
 import { Level6Comms } from '../levels/Level6Comms.js';
 import { Level7Final } from '../levels/Level7Final.js';
@@ -463,6 +464,8 @@ export class Game {
     if (this.infoPanel) this.infoPanel.hide();
     if (this.playerController) this.playerController.enabled = false;
     if (this.interaction) this.interaction.enabled = false;
+    if (this.kidOverlay) this.kidOverlay.hide();
+    if (this.adventure3D) this.adventure3D.clearLevelProps();
   }
 
   startLevel1(skipIntro = false) {
@@ -552,6 +555,36 @@ export class Game {
       },
       onComplete: () => {
         console.log("Level 3 (Solar Storm) rescue stage active!");
+      }
+    });
+  }
+
+  startLevel4(skipIntro = false) {
+    this.prepareForDedicatedLevel();
+
+    // 1. Camera starts zoom toward greenhouse in colony view
+    const bData = BUILDINGS_DATA.greenhouse;
+    if (bData && bData.cameraView && this.cameraManager) {
+      this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 800);
+    }
+
+    // 2. Play smooth circular iris wipe into dedicated Level 4 scene
+    LevelTransition.play({
+      badge: "SOL 4 • HYDROPONIC BIO-DOMES",
+      title: 'DAY 4: <span class="title-accent">GROW FOOD</span>',
+      subtitle: "The crater shadow is freezing our greenhouse! Plant crops, activate heaters, and harvest fresh food!",
+      skipIntro,
+      onMidpoint: () => {
+        if (this.cameraManager) {
+          this.cameraManager.isTransitioning = false;
+          if (this.cameraManager.controls) this.cameraManager.controls.enabled = false;
+        }
+        this.setColonyVisible(false);
+        this.currentLevel = new Level4Greenhouse(this);
+        this.currentLevel.init(skipIntro);
+      },
+      onComplete: () => {
+        console.log("Level 4 (Hydroponics & Food) stage active!");
       }
     });
   }
@@ -652,6 +685,8 @@ export class Game {
           this.currentLevel.dispose();
           this.currentLevel = null;
         }
+        if (this.kidOverlay) this.kidOverlay.hide();
+        if (this.adventure3D) this.adventure3D.clearLevelProps();
         this.missionControl.show();
       },
       () => {
@@ -690,14 +725,7 @@ export class Game {
         break;
       }
       case 4: {
-        const bData = BUILDINGS_DATA.greenhouse;
-        if (bData && bData.cameraView) {
-          this.cameraManager.flyTo(bData.cameraView.position, bData.cameraView.target, 1200);
-        }
-        if (this.interaction) this.interaction.highlightBuilding('greenhouse');
-        setTimeout(() => {
-          this.adventure3D.startLevel4Greenhouse(() => this.handleMiniGameSuccess(4, 'choice_4_a'));
-        }, 500);
+        this.startLevel4(false);
         break;
       }
       case 5: {
@@ -774,7 +802,7 @@ export class Game {
 
       case 'greenhouse':
         if (currentSol === 4) {
-          this.adventure3D.startLevel4Greenhouse(() => this.handleMiniGameSuccess(4, 'choice_4_a'));
+          this.startLevel4(false);
         } else {
           this.infoPanel.show('greenhouse');
         }
@@ -811,9 +839,6 @@ export class Game {
       } else {
         orbitVoice.speak(`Super job Commander! Sol ${sol} mission completed! Advancing to Sol ${gameState.currentDay}!`);
         if (this.gameHUD) this.gameHUD.update(gameState);
-        setTimeout(() => {
-          this.startSolMission(gameState.currentDay);
-        }, 1200);
       }
     } else {
       orbitVoice.speak("Awesome maintenance work Commander! Systems running smoothly!");

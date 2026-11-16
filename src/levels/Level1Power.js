@@ -68,6 +68,12 @@ export class Level1Power {
     this.targetDestination = null;
     this.currentGuideTarget = null;
     this.hasPromptedAction = false;
+
+    // Panel Aim State (Separate from astronaut walking)
+    this.isAimingLeft = false;
+    this.isAimingRight = false;
+    this.hasGivenPhase1Intro = false;
+    this.hasGivenPhase2Intro = false;
   }
 
   safeTimeout(fn, ms) {
@@ -683,6 +689,18 @@ export class Level1Power {
       onActionRelease: () => {
         this.isActionPressed = false;
       },
+      onAimLeftPress: () => {
+        this.isAimingLeft = true;
+      },
+      onAimLeftRelease: () => {
+        this.isAimingLeft = false;
+      },
+      onAimRightPress: () => {
+        this.isAimingRight = true;
+      },
+      onAimRightRelease: () => {
+        this.isAimingRight = false;
+      },
       onJoystickMove: (dx, dz) => {
         this.touchMoveX = dx;
         this.touchMoveZ = dz;
@@ -700,7 +718,8 @@ export class Level1Power {
         case 'KeyA': case 'ArrowLeft': this.keys.left = true; e.preventDefault(); break;
         case 'KeyD': case 'ArrowRight': this.keys.right = true; e.preventDefault(); break;
         case 'Space': this.keys.action = true; this.isActionPressed = true; e.preventDefault(); break;
-        case 'KeyE': this.keys.interact = true; this.handleInteract(); e.preventDefault(); break;
+        case 'KeyQ': this.isAimingLeft = true; e.preventDefault(); break;
+        case 'KeyE': this.isAimingRight = true; this.keys.interact = true; this.handleInteract(); e.preventDefault(); break;
       }
     };
 
@@ -711,7 +730,8 @@ export class Level1Power {
         case 'KeyA': case 'ArrowLeft': this.keys.left = false; break;
         case 'KeyD': case 'ArrowRight': this.keys.right = false; break;
         case 'Space': this.keys.action = false; this.isActionPressed = false; break;
-        case 'KeyE': this.keys.interact = false; break;
+        case 'KeyQ': this.isAimingLeft = false; break;
+        case 'KeyE': this.isAimingRight = false; this.keys.interact = false; break;
       }
     };
 
@@ -727,6 +747,7 @@ export class Level1Power {
       if (
         e.target.closest('.l1-top-bar') ||
         e.target.closest('#l1-touch-dock') ||
+        e.target.closest('#l1-panel-aim-dock') ||
         e.target.closest('.l1-modal-backdrop') ||
         e.target.closest('#orbit-companion') ||
         e.target.closest('#luna-orientation-overlay')
@@ -882,6 +903,12 @@ export class Level1Power {
   }
 
   updatePlayerMovement(delta) {
+    // If actively tilting/aiming a solar panel, keep astronaut planted in place!
+    if (this.phase === 2 && (this.isAimingLeft || this.isAimingRight)) {
+      this.targetDestination = null;
+      return;
+    }
+
     let moveX = 0;
     let moveZ = 0;
 
@@ -1012,19 +1039,29 @@ export class Level1Power {
           this.beacon.showAt(targetPanel.group.position.x, 0, targetPanel.group.position.z, 0x00E5FF);
         }
         orbit.flyTo3D(new THREE.Vector3(targetPanel.group.position.x, 1.2, targetPanel.group.position.z), this.camera);
-        orbit.say("Commander, walk over here to clean this dusty panel!", {
-          emotion: 'worried',
-          gesture: 'point'
-        });
+        
+        // ONLY speak on the FIRST panel!
+        const cleanedCount = this.panels.filter(p => p.isClean).length;
+        if (cleanedCount === 0 && !this.hasGivenPhase1Intro) {
+          this.hasGivenPhase1Intro = true;
+          orbit.say("Commander, walk over here to clean this dusty panel!", {
+            emotion: 'worried',
+            gesture: 'point'
+          });
+        }
       }
 
       if (minD < 2.4 && !this.isActionPressed && !nearPanel?.isClean) {
         if (!this.hasPromptedAction) {
           this.hasPromptedAction = true;
-          orbit.say("Great! Now hold SPACE (or tap ACTION) to sweep off the dust!", {
-            emotion: 'happy',
-            gesture: 'point'
-          });
+          // ONLY prompt action on the FIRST panel!
+          const cleanedCount = this.panels.filter(p => p.isClean).length;
+          if (cleanedCount === 0) {
+            orbit.say("Great! Now hold SPACE (or tap ACTION) to sweep off the dust!", {
+              emotion: 'happy',
+              gesture: 'point'
+            });
+          }
         }
       } else if (minD >= 2.4) {
         this.hasPromptedAction = false;
@@ -1120,79 +1157,111 @@ export class Level1Power {
           this.beacon.showAt(targetPanel.group.position.x, 0, targetPanel.group.position.z, 0xFFD166);
         }
         orbit.flyTo3D(new THREE.Vector3(targetPanel.group.position.x, 1.2, targetPanel.group.position.z), this.camera);
-        orbit.say("Use A / D or Arrow keys to aim this panel at the sun!", {
-          emotion: 'happy',
-          gesture: 'point'
-        });
+
+        // ONLY speak on the FIRST panel!
+        const alignedCount = this.panels.filter(p => p.isAligned).length;
+        if (alignedCount === 0 && !this.hasGivenPhase2Intro) {
+          this.hasGivenPhase2Intro = true;
+          orbit.say("Tap the on-screen Tilt buttons or press Q / E to aim this panel at the sun!", {
+            emotion: 'happy',
+            gesture: 'point'
+          });
+        }
       }
     }
 
     // Check proximity to clean unaligned panels
+    let nearUnalignedPanel = null;
+    let nearestDist = Infinity;
     for (const panel of this.panels) {
       if (panel.isClean && !panel.isAligned) {
         const d = pPos.distanceTo(panel.group.position);
+        if (d < 2.8 && d < nearestDist) {
+          nearestDist = d;
+          nearUnalignedPanel = panel;
+        }
+      }
+    }
 
-        if (d < 2.5) {
-          panel.ringMesh.visible = true;
-          panel.ringMat.opacity = 0.85;
+    if (nearUnalignedPanel) {
+      nearUnalignedPanel.ringMesh.visible = true;
+      nearUnalignedPanel.ringMat.opacity = 0.85;
 
-          // Interactive angle adjustment
-          if (this.keys.left || this.touchMoveX < -0.2) {
-            panel.angleAlignment -= delta * 1.5;
-          } else if (this.keys.right || this.touchMoveX > 0.2) {
-            panel.angleAlignment += delta * 1.5;
+      // Interactive angle adjustment using dedicated Q/E or on-screen buttons
+      if (this.isAimingLeft) {
+        nearUnalignedPanel.angleAlignment -= delta * 1.5;
+      } else if (this.isAimingRight) {
+        nearUnalignedPanel.angleAlignment += delta * 1.5;
+      }
+
+      nearUnalignedPanel.head.rotation.x = nearUnalignedPanel.angleAlignment;
+
+      // Color Ring Feedback: Red -> Yellow -> Green
+      const angleDiff = Math.abs(nearUnalignedPanel.angleAlignment - nearUnalignedPanel.targetAngle);
+      const alignProgress = Math.max(0, Math.min(1, 1 - (angleDiff / 0.75)));
+
+      let statusText = "Tilt to Align!";
+      if (alignProgress > 0.8) statusText = "Almost there! 🎯";
+      if (angleDiff < 0.12) statusText = "PERFECT! ☀️";
+
+      if (this.hud) {
+        this.hud.showAimDock(true, alignProgress, statusText);
+      }
+
+      if (angleDiff < 0.12) {
+        // Snaps into alignment!
+        nearUnalignedPanel.isAligned = true;
+        nearUnalignedPanel.angleAlignment = nearUnalignedPanel.targetAngle;
+        nearUnalignedPanel.head.rotation.x = nearUnalignedPanel.targetAngle;
+        nearUnalignedPanel.ringMat.color.setHex(0x06D6A0); // Bright green!
+
+        this.currentGuideTarget = null;
+        this.isAimingLeft = false;
+        this.isAimingRight = false;
+        if (this.hud) this.hud.showAimDock(false);
+
+        level1Audio.playDing();
+        this.batteryLevel = Math.min(100, this.batteryLevel + 6);
+        this.hud.setBattery(this.batteryLevel);
+        this.hud.showPowerPopup(window.innerWidth / 2, window.innerHeight * 0.45, "☀️ Aligned! +6% ⚡");
+
+        setTimeout(() => {
+          nearUnalignedPanel.ringMesh.visible = false;
+        }, 600);
+
+        const alignedCount = this.panels.filter(p => p.isAligned).length;
+        this.hud.setObjective(`Aim at the sun (${alignedCount}/6)`, "☀️");
+
+        // When all 6 are aligned: Transition to Phase 3!
+        if (alignedCount === 6) {
+          this.phase = 3;
+          this.currentGuideTarget = null;
+          this.cableDropGroup.visible = true; // Drop cable on the ground
+          this.hud.setStars(2);
+
+          if (this.beacon) {
+            this.beacon.showAt(2.5, 0, 4.0, 0xFFD166);
           }
+          orbit.flyTo3D(new THREE.Vector3(2.5, 1.2, 4.0), this.camera);
+          orbit.say("Perfect sun alignment! Walk over and pick up the yellow power cable!", {
+            emotion: 'happy',
+            gesture: 'point'
+          });
 
-          panel.head.rotation.x = panel.angleAlignment;
-
-          // Color Ring Feedback: Red -> Yellow -> Green
-          const angleDiff = Math.abs(panel.angleAlignment - panel.targetAngle);
-
-          if (angleDiff < 0.12) {
-            // Snaps into alignment!
-            panel.isAligned = true;
-            panel.angleAlignment = panel.targetAngle;
-            panel.head.rotation.x = panel.targetAngle;
-            panel.ringMat.color.setHex(0x06D6A0); // Bright green!
-
-            this.currentGuideTarget = null;
-            level1Audio.playDing();
-            this.batteryLevel = Math.min(100, this.batteryLevel + 6);
-            this.hud.setBattery(this.batteryLevel);
-            this.hud.showPowerPopup(window.innerWidth / 2, window.innerHeight * 0.45, "☀️ Aligned! +6% ⚡");
-
-            setTimeout(() => {
-              panel.ringMesh.visible = false;
-            }, 600);
-
-            const alignedCount = this.panels.filter(p => p.isAligned).length;
-            this.hud.setObjective(`Aim at the sun (${alignedCount}/6)`, "☀️");
-
-            // When all 6 are aligned: Transition to Phase 3!
-            if (alignedCount === 6) {
-              this.phase = 3;
-              this.currentGuideTarget = null;
-              this.cableDropGroup.visible = true; // Drop cable on the ground
-              this.hud.setStars(2);
-
-              if (this.beacon) {
-                this.beacon.showAt(2.5, 0, 4.0, 0xFFD166);
-              }
-              orbit.flyTo3D(new THREE.Vector3(2.5, 1.2, 4.0), this.camera);
-              orbit.say("Perfect sun alignment! Walk over and pick up the yellow power cable!", {
-                emotion: 'happy',
-                gesture: 'point'
-              });
-
-              this.hud.setObjective("Plug in the power cable!", "🔌");
-            }
-          } else if (angleDiff < 0.35) {
-            panel.ringMat.color.setHex(0xFFB703); // Yellow (getting close)
-          } else {
-            panel.ringMat.color.setHex(0xFF3B30); // Red (misaligned)
-          }
-        } else {
-          panel.ringMat.opacity = 0.0;
+          this.hud.setObjective("Plug in the power cable!", "🔌");
+        }
+      } else if (angleDiff < 0.35) {
+        nearUnalignedPanel.ringMat.color.setHex(0xFFB703); // Yellow (getting close)
+      } else {
+        nearUnalignedPanel.ringMat.color.setHex(0xFF3B30); // Red (misaligned)
+      }
+    } else {
+      if (this.hud) this.hud.showAimDock(false);
+      this.isAimingLeft = false;
+      this.isAimingRight = false;
+      for (const panel of this.panels) {
+        if (!panel.isAligned && panel.ringMesh) {
+          panel.ringMesh.visible = false;
         }
       }
     }
@@ -1382,6 +1451,7 @@ export class Level1Power {
 
     // Dispose HUD
     if (this.hud) {
+      this.hud.showAimDock(false);
       this.hud.dispose();
       this.hud = null;
     }

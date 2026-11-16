@@ -126,6 +126,29 @@ export class Level1HUD {
           <span style="font-size:0.75rem;">ACTION</span>
         </button>
       </div>
+
+      <!-- SOLAR PANEL AIM ON-SCREEN CONTROLS -->
+      <div class="l1-panel-aim-dock" id="l1-panel-aim-dock" style="display: none;">
+        <div class="l1-aim-title">☀️ AIM SOLAR PANEL AT SUN</div>
+        <div class="l1-aim-controls">
+          <button class="btn-l1-aim btn-l1-aim-left" id="btn-l1-aim-left" aria-label="Tilt Left/Up">
+            <span class="aim-arrow">◀</span>
+            <span class="aim-text">TILT UP</span>
+            <span class="aim-hint">[Q]</span>
+          </button>
+          <div class="l1-aim-meter">
+            <div class="l1-aim-bar-track">
+              <div class="l1-aim-bar-fill" id="l1-aim-bar-fill"></div>
+            </div>
+            <span class="l1-aim-status" id="l1-aim-status">Tilt to Align!</span>
+          </div>
+          <button class="btn-l1-aim btn-l1-aim-right" id="btn-l1-aim-right" aria-label="Tilt Right/Down">
+            <span class="aim-hint">[E]</span>
+            <span class="aim-text">TILT DOWN</span>
+            <span class="aim-arrow">▶</span>
+          </button>
+        </div>
+      </div>
     `;
 
     return wrap;
@@ -183,6 +206,9 @@ export class Level1HUD {
 
     // Mobile Touch Joystick
     this.setupTouchJoystick();
+
+    // Solar Panel Aim On-Screen Controls
+    this.setupAimControls();
 
     // Touch Action Button (Supports both pointer & touch events for all mobile phones)
     const actBtn = this.element.querySelector('#l1-touch-action-btn');
@@ -246,6 +272,62 @@ export class Level1HUD {
 
     window.addEventListener('touchmove', onMove);
     window.addEventListener('touchend', onEnd);
+  }
+
+  setupAimControls() {
+    const leftBtn = this.element.querySelector('#btn-l1-aim-left');
+    const rightBtn = this.element.querySelector('#btn-l1-aim-right');
+    if (!leftBtn || !rightBtn) return;
+
+    const startLeft = (e) => {
+      if (e && e.cancelable) e.preventDefault();
+      leftBtn.classList.add('active');
+      if (this.options.onAimLeftPress) this.options.onAimLeftPress();
+    };
+    const endLeft = (e) => {
+      if (e && e.cancelable) e.preventDefault();
+      leftBtn.classList.remove('active');
+      if (this.options.onAimLeftRelease) this.options.onAimLeftRelease();
+    };
+
+    const startRight = (e) => {
+      if (e && e.cancelable) e.preventDefault();
+      rightBtn.classList.add('active');
+      if (this.options.onAimRightPress) this.options.onAimRightPress();
+    };
+    const endRight = (e) => {
+      if (e && e.cancelable) e.preventDefault();
+      rightBtn.classList.remove('active');
+      if (this.options.onAimRightRelease) this.options.onAimRightRelease();
+    };
+
+    leftBtn.addEventListener('pointerdown', startLeft);
+    leftBtn.addEventListener('pointerup', endLeft);
+    leftBtn.addEventListener('pointerleave', endLeft);
+    leftBtn.addEventListener('touchstart', startLeft, { passive: false });
+    leftBtn.addEventListener('touchend', endLeft, { passive: false });
+    leftBtn.addEventListener('touchcancel', endLeft, { passive: false });
+
+    rightBtn.addEventListener('pointerdown', startRight);
+    rightBtn.addEventListener('pointerup', endRight);
+    rightBtn.addEventListener('pointerleave', endRight);
+    rightBtn.addEventListener('touchstart', startRight, { passive: false });
+    rightBtn.addEventListener('touchend', endRight, { passive: false });
+    rightBtn.addEventListener('touchcancel', endRight, { passive: false });
+  }
+
+  showAimDock(show = true, progress = 0, statusText = "Aim at Sun!") {
+    const dock = this.element.querySelector('#l1-panel-aim-dock');
+    if (!dock) return;
+    if (show) {
+      dock.style.display = 'flex';
+      const fill = dock.querySelector('#l1-aim-bar-fill');
+      const status = dock.querySelector('#l1-aim-status');
+      if (fill) fill.style.width = `${Math.min(100, Math.max(0, progress * 100))}%`;
+      if (status) status.textContent = statusText;
+    } else {
+      dock.style.display = 'none';
+    }
   }
 
   setObjective(text, icon = '🧹') {

@@ -39,7 +39,7 @@ export class Level6Comms {
     this.beamPulseMesh = null;
 
     this.azimuthAngle = 0;     // radians (-0.95 to 0.95)
-    this.elevationAngle = 0.65; // radians (0.35 to 1.25)
+    this.elevationAngle = 0.45; // radians (0.25 to 1.22)
     this.turnSpeed = 1.1;
 
     // Orbiting Satellite Target
@@ -187,7 +187,7 @@ export class Level6Comms {
     baseGroup.position.set(0, 0, 0);
 
     const whiteMat = new THREE.MeshStandardMaterial({ color: 0xF0F4F8, roughness: 0.35, metalness: 0.2 });
-    const silverMat = new THREE.MeshStandardMaterial({ color: 0xD0D7DE, metalness: 0.8, roughness: 0.25 });
+    const silverMat = new THREE.MeshStandardMaterial({ color: 0xD0D7DE, metalness: 0.8, roughness: 0.25, side: THREE.DoubleSide });
     const darkMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, metalness: 0.5, roughness: 0.6 });
 
     // 1. Concrete Hexagonal Pedestal
@@ -224,35 +224,35 @@ export class Level6Comms {
     this.headGroup = new THREE.Group();
     this.headGroup.position.set(0, 1.8, 0);
 
-    // Parabolic Dish Bowl (Curved reflector)
+    // Parabolic Dish Bowl (Curved reflector facing -Z towards satellite/sky)
     const dishGeo = new THREE.SphereGeometry(3.6, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.42);
     const dishMesh = new THREE.Mesh(dishGeo, silverMat);
-    dishMesh.rotation.x = -Math.PI / 2; // Pointing forward/up
+    dishMesh.rotation.x = Math.PI / 2; // Concave opening faces forward/north into -Z
     dishMesh.castShadow = true;
     dishMesh.receiveShadow = true;
     this.headGroup.add(dishMesh);
 
-    // Back reinforcing truss ring
+    // Back reinforcing truss ring (on the convex back facing camera/+Z)
     const truss = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.1, 8, 24), darkMat);
-    truss.position.z = -0.3;
+    truss.position.z = 0.3;
     this.headGroup.add(truss);
 
-    // Central Feed Horn & Quadripod Support Struts
+    // Central Feed Horn & Quadripod Support Struts (extending forward along -Z)
     const horn = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.8, 12), silverMat);
-    horn.rotation.x = Math.PI / 2;
-    horn.position.z = 2.2;
+    horn.rotation.x = -Math.PI / 2;
+    horn.position.z = -2.2;
     this.headGroup.add(horn);
 
     for (let i = 0; i < 4; i++) {
       const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
       const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.6, 6), darkMat);
-      strut.position.set(Math.cos(angle) * 1.4, Math.sin(angle) * 1.4, 1.1);
+      strut.position.set(Math.cos(angle) * 1.4, Math.sin(angle) * 1.4, -1.1);
       strut.rotation.z = angle + Math.PI / 2;
-      strut.rotation.x = 0.35;
+      strut.rotation.x = -0.35;
       this.headGroup.add(strut);
     }
 
-    // Volumetric Targeting Laser Beam extending into space
+    // Volumetric Targeting Laser Beam extending into space towards -Z
     const beamGeo = new THREE.CylinderGeometry(0.08, 0.3, 40, 12);
     this.beamMat = new THREE.MeshBasicMaterial({
       color: 0x00E5FF,
@@ -262,7 +262,7 @@ export class Level6Comms {
     });
     this.beamMesh = new THREE.Mesh(beamGeo, this.beamMat);
     this.beamMesh.rotation.x = Math.PI / 2;
-    this.beamMesh.position.z = 22;
+    this.beamMesh.position.z = -20;
     this.headGroup.add(this.beamMesh);
 
     this.turretGroup.add(this.headGroup);
@@ -467,11 +467,11 @@ export class Level6Comms {
   setupCamera() {
     // Clear cinematic third-person framing: Commander in foreground, giant Dish in midground,
     // Earth and Satellite in upper starry sky.
-    this.camera.position.set(0, 4.2, 8.8);
-    this.camera.lookAt(0, 4.5, -15);
+    this.camera.position.set(0, 4.8, 10.8);
+    this.camera.lookAt(0, 5.0, -18);
 
     if (this.cameraManager && this.cameraManager.controls) {
-      this.cameraManager.controls.target.set(0, 4.5, -15);
+      this.cameraManager.controls.target.set(0, 5.0, -18);
       this.cameraManager.controls.enabled = false;
     }
   }
@@ -583,15 +583,17 @@ export class Level6Comms {
       const targetPt = new THREE.Vector3();
       this.raycaster.ray.intersectPlane(plane, targetPt);
       if (targetPt) {
-        const dx = targetPt.x;
-        const dy = targetPt.y - 3.2;
-        const dz = targetPt.z;
+        const dishWorldPos = new THREE.Vector3();
+        this.headGroup.getWorldPosition(dishWorldPos);
+        const dx = targetPt.x - dishWorldPos.x;
+        const dy = targetPt.y - dishWorldPos.y;
+        const dz = targetPt.z - dishWorldPos.z;
         const targetAzimuth = Math.atan2(dx, -dz);
         const horizDist = Math.hypot(dx, dz);
         const targetElevation = Math.atan2(dy, horizDist);
 
         this.targetAzimuth = Math.max(-0.95, Math.min(0.95, targetAzimuth));
-        this.targetElevation = Math.max(0.32, Math.min(1.22, targetElevation));
+        this.targetElevation = Math.max(0.25, Math.min(1.22, targetElevation));
       }
     };
 
@@ -607,7 +609,7 @@ export class Level6Comms {
     orbitVoice.speak("Let's call Earth! Aim the dish!");
 
     // Smooth introductory camera fly-up
-    this.camera.position.set(0, 1.8, 6.2);
+    this.camera.position.set(0, 2.2, 7.5);
     this.camera.lookAt(0, 3.2, 0);
 
     let elapsed = 0;
@@ -615,9 +617,9 @@ export class Level6Comms {
       if (!this.isActive || this.phase !== 0) return;
       elapsed += 0.016;
 
-      this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, 4.2, 0.04);
-      this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, 8.8, 0.04);
-      this.camera.lookAt(0, 4.5, -15);
+      this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, 4.8, 0.04);
+      this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, 10.8, 0.04);
+      this.camera.lookAt(0, 5.0, -18);
 
       if (elapsed < 2.8) {
         requestAnimationFrame(animateCam);
@@ -645,6 +647,20 @@ export class Level6Comms {
    * Action trigger (Space / Action button)
    */
   handleActionTrigger() {
+    if (this.phase === 1 || this.phase === 2) {
+      // Auto-align dish directly toward satellite!
+      const dishWorldPos = new THREE.Vector3();
+      this.headGroup.getWorldPosition(dishWorldPos);
+      const dx = this.satellitePos.x - dishWorldPos.x;
+      const dy = this.satellitePos.y - dishWorldPos.y;
+      const dz = this.satellitePos.z - dishWorldPos.z;
+      this.targetAzimuth = Math.atan2(dx, -dz);
+      this.targetElevation = Math.atan2(dy, Math.hypot(dx, dz));
+      level6Audio.playCarrierTone();
+      orbitVoice.playChirp('click');
+      return;
+    }
+
     if (this.phase === 3) {
       // Check rhythm note strike
       this.checkRhythmHit();
@@ -708,30 +724,35 @@ export class Level6Comms {
       if (this.currentGuideTarget !== 'aim') {
         this.currentGuideTarget = 'aim';
         this.hasPromptedAction = false;
-        orbit.flyTo3D(this.satellitePos, this.camera);
-        orbit.say("Aim the dish at the orbiting NASA satellite! Use controls or tap the satellite in the sky!", {
-          emotion: 'excited',
-          gesture: 'point'
+        // Park ORBIT safely in top-right area so it NEVER blocks the satellite in the sky
+        const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight) || (window.innerWidth <= 950 && window.innerHeight <= 450);
+        orbit.flyTo(window.innerWidth - 130, isMobileLandscape ? 60 : 100);
+        orbit.say("Aim the dish at the orbiting NASA satellite! Use joystick, tap satellite, or tap AIM!", {
+          emotion: 'happy',
+          gesture: 'point',
+          autoCloseDelay: 4500
         });
       }
     } else if (this.phase === 2) {
       if (this.currentGuideTarget !== 'lock') {
         this.currentGuideTarget = 'lock';
         this.hasPromptedAction = false;
-        orbit.flyTo(window.innerWidth - 180, 100);
+        orbit.flyTo(window.innerWidth - 130, 100);
         orbit.say("Signal locked! Hold the reticle steady while telemetry synchronizes!", {
           emotion: 'happy',
-          gesture: 'nod'
+          gesture: 'nod',
+          autoCloseDelay: 3500
         });
       }
     } else if (this.phase === 3) {
       if (this.currentGuideTarget !== 'rhythm') {
         this.currentGuideTarget = 'rhythm';
         this.hasPromptedAction = false;
-        orbit.flyTo(window.innerWidth / 2, window.innerHeight * 0.25);
+        orbit.flyTo(window.innerWidth - 130, 100);
         orbit.say("Now beam the message to Earth! Tap TRANSMIT or Space as each data ring hits the center!", {
           emotion: 'excited',
-          gesture: 'cheer'
+          gesture: 'cheer',
+          autoCloseDelay: 3500
         });
       }
     }
@@ -741,7 +762,7 @@ export class Level6Comms {
    * Smooth orbital glide for the satellite across the sky
    */
   updateSatelliteOrbit(delta, elapsedTime) {
-    // Satellite travels slowly across sky: x from -22 to +20, y around 16, z around -28
+    // Satellite travels slowly across sky: x from -20 to +18, y around 16, z around -28
     this.satelliteOrbitT += delta * 0.045;
     const t = this.satelliteOrbitT;
 
@@ -754,6 +775,9 @@ export class Level6Comms {
       this.satelliteGroup.position.copy(this.satellitePos);
       this.satelliteGroup.rotation.y = t * 0.5;
       this.satelliteGroup.rotation.z = Math.sin(t * 2) * 0.15;
+    }
+    if (this.aimReticleRing && this.camera) {
+      this.aimReticleRing.lookAt(this.camera.position);
     }
   }
 
@@ -784,7 +808,7 @@ export class Level6Comms {
 
       // Steer Elevation (Up/Down)
       this.elevationAngle += steerY * this.turnSpeed * delta;
-      this.elevationAngle = Math.max(0.32, Math.min(1.22, this.elevationAngle));
+      this.elevationAngle = Math.max(0.25, Math.min(1.22, this.elevationAngle));
     } else if (this.targetAzimuth !== null && this.targetElevation !== null) {
       this.azimuthAngle = THREE.MathUtils.lerp(this.azimuthAngle, this.targetAzimuth, delta * 3.5);
       this.elevationAngle = THREE.MathUtils.lerp(this.elevationAngle, this.targetElevation, delta * 3.5);
@@ -804,22 +828,21 @@ export class Level6Comms {
    * Computes angular alignment between dish beam and satellite
    */
   updateSignalAndLock(delta) {
-    // 1. Calculate Beam World Vector
-    const beamDir = new THREE.Vector3(0, 0, 1);
-    this.headGroup.getWorldDirection(beamDir);
-    beamDir.normalize();
-
-    // 2. Vector from Dish to Satellite
+    // 1. Calculate Dish World Position
     const dishWorldPos = new THREE.Vector3();
     this.headGroup.getWorldPosition(dishWorldPos);
 
+    // 2. Calculate Dish Beam Direction in World Space (pointing along local -Z)
+    const beamDir = new THREE.Vector3(0, 0, -1).transformDirection(this.headGroup.matrixWorld).normalize();
+
+    // 3. Vector from Dish to Satellite
     const targetDir = new THREE.Vector3().subVectors(this.satellitePos, dishWorldPos).normalize();
 
-    // 3. Angular Distance
+    // 4. Angular Distance between Beam and Satellite
     const angleDiff = beamDir.angleTo(targetDir); // radians
 
-    // Max detection cone ~0.35 rad (20 degrees)
-    const maxAngle = 0.35;
+    // Detection cone: ~0.45 rad (~26 degrees) for responsive, satisfying alignment
+    const maxAngle = 0.45;
     const strength = Math.max(0, Math.min(1, 1 - (angleDiff / maxAngle)));
     this.signalStrength = strength;
 
@@ -829,8 +852,8 @@ export class Level6Comms {
     if (this.aimReticleMat) {
       if (strength >= 0.85) {
         this.aimReticleMat.color.setHex(0x06D6A0); // Emerald Green
-        this.aimReticleRing.scale.set(1.15, 1.15, 1);
-      } else if (strength >= 0.45) {
+        this.aimReticleRing.scale.set(1.2, 1.2, 1);
+      } else if (strength >= 0.40) {
         this.aimReticleMat.color.setHex(0xFFB703); // Solar Yellow
         this.aimReticleRing.scale.set(1.0, 1.0, 1);
       } else {
@@ -842,7 +865,7 @@ export class Level6Comms {
     // Phase 2: Lock Progression
     if (strength >= 0.85) {
       this.phase = 2;
-      this.lockProgress += delta / 3.0; // 3 seconds to lock
+      this.lockProgress += delta / 2.5; // ~2.5 seconds to lock
       if (this.hud) {
         this.hud.setObjective('🔒', 'Hold aim to lock on!');
       }

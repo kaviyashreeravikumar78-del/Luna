@@ -3,6 +3,8 @@ import { level7Audio } from '../audio/Level7Audio.js';
 import { Level7HUD } from './Level7HUD.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { orbitVoice } from '../audio/OrbitVoice.js';
+import { orbit } from '../components/Orbit.js';
+import { ObjectiveBeacon, ClickRippleEffect } from '../core/ObjectiveBeacon.js';
 import { gameState } from '../simulation/GameState.js';
 import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
 import { createHabitat } from '../objects/Habitat.js';
@@ -139,6 +141,14 @@ export class Level7Final {
     // HUD
     this.hud = null;
     this.activeTimers = [];
+
+    // Objective Beacon & Click-to-Move
+    this.beacon = null;
+    this.ripples = null;
+    this.groundMesh = null;
+    this.targetDestination = null;
+    this.currentGuideTarget = null;
+    this.hasPromptedAction = false;
   }
 
   safeTimeout(fn, ms) {
@@ -177,7 +187,12 @@ export class Level7Final {
     // 5. Bind Controls
     this.bindControls();
 
-    // 6. Start Entry Flow
+    // 6. Setup 3D Objective Beacon & Click-to-Move
+    this.beacon = new ObjectiveBeacon(this.levelGroup);
+    this.ripples = new ClickRippleEffect(this.levelGroup);
+    this.setupClickToMove();
+
+    // 7. Start Entry Flow
     if (skipIntro) {
       this.startGameplay();
     } else {
@@ -207,6 +222,7 @@ export class Level7Final {
     ground.position.y = -0.7;
     ground.receiveShadow = true;
     this.levelGroup.add(ground);
+    this.groundMesh = ground;
 
     // 2. Add Existing Colony Buildings
     // Habitat
@@ -563,6 +579,45 @@ export class Level7Final {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
+  setupClickToMove() {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    this.onCanvasPointerDown = (e) => {
+      if (
+        e.target.closest('.l7-top-bar') ||
+        e.target.closest('#l7-touch-dock') ||
+        e.target.closest('.l7-modal-backdrop') ||
+        e.target.closest('#orbit-companion') ||
+        e.target.closest('#luna-orientation-overlay')
+      ) {
+        return;
+      }
+
+      if (this.phase === 0 || this.phase >= 2) return;
+
+      const dom = this.game.renderer.domElement;
+      const rect = dom.getBoundingClientRect();
+      this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      if (this.groundMesh) {
+        const hits = this.raycaster.intersectObject(this.groundMesh);
+        if (hits.length > 0) {
+          const pt = hits[0].point;
+          this.targetDestination = { x: pt.x, z: pt.z };
+          if (this.ripples) {
+            this.ripples.spawn(pt.x, 0.05, pt.z);
+          }
+        }
+      }
+    };
+
+    const dom = this.game.renderer.domElement;
+    dom.addEventListener('pointerdown', this.onCanvasPointerDown);
+  }
+
   playEntryCinematic() {
     this.phase = 0;
     orbitVoice.speak("Final check, Commander! Visit every glowing building!");
@@ -626,6 +681,8 @@ export class Level7Final {
     }
 
     level7Audio.playFacilityCheck(this.checkedCount);
+    this.currentGuideTarget = null;
+    this.hasPromptedAction = false;
 
     if (this.hud) {
       this.hud.updateFacilityStatus(fac.id, true);
@@ -721,8 +778,56 @@ export class Level7Final {
       this.updateCameraFollow();
     }
 
-    // 5. Render
+    // 5. Update Objective Guidance & Beacon
+    this.updateObjectiveGuidance(delta, elapsedTime);
+    if (this.beacon) this.beacon.update(delta, elapsedTime);
+    if (this.ripples) this.ripples.update(delta);
+
+    // 6. Render
     this.game.renderer.render(this.scene, this.camera);
+  }
+
+  updateObjectiveGuidance(delta, elapsedTime) {
+    if (this.phase !== 1) {
+      if (this.beacon) this.beacon.hide();
+      return;
+    }
+
+    const unchecked = this.facilities.filter(f => !f.checked);
+    if (unchecked.length > 0) {
+      let nextFac = unchecked[0];
+      let minDist = this.playerPos.distanceTo(nextFac.pos);
+      for (let i = 1; i < unchecked.length; i++) {
+        const d = this.playerPos.distanceTo(unchecked[i].pos);
+        if (d < minDist) {
+          minDist = d;
+          nextFac = unchecked[i];
+        }
+      }
+
+      if (this.currentGuideTarget !== nextFac) {
+        this.currentGuideTarget = nextFac;
+        this.hasPromptedAction = false;
+        if (this.beacon) {
+          this.beacon.showAt(nextFac.pos.x, 0.1, nextFac.pos.z, 0x00E5FF);
+        }
+        orbit.flyTo3D(new THREE.Vector3(nextFac.pos.x, 2.2, nextFac.pos.z), this.camera);
+        orbit.say(`Head over to the ${nextFac.name}! Walk onto the glowing ring and tap INSPECT!`, {
+          emotion: 'happy',
+          gesture: 'point'
+        });
+      }
+
+      if (minDist < 3.2 && !this.hasPromptedAction) {
+        this.hasPromptedAction = true;
+        orbit.say(`You're at the ${nextFac.name}! Tap INSPECT or Space to check it!`, {
+          emotion: 'excited',
+          gesture: 'point'
+        });
+      }
+    } else {
+      if (this.beacon) this.beacon.hide();
+    }
   }
 
   updateMovement(delta) {
@@ -735,6 +840,20 @@ export class Level7Final {
     if (this.keys.backward) moveZ += 1;
     if (this.keys.left) moveX -= 1;
     if (this.keys.right) moveX += 1;
+
+    if (moveX !== 0 || moveZ !== 0) {
+      this.targetDestination = null;
+    } else if (this.targetDestination) {
+      const dx = this.targetDestination.x - this.playerPos.x;
+      const dz = this.targetDestination.z - this.playerPos.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 0.4) {
+        moveX = dx / dist;
+        moveZ = dz / dist;
+      } else {
+        this.targetDestination = null;
+      }
+    }
 
     const len = Math.hypot(moveX, moveZ);
     if (len > 0.05) {
@@ -870,6 +989,19 @@ export class Level7Final {
 
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+
+    if (this.onCanvasPointerDown && this.game.renderer) {
+      this.game.renderer.domElement.removeEventListener('pointerdown', this.onCanvasPointerDown);
+    }
+
+    if (this.beacon) {
+      this.beacon.dispose();
+      this.beacon = null;
+    }
+    if (this.ripples) {
+      this.ripples.dispose();
+      this.ripples = null;
+    }
 
     if (this.hud) {
       this.hud.dispose();

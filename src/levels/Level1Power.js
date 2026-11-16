@@ -7,6 +7,7 @@ import { level1Audio } from '../audio/Level1Audio.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { Level1HUD } from './Level1HUD.js';
 import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
+import { ObjectiveBeacon, ClickRippleEffect } from '../core/ObjectiveBeacon.js';
 
 /**
  * LUNA: Mission Survival - Dedicated Level 1 (Sol 1: Power Up the Moon Base)
@@ -59,6 +60,14 @@ export class Level1Power {
     this.startTime = Date.now();
     this.reDustedCount = 0;
     this.activeTimers = [];
+
+    // Objective Beacon & Click-to-Move / Tap-to-Walk
+    this.beacon = null;
+    this.ripples = null;
+    this.groundMesh = null;
+    this.targetDestination = null;
+    this.currentGuideTarget = null;
+    this.hasPromptedAction = false;
   }
 
   safeTimeout(fn, ms) {
@@ -104,7 +113,12 @@ export class Level1Power {
     // 7. Bind Keyboard Controls
     this.bindControls();
 
-    // 8. Start Entry Cinematic (Commander walk-in, wave, ORBIT dialogue)
+    // 8. Setup 3D Objective Beacon & Click-to-Move Ripple Effect
+    this.beacon = new ObjectiveBeacon(this.levelGroup);
+    this.ripples = new ClickRippleEffect(this.levelGroup);
+    this.setupClickToMove();
+
+    // 9. Start Entry Cinematic (Commander walk-in, wave, ORBIT dialogue)
     if (skipIntro) {
       this.skipEntryCinematic();
     } else {
@@ -141,6 +155,7 @@ export class Level1Power {
     stage.position.y = -1.25;
     stage.receiveShadow = true;
     this.levelGroup.add(stage);
+    this.groundMesh = stage;
 
     const rimGeo = new THREE.RingGeometry(0.1, 13.2, 32);
     const rimMat = new THREE.MeshStandardMaterial({
@@ -704,6 +719,45 @@ export class Level1Power {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
+  setupClickToMove() {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    this.onCanvasPointerDown = (e) => {
+      if (
+        e.target.closest('.l1-top-bar') ||
+        e.target.closest('#l1-touch-dock') ||
+        e.target.closest('.l1-modal-backdrop') ||
+        e.target.closest('#orbit-companion') ||
+        e.target.closest('#luna-orientation-overlay')
+      ) {
+        return;
+      }
+
+      if (this.phase === 0 || this.phase >= 4) return;
+
+      const dom = this.game.renderer.domElement;
+      const rect = dom.getBoundingClientRect();
+      this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      if (this.groundMesh) {
+        const hits = this.raycaster.intersectObject(this.groundMesh);
+        if (hits.length > 0) {
+          const pt = hits[0].point;
+          this.targetDestination = { x: pt.x, z: pt.z };
+          if (this.ripples) {
+            this.ripples.spawn(pt.x, 0, pt.z);
+          }
+        }
+      }
+    };
+
+    const dom = this.game.renderer.domElement;
+    dom.addEventListener('pointerdown', this.onCanvasPointerDown);
+  }
+
   skipEntryCinematic() {
     this.phase = 1;
     this.commander.position.z = 3.6;
@@ -821,6 +875,10 @@ export class Level1Power {
     if (this.hasCable && !this.cablePlugged) {
       this.updateCarriedCable();
     }
+
+    // 5. Update 3D Objective Beacon & Click-to-Move Ripples
+    if (this.beacon) this.beacon.update(delta, elapsedTime);
+    if (this.ripples) this.ripples.update(delta);
   }
 
   updatePlayerMovement(delta) {
@@ -836,6 +894,21 @@ export class Level1Power {
     if (this.touchMoveX || this.touchMoveZ) {
       moveX += this.touchMoveX;
       moveZ += this.touchMoveZ;
+    }
+
+    // Click-to-move pathing (overridden if keyboard or joystick is touched)
+    if (moveX !== 0 || moveZ !== 0) {
+      this.targetDestination = null;
+    } else if (this.targetDestination) {
+      const dx = this.targetDestination.x - this.commander.position.x;
+      const dz = this.targetDestination.z - this.commander.position.z;
+      const distToDest = Math.hypot(dx, dz);
+      if (distToDest > 0.35) {
+        moveX = dx / distToDest;
+        moveZ = dz / distToDest;
+      } else {
+        this.targetDestination = null;
+      }
     }
 
     const isMoving = Math.abs(moveX) > 0.05 || Math.abs(moveZ) > 0.05;
@@ -920,6 +993,44 @@ export class Level1Power {
       }
     }
 
+    // Dynamic guide beacon & ORBIT flight to the next dusty panel
+    const uncleaned = this.panels.filter(p => !p.isClean);
+    if (uncleaned.length > 0) {
+      let targetPanel = uncleaned[0];
+      let minD = pPos.distanceTo(targetPanel.group.position);
+      for (let i = 1; i < uncleaned.length; i++) {
+        const d = pPos.distanceTo(uncleaned[i].group.position);
+        if (d < minD) {
+          minD = d;
+          targetPanel = uncleaned[i];
+        }
+      }
+
+      if (this.currentGuideTarget !== targetPanel) {
+        this.currentGuideTarget = targetPanel;
+        if (this.beacon) {
+          this.beacon.showAt(targetPanel.group.position.x, 0, targetPanel.group.position.z, 0x00E5FF);
+        }
+        orbit.flyTo3D(new THREE.Vector3(targetPanel.group.position.x, 1.2, targetPanel.group.position.z), this.camera);
+        orbit.say("Commander, walk over here to clean this dusty panel!", {
+          emotion: 'worried',
+          gesture: 'point'
+        });
+      }
+
+      if (minD < 2.4 && !this.isActionPressed && !nearPanel?.isClean) {
+        if (!this.hasPromptedAction) {
+          this.hasPromptedAction = true;
+          orbit.say("Great! Now hold SPACE (or tap ACTION) to sweep off the dust!", {
+            emotion: 'happy',
+            gesture: 'point'
+          });
+        }
+      } else if (minD >= 2.4) {
+        this.hasPromptedAction = false;
+      }
+    }
+
     if (nearPanel && this.isActionPressed) {
       this.isSweeping = true;
       this.sweepTime += delta * 6;
@@ -949,6 +1060,10 @@ export class Level1Power {
         nearPanel.dustMesh.visible = false;
         nearPanel.cellMesh.material.emissiveIntensity = 0.35; // Panel glows brightly!
 
+        // Reset guide target so beacon flies to next panel
+        this.currentGuideTarget = null;
+        this.hasPromptedAction = false;
+
         // Battery boost + pop-up
         this.batteryLevel = Math.min(100, this.batteryLevel + 10);
         this.hud.setBattery(this.batteryLevel);
@@ -963,6 +1078,8 @@ export class Level1Power {
           this.isSweeping = false;
           if (u.brush) u.brush.visible = false; // Hide brush tool
           this.phase = 2;
+          this.currentGuideTarget = null;
+          if (this.beacon) this.beacon.hide();
 
           orbit.say("All 6 panels are shiny clean! Now let's aim them at the sun!", {
             emotion: 'excited',
@@ -983,6 +1100,32 @@ export class Level1Power {
    */
   updatePhase2Aim(delta) {
     const pPos = this.commander.position;
+
+    // Guide beacon to unaligned panel
+    const unaligned = this.panels.filter(p => p.isClean && !p.isAligned);
+    if (unaligned.length > 0) {
+      let targetPanel = unaligned[0];
+      let minD = pPos.distanceTo(targetPanel.group.position);
+      for (let i = 1; i < unaligned.length; i++) {
+        const d = pPos.distanceTo(unaligned[i].group.position);
+        if (d < minD) {
+          minD = d;
+          targetPanel = unaligned[i];
+        }
+      }
+
+      if (this.currentGuideTarget !== targetPanel) {
+        this.currentGuideTarget = targetPanel;
+        if (this.beacon) {
+          this.beacon.showAt(targetPanel.group.position.x, 0, targetPanel.group.position.z, 0xFFD166);
+        }
+        orbit.flyTo3D(new THREE.Vector3(targetPanel.group.position.x, 1.2, targetPanel.group.position.z), this.camera);
+        orbit.say("Use A / D or Arrow keys to aim this panel at the sun!", {
+          emotion: 'happy',
+          gesture: 'point'
+        });
+      }
+    }
 
     // Check proximity to clean unaligned panels
     for (const panel of this.panels) {
@@ -1012,6 +1155,7 @@ export class Level1Power {
             panel.head.rotation.x = panel.targetAngle;
             panel.ringMat.color.setHex(0x06D6A0); // Bright green!
 
+            this.currentGuideTarget = null;
             level1Audio.playDing();
             this.batteryLevel = Math.min(100, this.batteryLevel + 6);
             this.hud.setBattery(this.batteryLevel);
@@ -1027,10 +1171,15 @@ export class Level1Power {
             // When all 6 are aligned: Transition to Phase 3!
             if (alignedCount === 6) {
               this.phase = 3;
+              this.currentGuideTarget = null;
               this.cableDropGroup.visible = true; // Drop cable on the ground
               this.hud.setStars(2);
 
-              orbit.say("Perfect sun alignment! Pick up the power cable and plug it in!", {
+              if (this.beacon) {
+                this.beacon.showAt(2.5, 0, 4.0, 0xFFD166);
+              }
+              orbit.flyTo3D(new THREE.Vector3(2.5, 1.2, 4.0), this.camera);
+              orbit.say("Perfect sun alignment! Walk over and pick up the yellow power cable!", {
                 emotion: 'happy',
                 gesture: 'point'
               });
@@ -1074,6 +1223,10 @@ export class Level1Power {
       u.rightArm.rotation.set(-1.25, -0.2, -0.15);
     }
 
+    if (this.beacon) {
+      this.beacon.showAt(-8.2, 0, 0.96, 0x00E5FF);
+    }
+    orbit.flyTo3D(new THREE.Vector3(-8.2, 1.3, 0.96), this.camera);
     orbit.say("Carry the cable to the glowing socket on the Power Hub!", {
       emotion: 'excited',
       gesture: 'point'
@@ -1101,13 +1254,13 @@ export class Level1Power {
 
     if (!this.hasCable) {
       const d = pPos.distanceTo(this.cableDropGroup.position);
-      if (d < 2.2) {
+      if (d < 2.4) {
         this.pickUpCable();
       }
     } else if (!this.cablePlugged) {
       // Near power hub socket (X = -8.2, Z = 0.96)
       const d = pPos.distanceTo(this.socketPos);
-      if (d < 2.2) {
+      if (d < 2.4) {
         this.plugCableIn();
       }
     }
@@ -1213,6 +1366,19 @@ export class Level1Power {
 
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+
+    if (this.onCanvasPointerDown && this.game.renderer) {
+      this.game.renderer.domElement.removeEventListener('pointerdown', this.onCanvasPointerDown);
+    }
+
+    if (this.beacon) {
+      this.beacon.dispose();
+      this.beacon = null;
+    }
+    if (this.ripples) {
+      this.ripples.dispose();
+      this.ripples = null;
+    }
 
     // Dispose HUD
     if (this.hud) {

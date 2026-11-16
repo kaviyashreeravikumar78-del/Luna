@@ -664,6 +664,29 @@ export class Orbit {
     this.flyTo(tx, ty);
   }
 
+  /**
+   * Projects 3D world coordinates to screen space and flies ORBIT right next to the 3D target!
+   */
+  flyTo3D(worldPosition, camera, offset = { x: 45, y: -45 }, duration = 650) {
+    if (!worldPosition || !camera) return;
+    const v = worldPosition.clone().project(camera);
+    if (v.z > 1) return; // Behind camera
+
+    let sx = (v.x * 0.5 + 0.5) * window.innerWidth + (offset.x || 0);
+    let sy = (-(v.y * 0.5) + 0.5) * window.innerHeight + (offset.y || 0);
+
+    const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight) || (window.innerWidth <= 950 && window.innerHeight <= 450);
+    if (isMobileLandscape) {
+      sy = Math.max(35, Math.min(sy, 110));
+      sx = Math.max(20, Math.min(sx, window.innerWidth - 110));
+    } else {
+      sx = Math.max(20, Math.min(sx, window.innerWidth - 180));
+      sy = Math.max(50, Math.min(sy, window.innerHeight - 200));
+    }
+
+    this.flyTo(sx, sy, duration);
+  }
+
   showBubble(text, { showNextBtn = false, nextBtnText = "Next ➔", onNext = null } = {}) {
     const bubble = this.container.querySelector('#orbit-speech-bubble');
     const msgEl = this.container.querySelector('#orbit-bubble-msg');

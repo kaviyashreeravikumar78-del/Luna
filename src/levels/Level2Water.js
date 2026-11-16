@@ -7,6 +7,7 @@ import { level2Audio } from '../audio/Level2Audio.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { Level2HUD } from './Level2HUD.js';
 import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
+import { ObjectiveBeacon, ClickRippleEffect } from '../core/ObjectiveBeacon.js';
 
 /**
  * LUNA: Mission Survival - Dedicated Level 2 (Sol 2: Water Hunt Driving Mini-game)
@@ -83,6 +84,13 @@ export class Level2Water {
     this.wheelDustParticles = [];
     this.drillChipParticles = [];
     this.activeTimers = [];
+
+    // Objective Beacon & Click-to-Move / Tap-to-Drive
+    this.beacon = null;
+    this.ripples = null;
+    this.targetDestination = null;
+    this.currentGuideTarget = null;
+    this.hasPromptedAction = false;
   }
 
   safeTimeout(fn, ms) {
@@ -139,7 +147,12 @@ export class Level2Water {
     // 12. Bind Keyboard Controls
     this.bindControls();
 
-    // 13. Play Entry Cinematic
+    // 13. Setup 3D Objective Beacon & Click-to-Move
+    this.beacon = new ObjectiveBeacon(this.levelGroup);
+    this.ripples = new ClickRippleEffect(this.levelGroup);
+    this.setupClickToMove();
+
+    // 14. Play Entry Cinematic
     this.playEntryCinematic();
   }
 
@@ -635,6 +648,45 @@ export class Level2Water {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
+  setupClickToMove() {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    this.onCanvasPointerDown = (e) => {
+      if (
+        e.target.closest('.l2-top-bar') ||
+        e.target.closest('#l2-touch-dock') ||
+        e.target.closest('.l2-modal-backdrop') ||
+        e.target.closest('#orbit-companion') ||
+        e.target.closest('#luna-orientation-overlay')
+      ) {
+        return;
+      }
+
+      if (this.phase === 0 || this.phase >= 4) return;
+
+      const dom = this.game.renderer.domElement;
+      const rect = dom.getBoundingClientRect();
+      this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      if (this.terrainMesh) {
+        const hits = this.raycaster.intersectObject(this.terrainMesh);
+        if (hits.length > 0) {
+          const pt = hits[0].point;
+          this.targetDestination = { x: pt.x, z: pt.z };
+          if (this.ripples) {
+            this.ripples.spawn(pt.x, pt.y + 0.15, pt.z);
+          }
+        }
+      }
+    };
+
+    const dom = this.game.renderer.domElement;
+    dom.addEventListener('pointerdown', this.onCanvasPointerDown);
+  }
+
   playEntryCinematic() {
     this.phase = 0; // Cutscene lock
     level2Audio.startEngine();
@@ -692,15 +744,115 @@ export class Level2Water {
     if (this.waterBeacon) {
       this.waterBeacon.rotation.z = elapsedTime * 2.0;
     }
+
+    // 7. Update Objective Guidance & Beacon
+    this.updateObjectiveGuidance(delta, elapsedTime);
+    if (this.beacon) this.beacon.update(delta, elapsedTime);
+    if (this.ripples) this.ripples.update(delta);
+  }
+
+  updateObjectiveGuidance(delta, elapsedTime) {
+    if (this.phase < 1 || this.phase > 3) {
+      if (this.beacon) this.beacon.hide();
+      return;
+    }
+
+    // Check if tank is full (3/3 ice collected)
+    if (this.tankCount >= this.maxTank) {
+      if (this.currentGuideTarget !== 'base') {
+        this.currentGuideTarget = 'base';
+        this.hasPromptedAction = false;
+        if (this.beacon) {
+          this.beacon.showAt(this.basePos.x, this.basePos.y + 0.25, this.basePos.z, 0x06D6A0);
+        }
+        orbit.flyTo3D(new THREE.Vector3(this.basePos.x, this.basePos.y + 2.5, this.basePos.z), this.camera);
+        orbit.say("Tank is full! Drive back to base and tap UNLOAD to melt the ice into clean water!", {
+          emotion: 'excited',
+          gesture: 'point'
+        });
+      }
+
+      const distToBase = this.roverPos.distanceTo(this.basePos);
+      if (distToBase < 5.0 && !this.hasPromptedAction) {
+        this.hasPromptedAction = true;
+        orbit.say("You reached base! Hold SPACE or tap UNLOAD to fill our colony water tanks!", {
+          emotion: 'happy',
+          gesture: 'point'
+        });
+      }
+      return;
+    }
+
+    // Find nearest uncollected ice deposit
+    let closestDep = null;
+    let closestDist = Infinity;
+    this.iceDeposits.forEach(dep => {
+      if (!dep.collected) {
+        const d = this.roverPos.distanceTo(dep.pos);
+        if (d < closestDist) {
+          closestDist = d;
+          closestDep = dep;
+        }
+      }
+    });
+
+    if (closestDep) {
+      if (this.currentGuideTarget !== closestDep) {
+        this.currentGuideTarget = closestDep;
+        this.hasPromptedAction = false;
+        if (this.beacon) {
+          this.beacon.showAt(closestDep.pos.x, closestDep.pos.y + 0.1, closestDep.pos.z, 0x00E5FF);
+        }
+        orbit.flyTo3D(new THREE.Vector3(closestDep.pos.x, closestDep.pos.y + 2.0, closestDep.pos.z), this.camera);
+        orbit.say("Follow me north to the shadowed crater! Tap PING to scan for ice!", {
+          emotion: 'happy',
+          gesture: 'point'
+        });
+      }
+
+      if (closestDist < 4.2 && !this.hasPromptedAction) {
+        this.hasPromptedAction = true;
+        orbit.say("Ice deposit detected! Hold SPACE or tap DRILL to extract it!", {
+          emotion: 'excited',
+          gesture: 'point'
+        });
+      }
+    }
   }
 
   updateRoverDriving(delta) {
+    let clickSteer = 0;
+    let clickThrottle = 0;
+
+    const manualActive = this.keys.forward || this.keys.backward || this.keys.left || this.keys.right ||
+      Math.abs(this.touchSteerX) > 0.05 || Math.abs(this.touchThrottleZ) > 0.1;
+
+    if (manualActive) {
+      this.targetDestination = null;
+    } else if (this.targetDestination) {
+      const dx = this.targetDestination.x - this.roverPos.x;
+      const dz = this.targetDestination.z - this.roverPos.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 1.8) {
+        const targetHeading = Math.atan2(-dx, -dz);
+        let diff = targetHeading - this.roverHeading;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+
+        clickSteer = Math.max(-1, Math.min(1, diff * 2.2));
+        clickThrottle = Math.cos(diff) > 0.1 ? 1.0 : 0.45;
+      } else {
+        this.targetDestination = null;
+      }
+    }
+
     let throttle = 0;
     if (this.keys.forward) throttle += 1;
     if (this.keys.backward) throttle -= 1;
 
     if (this.touchThrottleZ < -0.2) throttle += 1;
     if (this.touchThrottleZ > 0.2) throttle -= 1;
+    if (clickThrottle) throttle += clickThrottle;
 
     // Acceleration & Braking
     if (throttle > 0) {
@@ -721,8 +873,9 @@ export class Level2Water {
     if (this.keys.left) steerInput += 1;
     if (this.keys.right) steerInput -= 1;
     if (this.touchSteerX) steerInput -= this.touchSteerX;
+    if (clickSteer) steerInput += clickSteer;
 
-    this.steerAngle = steerInput * this.maxSteer;
+    this.steerAngle = Math.max(-this.maxSteer, Math.min(this.maxSteer, steerInput * this.maxSteer));
 
     // Turn front wheels visually
     this.frontWheelPivots.forEach(p => {
@@ -935,6 +1088,8 @@ export class Level2Water {
       this.activeDrillSite.collected = true;
       this.activeDrillSite.patch.visible = false;
       this.activeDrillSite.crystal.visible = false;
+      this.currentGuideTarget = null;
+      this.hasPromptedAction = false;
 
       this.tankCount++;
       this.hud.setTank(this.tankCount, this.maxTank);
@@ -1050,6 +1205,19 @@ export class Level2Water {
 
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+
+    if (this.onCanvasPointerDown && this.game.renderer) {
+      this.game.renderer.domElement.removeEventListener('pointerdown', this.onCanvasPointerDown);
+    }
+
+    if (this.beacon) {
+      this.beacon.dispose();
+      this.beacon = null;
+    }
+    if (this.ripples) {
+      this.ripples.dispose();
+      this.ripples = null;
+    }
 
     // Restore fog
     this.scene.fog = this.originalFog;

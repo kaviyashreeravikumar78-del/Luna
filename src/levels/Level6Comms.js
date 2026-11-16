@@ -3,6 +3,7 @@ import { level6Audio } from '../audio/Level6Audio.js';
 import { Level6HUD } from './Level6HUD.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { orbitVoice } from '../audio/OrbitVoice.js';
+import { orbit } from '../components/Orbit.js';
 import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
 import { BUILDINGS_DATA } from '../data/buildings.js';
 
@@ -83,6 +84,12 @@ export class Level6Comms {
     // HUD
     this.hud = null;
     this.activeTimers = [];
+
+    // Tap-to-Aim & Guidance
+    this.targetAzimuth = null;
+    this.targetElevation = null;
+    this.currentGuideTarget = null;
+    this.hasPromptedAction = false;
   }
 
   safeTimeout(fn, ms) {
@@ -121,7 +128,10 @@ export class Level6Comms {
     // 5. Bind Controls
     this.bindControls();
 
-    // 6. Start Entry Flow
+    // 6. Setup Screen Tap-to-Aim
+    this.setupTapToAim();
+
+    // 7. Start Entry Flow
     if (skipIntro) {
       this.startGameplay();
     } else {
@@ -547,6 +557,48 @@ export class Level6Comms {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
+  setupTapToAim() {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    this.onCanvasPointerDown = (e) => {
+      if (
+        e.target.closest('.l6-top-bar') ||
+        e.target.closest('#l6-touch-dock') ||
+        e.target.closest('.l6-modal-backdrop') ||
+        e.target.closest('#orbit-companion') ||
+        e.target.closest('#luna-orientation-overlay')
+      ) {
+        return;
+      }
+      if (this.phase !== 1 && this.phase !== 2) return;
+
+      const dom = this.game.renderer.domElement;
+      const rect = dom.getBoundingClientRect();
+      this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 28);
+      const targetPt = new THREE.Vector3();
+      this.raycaster.ray.intersectPlane(plane, targetPt);
+      if (targetPt) {
+        const dx = targetPt.x;
+        const dy = targetPt.y - 3.2;
+        const dz = targetPt.z;
+        const targetAzimuth = Math.atan2(dx, -dz);
+        const horizDist = Math.hypot(dx, dz);
+        const targetElevation = Math.atan2(dy, horizDist);
+
+        this.targetAzimuth = Math.max(-0.95, Math.min(0.95, targetAzimuth));
+        this.targetElevation = Math.max(0.32, Math.min(1.22, targetElevation));
+      }
+    };
+
+    const dom = this.game.renderer.domElement;
+    dom.addEventListener('pointerdown', this.onCanvasPointerDown);
+  }
+
   /**
    * Entry Cinematic with zoom and ORBIT voice line
    */
@@ -644,8 +696,45 @@ export class Level6Comms {
       this.earthClouds.rotation.y += delta * 0.05;
     }
 
-    // 7. Render
+    // 7. Update Objective Guidance
+    this.updateObjectiveGuidance(delta, elapsedTime);
+
+    // 8. Render
     this.game.renderer.render(this.scene, this.camera);
+  }
+
+  updateObjectiveGuidance(delta, elapsedTime) {
+    if (this.phase === 1) {
+      if (this.currentGuideTarget !== 'aim') {
+        this.currentGuideTarget = 'aim';
+        this.hasPromptedAction = false;
+        orbit.flyTo3D(this.satellitePos, this.camera);
+        orbit.say("Aim the dish at the orbiting NASA satellite! Use controls or tap the satellite in the sky!", {
+          emotion: 'excited',
+          gesture: 'point'
+        });
+      }
+    } else if (this.phase === 2) {
+      if (this.currentGuideTarget !== 'lock') {
+        this.currentGuideTarget = 'lock';
+        this.hasPromptedAction = false;
+        orbit.flyTo(window.innerWidth - 180, 100);
+        orbit.say("Signal locked! Hold the reticle steady while telemetry synchronizes!", {
+          emotion: 'happy',
+          gesture: 'nod'
+        });
+      }
+    } else if (this.phase === 3) {
+      if (this.currentGuideTarget !== 'rhythm') {
+        this.currentGuideTarget = 'rhythm';
+        this.hasPromptedAction = false;
+        orbit.flyTo(window.innerWidth / 2, window.innerHeight * 0.25);
+        orbit.say("Now beam the message to Earth! Tap TRANSMIT or Space as each data ring hits the center!", {
+          emotion: 'excited',
+          gesture: 'cheer'
+        });
+      }
+    }
   }
 
   /**
@@ -687,6 +776,8 @@ export class Level6Comms {
     level6Audio.setMotorSound(isMoving);
 
     if (isMoving) {
+      this.targetAzimuth = null;
+      this.targetElevation = null;
       // Steer Azimuth (Left/Right)
       this.azimuthAngle += steerX * this.turnSpeed * delta;
       this.azimuthAngle = Math.max(-0.95, Math.min(0.95, this.azimuthAngle));
@@ -694,6 +785,10 @@ export class Level6Comms {
       // Steer Elevation (Up/Down)
       this.elevationAngle += steerY * this.turnSpeed * delta;
       this.elevationAngle = Math.max(0.32, Math.min(1.22, this.elevationAngle));
+    } else if (this.targetAzimuth !== null && this.targetElevation !== null) {
+      this.azimuthAngle = THREE.MathUtils.lerp(this.azimuthAngle, this.targetAzimuth, delta * 3.5);
+      this.elevationAngle = THREE.MathUtils.lerp(this.elevationAngle, this.targetElevation, delta * 3.5);
+      level6Audio.setMotorSound(Math.abs(this.azimuthAngle - this.targetAzimuth) > 0.02);
     }
 
     // Apply rotation to Three.js groups
@@ -1054,6 +1149,10 @@ export class Level6Comms {
 
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+
+    if (this.onCanvasPointerDown && this.game.renderer) {
+      this.game.renderer.domElement.removeEventListener('pointerdown', this.onCanvasPointerDown);
+    }
 
     if (this.hud) {
       this.hud.dispose();

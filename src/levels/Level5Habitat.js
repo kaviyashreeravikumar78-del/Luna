@@ -3,6 +3,8 @@ import { level5Audio } from '../audio/Level5Audio.js';
 import { Level5HUD } from './Level5HUD.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { orbitVoice } from '../audio/OrbitVoice.js';
+import { orbit } from '../components/Orbit.js';
+import { ObjectiveBeacon, ClickRippleEffect } from '../core/ObjectiveBeacon.js';
 import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
 import { BUILDINGS_DATA } from '../data/buildings.js';
 
@@ -65,6 +67,14 @@ export class Level5Habitat {
     // HUD
     this.hud = null;
     this.activeTimers = [];
+
+    // Objective Beacon & Click-to-Move
+    this.beacon = null;
+    this.ripples = null;
+    this.groundMesh = null;
+    this.targetDestination = null;
+    this.currentGuideTarget = null;
+    this.hasPromptedAction = false;
   }
 
   safeTimeout(fn, ms) {
@@ -106,7 +116,12 @@ export class Level5Habitat {
     // 6. Bind Keyboard Controls
     this.bindControls();
 
-    // 7. Start Entry Flow
+    // 7. Setup 3D Objective Beacon & Click-to-Move
+    this.beacon = new ObjectiveBeacon(this.levelGroup);
+    this.ripples = new ClickRippleEffect(this.levelGroup);
+    this.setupClickToMove();
+
+    // 8. Start Entry Flow
     if (skipIntro) {
       this.startGameplay();
     } else {
@@ -160,6 +175,7 @@ export class Level5Habitat {
     floor.position.y = 0.0;
     floor.receiveShadow = true;
     this.levelGroup.add(floor);
+    this.groundMesh = floor;
 
     // Grid Floor Seams / Grates
     const gridHelper = new THREE.GridHelper(24, 24, 0x00E5FF, 0x334155);
@@ -662,6 +678,45 @@ export class Level5Habitat {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
+  setupClickToMove() {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    this.onCanvasPointerDown = (e) => {
+      if (
+        e.target.closest('.l5-top-bar') ||
+        e.target.closest('#l5-touch-dock') ||
+        e.target.closest('.l5-modal-backdrop') ||
+        e.target.closest('#orbit-companion') ||
+        e.target.closest('#luna-orientation-overlay')
+      ) {
+        return;
+      }
+
+      if (this.phase === 0 || this.phase >= 3) return;
+
+      const dom = this.game.renderer.domElement;
+      const rect = dom.getBoundingClientRect();
+      this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      if (this.groundMesh) {
+        const hits = this.raycaster.intersectObject(this.groundMesh);
+        if (hits.length > 0) {
+          const pt = hits[0].point;
+          this.targetDestination = { x: pt.x, z: pt.z };
+          if (this.ripples) {
+            this.ripples.spawn(pt.x, 0.05, pt.z);
+          }
+        }
+      }
+    };
+
+    const dom = this.game.renderer.domElement;
+    dom.addEventListener('pointerdown', this.onCanvasPointerDown);
+  }
+
   /**
    * Entry Cinematic with pulsing soft alarm and ORBIT introduction
    */
@@ -808,8 +863,83 @@ export class Level5Habitat {
     // 9. Camera gentle follow
     this.updateCameraFollow();
 
-    // 10. Render
+    // 10. Update Objective Guidance & Beacon
+    this.updateObjectiveGuidance(delta, elapsedTime);
+    if (this.beacon) this.beacon.update(delta, elapsedTime);
+    if (this.ripples) this.ripples.update(delta);
+
+    // 11. Render
     this.game.renderer.render(this.scene, this.camera);
+  }
+
+  updateObjectiveGuidance(delta, elapsedTime) {
+    if (this.phase < 1 || this.phase > 2) {
+      if (this.beacon) this.beacon.hide();
+      return;
+    }
+
+    const cPos = this.commander.group.position;
+
+    // Phase 2: Pressure Valve
+    if (this.phase === 2) {
+      if (this.currentGuideTarget !== 'valve') {
+        this.currentGuideTarget = 'valve';
+        this.hasPromptedAction = false;
+        if (this.beacon) {
+          this.beacon.showAt(this.valvePosition.x, 0.1, this.valvePosition.z, 0x06D6A0);
+        }
+        orbit.flyTo3D(new THREE.Vector3(this.valvePosition.x, 1.8, this.valvePosition.z), this.camera);
+        orbit.say("Both leaks sealed! Walk over to the pressure valve to restore oxygen!", {
+          emotion: 'happy',
+          gesture: 'point'
+        });
+      }
+
+      const dist = cPos.distanceTo(this.valvePosition);
+      if (dist < 2.8 && !this.hasPromptedAction) {
+        this.hasPromptedAction = true;
+        orbit.say("Hold SPACE or tap TURN to restore oxygen to the habitat!", {
+          emotion: 'excited',
+          gesture: 'cheer'
+        });
+      }
+      return;
+    }
+
+    // Phase 1: Nearest unsealed leak
+    const unsealed = this.leaks.filter(l => !l.isSealed);
+    if (unsealed.length > 0) {
+      let targetLeak = unsealed[0];
+      let minDist = cPos.distanceTo(targetLeak.pos);
+      for (let i = 1; i < unsealed.length; i++) {
+        const d = cPos.distanceTo(unsealed[i].pos);
+        if (d < minDist) {
+          minDist = d;
+          targetLeak = unsealed[i];
+        }
+      }
+
+      if (this.currentGuideTarget !== targetLeak) {
+        this.currentGuideTarget = targetLeak;
+        this.hasPromptedAction = false;
+        if (this.beacon) {
+          this.beacon.showAt(targetLeak.pos.x, 0.1, targetLeak.pos.z, 0xFF5E57);
+        }
+        orbit.flyTo3D(new THREE.Vector3(targetLeak.pos.x, 1.8, targetLeak.pos.z), this.camera);
+        orbit.say(`Air leak detected at ${targetLeak.name}! Walk over and hold SPACE or tap SEAL to spray foam!`, {
+          emotion: 'worried',
+          gesture: 'point'
+        });
+      }
+
+      if (minDist < 2.5 && !this.hasPromptedAction) {
+        this.hasPromptedAction = true;
+        orbit.say(`Hold SPACE or tap SEAL to spray airtight foam on this leak!`, {
+          emotion: 'excited',
+          gesture: 'point'
+        });
+      }
+    }
   }
 
   updateCommander(delta) {
@@ -826,6 +956,20 @@ export class Level5Habitat {
     if (Math.abs(this.touchMoveX) > 0.05 || Math.abs(this.touchMoveY) > 0.05) {
       moveX += this.touchMoveX;
       moveZ += this.touchMoveY;
+    }
+
+    if (moveX !== 0 || moveZ !== 0) {
+      this.targetDestination = null;
+    } else if (this.targetDestination) {
+      const dx = this.targetDestination.x - this.commander.group.position.x;
+      const dz = this.targetDestination.z - this.commander.group.position.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 0.35) {
+        moveX = dx / dist;
+        moveZ = dz / dist;
+      } else {
+        this.targetDestination = null;
+      }
     }
 
     const len = Math.hypot(moveX, moveZ);
@@ -912,6 +1056,8 @@ export class Level5Habitat {
             leak.callRing.visible = false;
             leak.particles.visible = false;
             this.leaksSealedCount++;
+            this.currentGuideTarget = null;
+            this.hasPromptedAction = false;
 
             level5Audio.playLeakSealed();
 
@@ -1184,6 +1330,19 @@ export class Level5Habitat {
 
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+
+    if (this.onCanvasPointerDown && this.game.renderer) {
+      this.game.renderer.domElement.removeEventListener('pointerdown', this.onCanvasPointerDown);
+    }
+
+    if (this.beacon) {
+      this.beacon.dispose();
+      this.beacon = null;
+    }
+    if (this.ripples) {
+      this.ripples.dispose();
+      this.ripples = null;
+    }
 
     if (this.hud) {
       this.hud.dispose();

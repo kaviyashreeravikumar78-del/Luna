@@ -3,6 +3,8 @@ import { level3Audio } from '../audio/Level3Audio.js';
 import { Level3HUD } from './Level3HUD.js';
 import { LevelTransition } from '../core/LevelTransition.js';
 import { orbitVoice } from '../audio/OrbitVoice.js';
+import { orbit } from '../components/Orbit.js';
+import { ObjectiveBeacon, ClickRippleEffect } from '../core/ObjectiveBeacon.js';
 import { disposeThreeObject, clearTimerArray } from '../core/disposeHelper.js';
 import { BUILDINGS_DATA } from '../data/buildings.js';
 import nasaData from '../data/nasa_sep_events.json';
@@ -75,6 +77,14 @@ export class Level3Storm {
     // Real NASA Event
     this.nasaEvent = nasaData.events[0];
     this.activeTimers = [];
+
+    // Objective Beacon & Click-to-Move
+    this.beacon = null;
+    this.ripples = null;
+    this.groundMesh = null;
+    this.targetDestination = null;
+    this.currentGuideTarget = null;
+    this.hasPromptedAction = false;
   }
 
   safeTimeout(fn, ms) {
@@ -118,7 +128,12 @@ export class Level3Storm {
     // 6. Bind Keyboard Controls
     this.bindControls();
 
-    // 7. Start Entry Cinematic
+    // 7. Setup 3D Objective Beacon & Click-to-Move
+    this.beacon = new ObjectiveBeacon(this.levelGroup);
+    this.ripples = new ClickRippleEffect(this.levelGroup);
+    this.setupClickToMove();
+
+    // 8. Start Entry Cinematic
     if (skipIntro) {
       this.startGameplay();
     } else {
@@ -148,6 +163,7 @@ export class Level3Storm {
     ground.position.y = -0.6;
     ground.receiveShadow = true;
     this.levelGroup.add(ground);
+    this.groundMesh = ground;
 
     // Perimeter low-poly rocks and ridges
     const rockGeo = new THREE.DodecahedronGeometry(1, 1);
@@ -787,6 +803,45 @@ export class Level3Storm {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
+  setupClickToMove() {
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    this.onCanvasPointerDown = (e) => {
+      if (
+        e.target.closest('.l3-top-bar') ||
+        e.target.closest('#l3-touch-dock') ||
+        e.target.closest('.l3-modal-backdrop') ||
+        e.target.closest('#orbit-companion') ||
+        e.target.closest('#luna-orientation-overlay')
+      ) {
+        return;
+      }
+
+      if (this.phase === 0 || this.phase >= 4) return;
+
+      const dom = this.game.renderer.domElement;
+      const rect = dom.getBoundingClientRect();
+      this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      if (this.groundMesh) {
+        const hits = this.raycaster.intersectObject(this.groundMesh);
+        if (hits.length > 0) {
+          const pt = hits[0].point;
+          this.targetDestination = { x: pt.x, z: pt.z };
+          if (this.ripples) {
+            this.ripples.spawn(pt.x, 0.05, pt.z);
+          }
+        }
+      }
+    };
+
+    const dom = this.game.renderer.domElement;
+    dom.addEventListener('pointerdown', this.onCanvasPointerDown);
+  }
+
   /**
    * Entry Cinematic with sirens, sky flickering, and ORBIT warning
    */
@@ -871,6 +926,8 @@ export class Level3Storm {
             }
 
             alertedAny = true;
+            this.currentGuideTarget = null;
+            this.hasPromptedAction = false;
             orbitVoice.speak(`${astro.name} is following you!`);
           }
         }
@@ -928,8 +985,93 @@ export class Level3Storm {
     // 6. Update Waypoint Guide Ring
     this.updateWaypointMarker(elapsedTime);
 
-    // 7. Render scene
+    // 7. Update Objective Guidance & Beacon
+    this.updateObjectiveGuidance(delta, elapsedTime);
+    if (this.beacon) this.beacon.update(delta, elapsedTime);
+    if (this.ripples) this.ripples.update(delta);
+
+    // 8. Render scene
     this.game.renderer.render(this.scene, this.camera);
+  }
+
+  updateObjectiveGuidance(delta, elapsedTime) {
+    if (this.phase < 1 || this.phase > 3) {
+      if (this.beacon) this.beacon.hide();
+      return;
+    }
+
+    const cPos = this.commander.group.position;
+
+    // Phase 3: Shield Generator activation
+    if (this.phase === 3) {
+      const towerPos = new THREE.Vector3(0, 0.2, 6.7);
+      if (this.currentGuideTarget !== 'shield') {
+        this.currentGuideTarget = 'shield';
+        this.hasPromptedAction = false;
+        if (this.beacon) {
+          this.beacon.showAt(towerPos.x, towerPos.y, towerPos.z, 0x00E5FF);
+        }
+        orbit.flyTo3D(new THREE.Vector3(towerPos.x, 2.2, towerPos.z), this.camera);
+        orbit.say("All astronauts are sheltered! Walk to the Shield Generator and hold SPACE or tap CHARGE!", {
+          emotion: 'excited',
+          gesture: 'point'
+        });
+      }
+      return;
+    }
+
+    // Phase 2: Leading followers to shelter door
+    if (this.followers.length > 0) {
+      const doorPos = new THREE.Vector3(0, 0.2, -3.8);
+      if (this.currentGuideTarget !== 'shelter') {
+        this.currentGuideTarget = 'shelter';
+        this.hasPromptedAction = false;
+        if (this.beacon) {
+          this.beacon.showAt(doorPos.x, doorPos.y, doorPos.z, 0x06D6A0);
+        }
+        orbit.flyTo3D(new THREE.Vector3(doorPos.x, 2.2, doorPos.z), this.camera);
+        orbit.say("Astronauts are following you! Lead them inside the glowing shelter door!", {
+          emotion: 'happy',
+          gesture: 'point'
+        });
+      }
+      return;
+    }
+
+    // Phase 1: Find nearest ungathered astronaut
+    const ungathered = this.astronauts.filter(a => !a.isGathered && !a.isSheltered);
+    if (ungathered.length > 0) {
+      let targetAstro = ungathered[0];
+      let minDist = cPos.distanceTo(targetAstro.group.position);
+      for (let i = 1; i < ungathered.length; i++) {
+        const d = cPos.distanceTo(ungathered[i].group.position);
+        if (d < minDist) {
+          minDist = d;
+          targetAstro = ungathered[i];
+        }
+      }
+
+      if (this.currentGuideTarget !== targetAstro) {
+        this.currentGuideTarget = targetAstro;
+        this.hasPromptedAction = false;
+        if (this.beacon) {
+          this.beacon.showAt(targetAstro.group.position.x, 0.1, targetAstro.group.position.z, 0xFFD166);
+        }
+        orbit.flyTo3D(new THREE.Vector3(targetAstro.group.position.x, 2.0, targetAstro.group.position.z), this.camera);
+        orbit.say(`Run over to ${targetAstro.name}! Press Space or tap ACTION to alert them!`, {
+          emotion: 'worried',
+          gesture: 'point'
+        });
+      }
+
+      if (minDist < 3.2 && !this.hasPromptedAction) {
+        this.hasPromptedAction = true;
+        orbit.say(`You reached ${targetAstro.name}! Tap ACTION or Space to call them!`, {
+          emotion: 'excited',
+          gesture: 'wave'
+        });
+      }
+    }
   }
 
   updateCommander(delta) {
@@ -947,6 +1089,20 @@ export class Level3Storm {
     if (Math.abs(this.touchMoveX) > 0.05 || Math.abs(this.touchMoveY) > 0.05) {
       moveX += this.touchMoveX;
       moveZ += this.touchMoveY;
+    }
+
+    if (moveX !== 0 || moveZ !== 0) {
+      this.targetDestination = null;
+    } else if (this.targetDestination) {
+      const dx = this.targetDestination.x - this.commander.group.position.x;
+      const dz = this.targetDestination.z - this.commander.group.position.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 0.35) {
+        moveX = dx / dist;
+        moveZ = dz / dist;
+      } else {
+        this.targetDestination = null;
+      }
     }
 
     const len = Math.hypot(moveX, moveZ);
@@ -1057,6 +1213,9 @@ export class Level3Storm {
           this.hud.updateAstronautStatus(astro.crewIndex, 'sheltered');
           this.hud.updateCrewSafeCount(this.shelteredCount, 4);
         }
+
+        this.currentGuideTarget = null;
+        this.hasPromptedAction = false;
 
         // Pulse shelter light
         if (this.shelterLampMat) {
@@ -1346,6 +1505,19 @@ export class Level3Storm {
 
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+
+    if (this.onCanvasPointerDown && this.game.renderer) {
+      this.game.renderer.domElement.removeEventListener('pointerdown', this.onCanvasPointerDown);
+    }
+
+    if (this.beacon) {
+      this.beacon.dispose();
+      this.beacon = null;
+    }
+    if (this.ripples) {
+      this.ripples.dispose();
+      this.ripples = null;
+    }
 
     if (this.hud) {
       this.hud.dispose();
